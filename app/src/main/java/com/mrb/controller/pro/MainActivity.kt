@@ -22,7 +22,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var imageSteering: ImageView
     private lateinit var textStatus: TextView
 
-    // HID Descriptor: Ye PC ko batata hai ki hum ek Gamepad hain (Standard Report Map)
     private val HID_REPORT_DESC = byteArrayOf(
         0x05.toByte(), 0x01.toByte(), 0x09.toByte(), 0x04.toByte(), 0xa1.toByte(), 0x01.toByte(),
         0x85.toByte(), 0x01.toByte(), 0x05.toByte(), 0x09.toByte(), 0x19.toByte(), 0x01.toByte(),
@@ -39,7 +38,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         imageSteering = findViewById(R.id.imageSteering)
         textStatus = findViewById(R.id.textStatus)
 
-        bluetoothAdapter = BluetoothManager.getAdapter(this)
+        // Standard way to get Bluetooth Adapter
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothAdapter = bluetoothManager.adapter
+
         bluetoothAdapter?.getProfileProxy(this, object : BluetoothProfile.ServiceListener {
             override fun onServiceConnected(profile: Int, proxy: BluetoothProfile?) {
                 if (profile == BluetoothProfile.HID_DEVICE) {
@@ -59,10 +61,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             "MRB_Gamepad", "Mobile Steering", "Meet_Dev", 
             BluetoothHidDevice.SUBCLASS1_COMBO, HID_REPORT_DESC
         )
-        hidDevice?.registerApp(sdp, null, null, { it.run() }, object : BluetoothHidDevice.Callback() {
+        hidDevice?.registerApp(sdp, null, null, { it?.run() }, object : BluetoothHidDevice.Callback() {
             override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
                 connectedDevice = if (state == BluetoothProfile.STATE_CONNECTED) device else null
-                runOnUiThread { textStatus.text = if (state == BluetoothProfile.STATE_CONNECTED) "Connected!" else "Ready to Pair..." }
+                runOnUiThread { 
+                    textStatus.text = if (state == BluetoothProfile.STATE_CONNECTED) "Connected!" else "Ready to Pair..." 
+                }
             }
         })
     }
@@ -71,10 +75,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
             val xTilt = event.values[0]
             imageSteering.rotation = xTilt * -10f
-
-            // HID Report bhejo (Left/Right Steering)
-            // Yahan hum signals bhej sakte hain jo PC ke 'A' or 'D' keys ke barabar ho
-            // HID logic ke liye byte array bhejni hogi
+            
+            // FUTURE: Tilt data ko HID reports (A/D keys) mein yahan convert karenge
         }
     }
 
@@ -89,9 +91,4 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-}
-
-private fun BluetoothManager.getAdapter(context: Context): BluetoothAdapter? {
-    val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-    return manager.adapter
 }
