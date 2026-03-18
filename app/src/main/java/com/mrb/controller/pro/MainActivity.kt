@@ -21,48 +21,51 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var gasOn = false
     private var brakeOn = false
     private var lastSendTime = 0L
+    private lateinit var tvStatus: TextView
 
-    // ── XBOX 360 STANDARD DESCRIPTOR (Android Games Friendly) ──
+    // -- FIXED DESCRIPTOR FOR KOTLIN --
     private val HID_DESC = byteArrayOf(
-        0x05, 0x01, 0x09, 0x05, 0xa1, 0x01, 0x85, 0x01,
-        0x05, 0x09, 0x19, 0x01, 0x29, 0x0a, 0x15, 0x00,
-        0x25, 0x01, 0x95, 0x0a, 0x75, 0x01, 0x81, 0x02,
-        0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x15, 0x81,
-        0x25, 0x7f, 0x75, 0x08, 0x95, 0x02, 0x81, 0x02,
-        0xc0
-    ).map { it.toByte() }.toByteArray()
+        0x05, 0x01, 0x09, 0x04, 0xa1.toByte(), 0x01, 0x85.toByte(), 0x01,
+        0x05, 0x09, 0x19, 0x01, 0x29, 0x04, 0x15, 0x00,
+        0x25, 0x01, 0x75, 0x01, 0x95, 0x04, 0x81.toByte(), 0x02,
+        0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x15, 0x81.toByte(),
+        0x25, 0x7f, 0x75, 0x08, 0x95, 0x02, 0x81.toByte(), 0x02,
+        0xc0.toByte()
+    )
 
-    @SuppressLint("ClickableViewAccessibility")
+    @SuppressLint("ClickableViewAccessibility", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        val root = FrameLayout(this).apply { setBackgroundColor(Color.parseColor("#080808")) }
-        val tvStatus = TextView(this).apply { 
+        val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
+        tvStatus = TextView(this).apply { 
             text = "MRB PRO: READY"; setTextColor(Color.WHITE); gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
             setPadding(0, 50, 0, 0)
         }
 
-        // GAS BUTTON
         val btnGas = Button(this).apply {
-            text = "GAS"; setBackgroundColor(Color.DARK_GRAY); setTextColor(Color.WHITE)
-            layoutParams = FrameLayout.LayoutParams(300, 500).apply { gravity = Gravity.END or Gravity.CENTER_VERTICAL; setMargins(0,0,100,0) }
-            setOnTouchListener { _, event ->
+            text = "GAS"; setBackgroundColor(Color.DKGRAY); setTextColor(Color.WHITE)
+            layoutParams = FrameLayout.LayoutParams(300, 500).apply { 
+                gravity = Gravity.END or Gravity.CENTER_VERTICAL; setMargins(0,0,100,0) 
+            }
+            setOnTouchListener { v, event ->
                 when(event.action) {
-                    MotionEvent.ACTION_DOWN -> { gasOn = true; setBackgroundColor(Color.GREEN); sendHIDReport(); true }
-                    MotionEvent.ACTION_UP -> { gasOn = false; setBackgroundColor(Color.DARK_GRAY); sendHIDReport(); true }
+                    MotionEvent.ACTION_DOWN -> { gasOn = true; v.setBackgroundColor(Color.GREEN); sendHIDReport(); true }
+                    MotionEvent.ACTION_UP -> { gasOn = false; v.setBackgroundColor(Color.DKGRAY); sendHIDReport(); true }
                     else -> false
                 }
             }
         }
 
-        // BRAKE BUTTON
         val btnBrake = Button(this).apply {
-            text = "BRAKE"; setBackgroundColor(Color.DARK_GRAY); setTextColor(Color.WHITE)
-            layoutParams = FrameLayout.LayoutParams(300, 500).apply { gravity = Gravity.START or Gravity.CENTER_VERTICAL; setMargins(100,0,0,0) }
-            setOnTouchListener { _, event ->
+            text = "BRAKE"; setBackgroundColor(Color.DKGRAY); setTextColor(Color.WHITE)
+            layoutParams = FrameLayout.LayoutParams(300, 500).apply { 
+                gravity = Gravity.START or Gravity.CENTER_VERTICAL; setMargins(100,0,0,0) 
+            }
+            setOnTouchListener { v, event ->
                 when(event.action) {
-                    MotionEvent.ACTION_DOWN -> { brakeOn = true; setBackgroundColor(Color.RED); sendHIDReport(); true }
-                    MotionEvent.ACTION_UP -> { brakeOn = false; setBackgroundColor(Color.DARK_GRAY); sendHIDReport(); true }
+                    MotionEvent.ACTION_DOWN -> { brakeOn = true; v.setBackgroundColor(Color.RED); sendHIDReport(); true }
+                    MotionEvent.ACTION_UP -> { brakeOn = false; v.setBackgroundColor(Color.DKGRAY); sendHIDReport(); true }
                     else -> false
                 }
             }
@@ -85,7 +88,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 val sdp = BluetoothHidDeviceAppSdpSettings("Mrb Pad", "Gamepad", "Meet", BluetoothHidDevice.SUBCLASS1_COMBO, HID_DESC)
                 hidDevice?.registerApp(sdp, null, null, { it?.run() }, object : BluetoothHidDevice.Callback() {
                     override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
-                        if (state == BluetoothProfile.STATE_CONNECTED) connectedDevice = device
+                        if (state == BluetoothProfile.STATE_CONNECTED) {
+                            connectedDevice = device
+                            runOnUiThread { tvStatus.text = "CONNECTED" }
+                        }
                     }
                 })
             }
@@ -97,7 +103,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
             tiltAngle = event.values[1]
             val now = System.currentTimeMillis()
-            if (now - lastSendTime > 30) { // Stable 33fps
+            if (now - lastSendTime > 40) {
                 sendHIDReport()
                 lastSendTime = now
             }
@@ -108,14 +114,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun sendHIDReport() {
         val device = connectedDevice ?: return
         val joyX = (tiltAngle * 15f).toInt().coerceIn(-127, 127).toByte()
-        
         var b1 = 0
         if (gasOn) b1 = b1 or 0x01
         if (brakeOn) b1 = b1 or 0x02
-
-        // Report Structure: [Buttons, AxisX, AxisY]
-        val report = byteArrayOf(b1.toByte(), joyX, 0x00)
-        hidDevice?.sendReport(device, 1, report)
+        hidDevice?.sendReport(device, 1, byteArrayOf(b1.toByte(), joyX, 0x00))
     }
 
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
