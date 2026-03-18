@@ -4,12 +4,40 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:background="#000000">
+    android:background="#000000"
+    android:padding="16dp">
 
-    <Button
-        android:id="@+id/btnConnect"
+    <TextView
+        android:id="@+id/textTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="CONNECT TO PC" />
+        android:text="MRB Controller: Tilt Data"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:layout_marginBottom="20dp"/>
+
+    <TextView
+        android:id="@+id/textX"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="X Axis (Left/Right): 0.0"
+        android:textColor="#FF0000"
+        android:textSize="18sp"/>
+
+    <TextView
+        android:id="@+id/textY"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Y Axis (Up/Down): 0.0"
+        android:textColor="#00FF00"
+        android:textSize="18sp"/>
+
+    <TextView
+        android:id="@+id/textZ"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Z Axis: 0.0"
+        android:textColor="#0000FF"
+        android:textSize="18sp"/>
 
 </LinearLayout>
