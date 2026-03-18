@@ -40,9 +40,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var wheelView: WheelView
     private lateinit var tiltBar: ProgressBar
     private var onPage2 = false
-    private val cornerRadius = 16.dpToPx().toFloat() // Material 3 softer corners
+    private val cornerRadius = 16.dpToPx().toFloat()
 
-    // ── GAMEPAD DESCRIPTOR ──
+    // ── GAMEPAD DESCRIPTOR (8 Buttons + X & Y Axes) ──
     private val HID_DESC = byteArrayOf(
         0x05.toByte(), 0x01.toByte(), 0x09.toByte(), 0x05.toByte(), 0xA1.toByte(), 0x01.toByte(), 
         0x85.toByte(), 0x01.toByte(), 0x05.toByte(), 0x09.toByte(), 0x19.toByte(), 0x01.toByte(), 
@@ -76,13 +76,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 or View.SYSTEM_UI_FLAG_FULLSCREEN)
         
-        window.decorView.setBackgroundColor(Color.parseColor("#0F0F0F")) // Exact dark theme from Image 2
+        window.decorView.setBackgroundColor(Color.parseColor("#080808"))
         requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
         val filter = IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED)
         registerReceiver(btReceiver, filter)
 
-        val root = FrameLayout(this).apply { setBackgroundColor(Color.parseColor("#0F0F0F")) }
+        val root = FrameLayout(this).apply { setBackgroundColor(Color.parseColor("#080808")) }
 
         page1 = buildPage1()
         page2 = buildPage2()
@@ -170,7 +170,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setBackgroundColor(Color.parseColor("#0F0F0F"))
+            setBackgroundColor(Color.parseColor("#080808"))
         }
 
         val tvTitle = TextView(this).apply {
@@ -203,104 +203,122 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         return root
     }
 
-    // ── PERFECT NON-OVERLAPPING LAYOUT (Ditto Image 2) ──
+    // ── PERFECT ABSOLUTE LAYOUT (EXACT DIMENSIONS & OFFSETS) ──
     private fun buildPage2(): View {
-        val root = RelativeLayout(this).apply { setBackgroundColor(Color.parseColor("#0F0F0F")) }
+        val root = RelativeLayout(this).apply { setBackgroundColor(Color.parseColor("#080808")) }
 
-        // Top Status
-        tvTopStatus = TextView(this).apply {
-            text = "● 7"
-            textSize = 12f; setTextColor(Color.parseColor("#4CAF50"));
-            layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT).apply { 
+        // Top Left Status
+        val topStatusContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT).apply {
                 addRule(RelativeLayout.ALIGN_PARENT_TOP)
                 addRule(RelativeLayout.ALIGN_PARENT_LEFT)
-                setMargins(20.dpToPx(), 20.dpToPx(), 0, 0)
+                setMargins(40.dpToPx(), 20.dpToPx(), 0, 0)
             }
         }
-
-        // Main 3-Column Layout to prevent overlap
-        val mainRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT).apply {
-                setMargins(40.dpToPx(), 40.dpToPx(), 40.dpToPx(), 40.dpToPx()) // Padding from screen edges
-            }
+        val greenDot = View(this).apply {
+            background = getSolidDrawable(Color.parseColor("#4CAF50"), Color.TRANSPARENT, 10f)
+            layoutParams = LinearLayout.LayoutParams(8.dpToPx(), 8.dpToPx()).apply { rightMargin = 8.dpToPx() }
         }
-
-        // --- LEFT COLUMN (Brake) ---
-        val leftCol = FrameLayout(this).apply { layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f) }
-        val brakePedal = buildWireframeBtn("BRAKE", Color.parseColor("#D32F2F"), getHandPath(), 140, 200) { on -> brakeOn = on; sendHIDReport() }
-        leftCol.addView(brakePedal, FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.CENTER })
-
-        // --- CENTER COLUMN (Wheel) ---
-        val centerCol = FrameLayout(this).apply { layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f) }
-        wheelView = WheelView(this).apply {
-            layoutParams = FrameLayout.LayoutParams(240.dpToPx(), 240.dpToPx()).apply { gravity = Gravity.CENTER }
+        tvTopStatus = TextView(this).apply {
+            text = "7"
+            textSize = 14f; setTextColor(Color.parseColor("#555555")); typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
         }
-        centerCol.addView(wheelView)
+        topStatusContainer.addView(greenDot); topStatusContainer.addView(tvTopStatus)
 
-        // --- RIGHT COLUMN (Gears + Gas) ---
-        val rightCol = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.2f) // Slightly wider for 2 items
-        }
+        // ── BUTTONS WITH EXACT SIZES ──
         
-        // Gears Stack
+        // 1. BRAKE (150x200) - Left aligned, Bottom aligned
+        val brakePedal = buildGameBtn("BRAKE", Color.parseColor("#D32F2F"), getHandPath(), 150, 200) { on -> brakeOn = on; sendHIDReport() }
+        val brakeParams = RelativeLayout.LayoutParams(150.dpToPx(), 200.dpToPx()).apply {
+            addRule(RelativeLayout.ALIGN_PARENT_LEFT)
+            addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+            setMargins(20.dpToPx(), 0, 0, 40.dpToPx()) // Offset from edges
+        }
+        brakePedal.layoutParams = brakeParams
+
+        // 2. GAS (150x200) - Right aligned, Bottom aligned
+        val gasPedal = buildGameBtn("GAS", Color.parseColor("#388E3C"), getSpeedoPath(), 150, 200) { on -> gasOn = on; sendHIDReport() }
+        gasPedal.id = View.generateViewId() // Need ID to place gears next to it
+        val gasParams = RelativeLayout.LayoutParams(150.dpToPx(), 200.dpToPx()).apply {
+            addRule(RelativeLayout.ALIGN_PARENT_RIGHT)
+            addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+            setMargins(0, 0, 20.dpToPx(), 40.dpToPx()) // Offset from right edge
+        }
+        gasPedal.layoutParams = gasParams
+
+        // 3. GEARS (120x80 each) - Left of Gas Pedal
         val gearsStack = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { rightMargin = 20.dpToPx() }
+            gravity = Gravity.BOTTOM
+            layoutParams = RelativeLayout.LayoutParams(120.dpToPx(), RelativeLayout.LayoutParams.WRAP_CONTENT).apply {
+                addRule(RelativeLayout.LEFT_OF, gasPedal.id)
+                addRule(RelativeLayout.ALIGN_BOTTOM, gasPedal.id) // Aligns perfectly with bottom of Gas
+                setMargins(0, 0, 20.dpToPx(), 0) // Space between gears and gas
+            }
         }
-        val btnGearDown = buildWireframeBtn("REVERSE", Color.parseColor("#F57C00"), getUpArrowPath(), 110, 80) { on -> gearDown = on; sendHIDReport() }
-        val btnGearUp = buildWireframeBtn("FRONT", Color.parseColor("#1976D2"), getDownArrowPath(), 110, 80) { on -> gearUp = on; sendHIDReport() }
+        val btnGearDown = buildGameBtn("REVERSE", Color.parseColor("#F57C00"), getUpArrowPath(), 120, 80) { on -> gearDown = on; sendHIDReport() }
+        val btnGearUp = buildGameBtn("FRONT", Color.parseColor("#1976D2"), getDownArrowPath(), 120, 80) { on -> gearUp = on; sendHIDReport() }
+        
         gearsStack.addView(btnGearDown)
-        gearsStack.addView(Space(this).apply { layoutParams = LinearLayout.LayoutParams(1, 20.dpToPx()) })
+        gearsStack.addView(Space(this).apply { layoutParams = LinearLayout.LayoutParams(1, 16.dpToPx()) }) // Gap between gears
         gearsStack.addView(btnGearUp)
 
-        // Gas Pedal
-        val gasPedal = buildWireframeBtn("GAS", Color.parseColor("#388E3C"), getSpeedoPath(), 140, 200) { on -> gasOn = on; sendHIDReport() }
-
-        rightCol.addView(gearsStack)
-        rightCol.addView(gasPedal)
-
-        mainRow.addView(leftCol); mainRow.addView(centerCol); mainRow.addView(rightCol)
-
-        // Bottom Bar
-        tiltBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
-            max = 100; progress = 50 
-            progressTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#81C784"))
-            layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, 4.dpToPx()).apply {
-                addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-                setMargins(100.dpToPx(), 0, 100.dpToPx(), 20.dpToPx())
+        // 4. STEERING WHEEL - Perfectly Centered
+        wheelView = WheelView(this).apply {
+            layoutParams = RelativeLayout.LayoutParams(260.dpToPx(), 260.dpToPx()).apply { 
+                addRule(RelativeLayout.CENTER_IN_PARENT) 
             }
         }
 
-        root.addView(tvTopStatus); root.addView(mainRow); root.addView(tiltBar)
+        // 5. TILT BAR - Bottom edge
+        tiltBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100; progress = 50 
+            progressTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#9E9D24")) 
+            progressBackgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#222222"))
+            layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, 4.dpToPx()).apply {
+                addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+                setMargins(40.dpToPx(), 0, 40.dpToPx(), 16.dpToPx())
+            }
+        }
+
+        root.addView(topStatusContainer)
+        root.addView(wheelView)
+        root.addView(brakePedal)
+        root.addView(gasPedal)
+        root.addView(gearsStack)
+        root.addView(tiltBar)
+        
         return root
     }
 
-    // ── MATERIAL 3 WIREFRAME BUTTON (Exact Match Image 2) ──
+    // ── EXACT SIZE BUTTON BUILDER ──
     @SuppressLint("ClickableViewAccessibility")
-    private fun buildWireframeBtn(label: String, themeColor: Int, pathData: String, wDp: Int, hDp: Int, onPress: (Boolean) -> Unit): View {
+    private fun buildGameBtn(label: String, activeThemeColor: Int, pathData: String, wDp: Int, hDp: Int, onPress: (Boolean) -> Unit): View {
         val btn = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            layoutParams = FrameLayout.LayoutParams(wDp.dpToPx(), hDp.dpToPx())
-            background = getWireframeDrawable(themeColor, cornerRadius)
+            // Use Match_Parent here because the sizing is handled by the parent RelativeLayout/LinearLayout LayoutParams
+            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         }
 
-        // Vector Icon
-        val iconSize = (min(wDp, hDp) * 0.4f).toInt()
+        val baseColor = Color.parseColor("#333333") 
+        val baseTextColor = Color.parseColor("#666666") 
+        val activeBgColor = Color.argb(40, Color.red(activeThemeColor), Color.green(activeThemeColor), Color.blue(activeThemeColor))
+
+        btn.background = getWireframeDrawable(baseColor, cornerRadius)
+
+        val iconSize = (min(wDp, hDp) * 0.35f).toInt()
         val ivIcon = ImageView(this).apply {
             layoutParams = LinearLayout.LayoutParams(iconSize.dpToPx(), iconSize.dpToPx()).apply { bottomMargin = 8.dpToPx() }
-            setImageDrawable(getVectorDrawable(context, iconSize, themeColor, pathData))
+            setImageDrawable(getVectorDrawable(context, iconSize, baseTextColor, pathData))
         }
 
-        // Text
         val tvLabel = TextView(this).apply {
             text = label
             textSize = 12f
-            setTextColor(themeColor)
+            setTextColor(baseTextColor)
             typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
             letterSpacing = 0.1f
         }
@@ -310,12 +328,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         btn.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    btn.background = getSolidDrawable(Color.argb(40, Color.red(themeColor), Color.green(themeColor), Color.blue(themeColor)), themeColor, cornerRadius)
+                    btn.background = getSolidDrawable(activeBgColor, activeThemeColor, cornerRadius)
+                    ivIcon.setImageDrawable(getVectorDrawable(context, iconSize, activeThemeColor, pathData))
+                    tvLabel.setTextColor(activeThemeColor)
                     onPress(true)
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    btn.background = getWireframeDrawable(themeColor, cornerRadius)
+                    btn.background = getWireframeDrawable(baseColor, cornerRadius)
+                    ivIcon.setImageDrawable(getVectorDrawable(context, iconSize, baseTextColor, pathData))
+                    tvLabel.setTextColor(baseTextColor)
                     onPress(false)
                     true
                 }
@@ -333,10 +355,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         page1.animate().alpha(0f).setDuration(300L).withEndAction { page1.visibility = View.GONE }.start()
     }
 
-    // ── STEERING LOGIC FIX (Landscape handled correctly) ──
+    // ── STEERING LOGIC (Landscape Y-Axis) ──
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER && onPage2) {
-            // FIXED: In landscape, holding it like a steering wheel means we read the Y-axis (values[1])
             val yAxisTilt = event.values[1] 
             
             filtAngle = alpha * yAxisTilt + (1 - alpha) * filtAngle
@@ -375,13 +396,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 }
 
-// ── CUSTOM WHEEL (Minimalistic White Ring like Image 2) ──
+// ── CUSTOM WHEEL (Exact Ditto Image 1) ──
 class WheelView(context: Context) : View(context) {
     private val paintWheel = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeWidth = 12f; color = Color.WHITE
+        style = Paint.Style.STROKE; strokeWidth = 16f; color = Color.WHITE
     }
     private val paintSpokes = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeWidth = 8f; color = Color.parseColor("#444444")
+        style = Paint.Style.STROKE; strokeWidth = 10f; color = Color.parseColor("#333333")
     }
     private val paintHub = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeWidth = 8f; color = Color.WHITE
@@ -393,27 +414,26 @@ class WheelView(context: Context) : View(context) {
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val cx = width / 2f; val cy = height / 2f
-        val radius = min(cx, cy) - 10f
+        val radius = min(cx, cy) - 16f
+        val hubRadius = radius * 0.25f
         
-        // Spokes
         for (i in 0..2) {
-            canvas.drawLine(cx, cy, cx, cy - radius, paintSpokes)
+            canvas.drawLine(cx, cy - hubRadius, cx, cy - radius, paintSpokes)
             canvas.save(); canvas.rotate(120f, cx, cy); canvas.restore()
         }
         
-        canvas.drawCircle(cx, cy, radius, paintWheel) // Outer
-        canvas.drawCircle(cx, cy, radius * 0.25f, paintHub) // Inner Hub
-        canvas.drawCircle(cx, cy - radius + 20f, 10f, paintDot) // Top indicator dot
+        canvas.drawCircle(cx, cy, radius, paintWheel) 
+        canvas.drawCircle(cx, cy, hubRadius, paintHub) 
+        canvas.drawCircle(cx, cy - radius + 12f, 10f, paintDot) 
     }
 }
 
-// ── UI HELPERS ──
 fun Int.dpToPx(): Int = (this * android.content.res.Resources.getSystem().displayMetrics.density).toInt()
 
 fun getWireframeDrawable(strokeColor: Int, radius: Float): GradientDrawable {
     val gd = GradientDrawable()
     gd.setColor(Color.TRANSPARENT)
-    gd.setStroke(3.dpToPx(), strokeColor)
+    gd.setStroke(2.dpToPx(), strokeColor)
     gd.cornerRadius = radius
     return gd
 }
@@ -426,7 +446,6 @@ fun getSolidDrawable(fillColor: Int, strokeColor: Int, radius: Float): GradientD
     return gd
 }
 
-// ── SVG PATHS FOR MATERIAL ICONS ──
 fun getHandPath() = "M21,12V6A2,2 0 0,0 19,4A2,2 0 0,0 17,6V7.5A2,2 0 0,0 15,5.5A2,2 0 0,0 13,7.5V8.5A2,2 0 0,0 11,6.5A2,2 0 0,0 9,8.5V13L6.87,12.44C6.55,12.35 6.2,12.41 5.95,12.6L4.5,13.88L9.62,19.82C10.15,20.44 10.93,20.8 11.76,20.8H17C18.66,20.8 20,19.46 20,17.8V12A2,2 0 0,0 22,10A2,2 0 0,0 21,12Z"
 fun getSpeedoPath() = "M12,4C7.58,4 4,7.58 4,12C4,14.05 4.78,15.92 6.06,17.34L7.48,15.92C6.55,14.89 6,13.5 6,12C6,8.69 8.69,6 12,6C15.31,6 18,8.69 18,12C18,13.5 17.45,14.89 16.52,15.92L17.94,17.34C19.22,15.92 20,14.05 20,12C20,7.58 16.42,4 12,4ZM12.5,8V12L15,14.5L13.5,16L10.5,12.5V8H12.5Z"
 fun getUpArrowPath() = "M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z"
@@ -441,11 +460,10 @@ fun getVectorDrawable(context: Context, sizeDp: Int, color: Int, pathData: Strin
     try {
         val path = PathParser.createPathFromPathData(pathData)
         val matrix = Matrix()
-        matrix.postScale(sizePx / 24f, sizePx / 24f) // standard 24x24 viewport scale
+        matrix.postScale(sizePx / 24f, sizePx / 24f) 
         path.transform(matrix)
         canvas.drawPath(path, paint)
     } catch (e: Exception) {
-        // Fallback simple circle if path fails
         canvas.drawCircle(sizePx/2f, sizePx/2f, sizePx/3f, paint)
     }
     return android.graphics.drawable.BitmapDrawable(context.resources, bitmap)
