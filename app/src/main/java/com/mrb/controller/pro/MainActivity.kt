@@ -19,13 +19,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var statusText: TextView
     private lateinit var dataText: TextView
 
-    // Correction: Added .toByte() to all values > 127
+    // Har ek literal ko .toByte() kiya hai taaki compiler error na de
     private val HID_REPORT_DESC = byteArrayOf(
-        0x05, 0x01, 0x09, 0x06, 0xa1.toByte(), 0x01, 0x85.toByte(), 0x01, 0x05, 0x07, 
-        0x19, 0xe0.toByte(), 0x29, 0xe7.toByte(), 0x15, 0x00, 0x25, 0x01, 0x75, 0x01, 
-        0x95, 0x08, 0x81.toByte(), 0x02, 0x95, 0x01, 0x75, 0x08, 0x81.toByte(), 0x01, 
-        0x95, 0x06, 0x75, 0x08, 0x15, 0x00, 0x25, 0x65, 0x19, 0x00, 
-        0x29, 0x65, 0x81.toByte(), 0x00, 0xc0.toByte()
+        0x05.toByte(), 0x01.toByte(), 0x09.toByte(), 0x06.toByte(), 0xA1.toByte(), 0x01.toByte(), 
+        0x85.toByte(), 0x01.toByte(), 0x05.toByte(), 0x07.toByte(), 0x19.toByte(), 0xE0.toByte(), 
+        0x29.toByte(), 0xE7.toByte(), 0x15.toByte(), 0x00.toByte(), 0x25.toByte(), 0x01.toByte(), 
+        0x75.toByte(), 0x01.toByte(), 0x95.toByte(), 0x08.toByte(), 0x81.toByte(), 0x02.toByte(), 
+        0x95.toByte(), 0x01.toByte(), 0x75.toByte(), 0x08.toByte(), 0x81.toByte(), 0x01.toByte(), 
+        0x95.toByte(), 0x06.toByte(), 0x75.toByte(), 0x08.toByte(), 0x15.toByte(), 0x00.toByte(), 
+        0x25.toByte(), 0x65.toByte(), 0x19.toByte(), 0x00.toByte(), 0x29.toByte(), 0x65.toByte(), 
+        0x81.toByte(), 0x00.toByte(), 0xC0.toByte()
     )
 
     @SuppressLint("MissingPermission")
@@ -39,11 +42,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         statusText = TextView(this).apply { 
-            text = "Initializing..."; textSize = 20f; setTextColor(Color.GREEN)
+            text = "Initializing MRB..."; textSize = 20f; setTextColor(Color.GREEN)
             setPadding(0, 0, 0, 50)
         }
         dataText = TextView(this).apply { 
-            text = "X: 0.0 | Y: 0.0"; textSize = 18f; setTextColor(Color.WHITE)
+            text = "Tilt Phone to Start"; textSize = 18f; setTextColor(Color.WHITE)
         }
 
         layout.addView(statusText); layout.addView(dataText)
@@ -67,7 +70,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     @SuppressLint("MissingPermission")
     private fun registerHidApp() {
-        val sdp = BluetoothHidDeviceAppSdpSettings("MRB_Gamepad", "Remote", "MeetDev", BluetoothHidDevice.SUBCLASS1_COMBO, HID_REPORT_DESC)
+        val sdp = BluetoothHidDeviceAppSdpSettings(
+            "MRB_Gamepad", "Remote", "MeetDev", 
+            BluetoothHidDevice.SUBCLASS1_COMBO, HID_REPORT_DESC
+        )
         hidDevice?.registerApp(sdp, null, null, { it?.run() }, object : BluetoothHidDevice.Callback() {
             override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
                 runOnUiThread {
@@ -84,16 +90,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             val x = event.values[0] 
             val y = event.values[1] 
 
-            runOnUiThread { dataText.text = "X: ${"%.1f".format(x)} | Y: ${"%.1f".format(y)}" }
+            runOnUiThread { dataText.text = "X (Steer): ${"%.1f".format(x)} | Y (Gas): ${"%.1f".format(y)}" }
 
             var keyByte: Byte = 0x00
 
-            if (x > 3.5f) keyByte = 0x04 // 'A' key (Left)
-            else if (x < -3.5f) keyByte = 0x07 // 'D' key (Right)
+            // X-Axis: Left (A) / Right (D)
+            if (x > 3.5f) keyByte = 0x04.toByte()
+            else if (x < -3.5f) keyByte = 0x07.toByte()
             
+            // Y-Axis: Gas (W) / Brake (S)
             if (keyByte == 0x00.toByte()) {
-                if (y < -3.0f) keyByte = 0x1a // 'W' key (Gas)
-                else if (y > 3.0f) keyByte = 0x16 // 'S' key (Brake)
+                if (y < -3.0f) keyByte = 0x1A.toByte()
+                else if (y > 3.0f) keyByte = 0x16.toByte()
             }
 
             val report = byteArrayOf(0, 0, keyByte, 0, 0, 0, 0, 0)
