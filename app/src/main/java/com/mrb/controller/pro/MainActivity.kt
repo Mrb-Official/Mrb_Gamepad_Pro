@@ -18,24 +18,20 @@ import kotlin.math.*
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
-    // ── Bluetooth HID ──────────────────────────
     private var hidDevice: BluetoothHidDevice? = null
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var connectedDevice: BluetoothDevice? = null
 
-    // ── Sensor ─────────────────────────────────
     private lateinit var sensorManager: SensorManager
     private var tiltX = 0f
     private val alpha = 0.15f 
     private var filtX = 0f
 
-    // ── State (Buttons) ────────────────────────
     private var gasOn    = false
     private var brakeOn  = false
     private var gearUp   = false
     private var gearDown = false
 
-    // ── UI ─────────────────────────────────────
     private lateinit var page1: View
     private lateinit var page2: View
     private lateinit var tvBtStatus: TextView
@@ -47,32 +43,32 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     // ── TRUE GAMEPAD LOGIC (8 Buttons + X/Y Axes) ──
     private val HID_DESC = byteArrayOf(
-        0x05.toByte(), 0x01.toByte(), // Usage Page: Generic Desktop
-        0x09.toByte(), 0x05.toByte(), // Usage: Gamepad
-        0xA1.toByte(), 0x01.toByte(), // Collection: Application
-        0x85.toByte(), 0x01.toByte(), // Report ID: 1
+        0x05.toByte(), 0x01.toByte(), 
+        0x09.toByte(), 0x05.toByte(), 
+        0xA1.toByte(), 0x01.toByte(), 
+        0x85.toByte(), 0x01.toByte(), 
         
-        // 8 Buttons (1 Byte)
-        0x05.toByte(), 0x09.toByte(), // Usage Page: Buttons
-        0x19.toByte(), 0x01.toByte(), // Usage Min: 1
-        0x29.toByte(), 0x08.toByte(), // Usage Max: 8
-        0x15.toByte(), 0x00.toByte(), // Logical Min: 0
-        0x25.toByte(), 0x01.toByte(), // Logical Max: 1
-        0x75.toByte(), 0x01.toByte(), // Report Size: 1
-        0x95.toByte(), 0x08.toByte(), // Report Count: 8
-        0x81.toByte(), 0x02.toByte(), // Input: Data,Variable,Absolute
+        // 8 Buttons
+        0x05.toByte(), 0x09.toByte(), 
+        0x19.toByte(), 0x01.toByte(), 
+        0x29.toByte(), 0x08.toByte(), 
+        0x15.toByte(), 0x00.toByte(), 
+        0x25.toByte(), 0x01.toByte(), 
+        0x75.toByte(), 0x01.toByte(), 
+        0x95.toByte(), 0x08.toByte(), 
+        0x81.toByte(), 0x02.toByte(), 
         
-        // Analog Stick X & Y (2 Bytes)
-        0x05.toByte(), 0x01.toByte(), // Usage Page: Generic Desktop
-        0x09.toByte(), 0x30.toByte(), // Usage: X
-        0x09.toByte(), 0x31.toByte(), // Usage: Y
-        0x15.toByte(), 0x81.toByte(), // Logical Min: -127
-        0x25.toByte(), 0x7F.toByte(), // Logical Max: 127
-        0x75.toByte(), 0x08.toByte(), // Report Size: 8
-        0x95.toByte(), 0x02.toByte(), // Report Count: 2
-        0x81.toByte(), 0x02.toByte(), // Input: Data,Variable,Absolute
+        // Analog Stick X & Y
+        0x05.toByte(), 0x01.toByte(), 
+        0x09.toByte(), 0x30.toByte(), 
+        0x09.toByte(), 0x31.toByte(), 
+        0x15.toByte(), 0x81.toByte(), 
+        0x25.toByte(), 0x7F.toByte(), 
+        0x75.toByte(), 0x08.toByte(), 
+        0x95.toByte(), 0x02.toByte(), 
+        0x81.toByte(), 0x02.toByte(), 
         
-        0xC0.toByte()                 // End Collection
+        0xC0.toByte()                 
     )
 
     private val btReceiver = object : BroadcastReceiver() {
@@ -91,7 +87,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // UI Setup
         window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                 or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
@@ -180,8 +175,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             if (onPage2) {
                                 onPage2 = false
                                 page1.visibility = View.VISIBLE
-                                page1.animate().alpha(1f).setDuration(500).start()
-                                page2.animate().alpha(0f).setDuration(300).withEndAction { page2.visibility = View.GONE }.start()
+                                page1.animate().alpha(1f).setDuration(500L).start()
+                                page2.animate().alpha(0f).setDuration(300L).withEndAction { page2.visibility = View.GONE }.start()
                             }
                         }
                     }
@@ -224,7 +219,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val btnConnect = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            background = getRoundedRectDrawable(Color.WHITE, 16.dpToPx())
+            background = getRoundedRectDrawable(Color.WHITE, 16.dpToPx().toFloat()) // FIXED INT TO FLOAT ERROR
             setPadding(40.dpToPx(), 16.dpToPx(), 40.dpToPx(), 16.dpToPx())
             setOnClickListener {
                 val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
@@ -256,27 +251,38 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             layoutParams = FrameLayout.LayoutParams(300.dpToPx(), 300.dpToPx()).apply { gravity = Gravity.CENTER }
         }
 
-        val brakePedal = buildBtn("BRAKE ✋", Color.RED, 180.dpToPx(), 280.dpToPx()) { on -> brakeOn = on; sendHIDReport() }
-        val brakeParams = FrameLayout.LayoutParams(180.dpToPx(), 280.dpToPx()).apply { gravity = Gravity.START or Gravity.CENTER_VERTICAL; setMargins(80.dpToPx(), 0, 0, 0) }
-        brakePedal.layoutParams = brakeParams
+        val brakePedal = buildBtn("BRAKE ✋", Color.RED) { on -> brakeOn = on; sendHIDReport() }
+        brakePedal.layoutParams = FrameLayout.LayoutParams(180.dpToPx(), 280.dpToPx()).apply { gravity = Gravity.START or Gravity.CENTER_VERTICAL; setMargins(80.dpToPx(), 0, 0, 0) }
 
         val gearsColumn = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
             layoutParams = FrameLayout.LayoutParams(180.dpToPx(), FrameLayout.LayoutParams.MATCH_PARENT).apply { gravity = Gravity.START or Gravity.CENTER_VERTICAL; setMargins(300.dpToPx(), 0, 0, 0) }
         }
-        val btnGearDown = buildBtn("REVERSE ▼", Color.parseColor("#D500F9"), 180.dpToPx(), 120.dpToPx(), isGear = true) { on -> gearDown = on; sendHIDReport() }
-        val btnGearUp = buildBtn("FRONT ▲", Color.parseColor("#00B0FF"), 180.dpToPx(), 120.dpToPx(), isGear = true) { on -> gearUp = on; sendHIDReport() }
+        
+        val btnGearDown = buildBtn("REVERSE ▼", Color.parseColor("#D500F9"), isGear = true) { on -> gearDown = on; sendHIDReport() }
+        val btnGearUp = buildBtn("FRONT ▲", Color.parseColor("#00B0FF"), isGear = true) { on -> gearUp = on; sendHIDReport() }
+        
+        // Use proper LayoutParams for LinearLayout children
+        btnGearDown.layoutParams = LinearLayout.LayoutParams(180.dpToPx(), 120.dpToPx())
+        btnGearUp.layoutParams = LinearLayout.LayoutParams(180.dpToPx(), 120.dpToPx())
+
         gearsColumn.addView(btnGearDown)
         gearsColumn.addView(Space(this).apply { layoutParams = LinearLayout.LayoutParams(1, 20.dpToPx()) })
         gearsColumn.addView(btnGearUp)
 
-        val gasPedal = buildBtn("GAS ⚡", Color.GREEN, 180.dpToPx(), 280.dpToPx()) { on -> gasOn = on; sendHIDReport() }
-        val gasParams = FrameLayout.LayoutParams(180.dpToPx(), 280.dpToPx()).apply { gravity = Gravity.END or Gravity.CENTER_VERTICAL; setMargins(0, 0, 80.dpToPx(), 0) }
-        gasPedal.layoutParams = gasParams
+        val gasPedal = buildBtn("GAS ⚡", Color.GREEN) { on -> gasOn = on; sendHIDReport() }
+        gasPedal.layoutParams = FrameLayout.LayoutParams(180.dpToPx(), 280.dpToPx()).apply { gravity = Gravity.END or Gravity.CENTER_VERTICAL; setMargins(0, 0, 80.dpToPx(), 0) }
 
-        val bottomParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.BOTTOM; setPadding(100.dpToPx(), 0, 100.dpToPx(), 20.dpToPx()) }
-        val bottomRoot = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; layoutParams = bottomParams }
+        // FIXED UNRESOLVED PADDING ERROR
+        val bottomParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.BOTTOM }
+        val bottomRoot = LinearLayout(this).apply { 
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            layoutParams = bottomParams
+            setPadding(100.dpToPx(), 0, 100.dpToPx(), 20.dpToPx()) // Applied directly to Layout, not LayoutParams
+        }
+        
         tiltBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
             max = 100; progress = 50 
             val pParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 8.dpToPx())
@@ -290,7 +296,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private fun buildBtn(label: String, pressColor: Int, w: Int, h: Int, isGear: Boolean = false, onPress: (Boolean) -> Unit): View {
+    private fun buildBtn(label: String, pressColor: Int, isGear: Boolean = false, onPress: (Boolean) -> Unit): View {
         val btn = FrameLayout(this)
         val text = TextView(this).apply {
             text = label
@@ -328,8 +334,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (onPage2) return
         onPage2 = true
         page2.visibility = View.VISIBLE
-        page2.animate().alpha(1f).setDuration(500).start()
-        page1.animate().alpha(0f).setDuration(300).withEndAction { page1.visibility = View.GONE }.start()
+        page2.animate().alpha(1f).setDuration(500L).start()
+        page1.animate().alpha(0f).setDuration(300L).withEndAction { page1.visibility = View.GONE }.start()
     }
 
     // ── GAMEPAD LOGIC ──
@@ -359,9 +365,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (gearUp)   buttons = (buttons.toInt() or 0x04).toByte() // Btn 3 (X)
         if (gearDown) buttons = (buttons.toInt() or 0x08).toByte() // Btn 4 (Y)
 
-        // Structure: Buttons(1 Byte), X(1 Byte), Y(1 Byte - Always 0)
         val report = byteArrayOf(buttons, joyX, 0x00.toByte())
-        
         hidDevice?.sendReport(connectedDevice, 1, report)
         
         runOnUiThread { tvTopStatus.text = "● TX: X=$joyX, B=$buttons" }
