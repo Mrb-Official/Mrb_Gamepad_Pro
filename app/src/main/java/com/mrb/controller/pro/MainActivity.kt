@@ -40,28 +40,44 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var tvConnected: TextView
     private var onPage2 = false
 
-    // ── 100% PURE GAMEPAD DESCRIPTOR (ONLY X & Y AXIS) ──
+    // ── 100% STANDARD ARCADE GAMEPAD (8 BUTTONS, 2 AXES) ──
     private val HID_DESC = byteArrayOf(
-        0x05.toByte(), 0x01.toByte(), 0x09.toByte(), 0x05.toByte(), 0xA1.toByte(), 0x01.toByte(),
-        0x85.toByte(), 0x01.toByte(), 0x05.toByte(), 0x09.toByte(), 0x19.toByte(), 0x01.toByte(),
-        0x29.toByte(), 0x10.toByte(), 0x15.toByte(), 0x00.toByte(), 0x25.toByte(), 0x01.toByte(),
-        0x75.toByte(), 0x01.toByte(), 0x95.toByte(), 0x10.toByte(), 0x81.toByte(), 0x02.toByte(),
-        0x05.toByte(), 0x01.toByte(), 0x09.toByte(), 0x30.toByte(), 0x09.toByte(), 0x31.toByte(),
-        0x15.toByte(), 0x81.toByte(), 0x25.toByte(), 0x7F.toByte(), 0x75.toByte(), 0x08.toByte(),
-        0x95.toByte(), 0x02.toByte(), 0x81.toByte(), 0x02.toByte(), 0xC0.toByte()
+        0x05.toByte(), 0x01.toByte(), // Usage Page (Generic Desktop)
+        0x09.toByte(), 0x05.toByte(), // Usage (Gamepad)
+        0xA1.toByte(), 0x01.toByte(), // Collection (Application)
+        0x85.toByte(), 0x01.toByte(), // Report ID (1)
+        
+        // 8 Standard Gamepad Buttons (1 Byte)
+        0x05.toByte(), 0x09.toByte(), // Usage Page (Button)
+        0x19.toByte(), 0x01.toByte(), // Usage Minimum (Button 1)
+        0x29.toByte(), 0x08.toByte(), // Usage Maximum (Button 8)
+        0x15.toByte(), 0x00.toByte(), // Logical Minimum (0)
+        0x25.toByte(), 0x01.toByte(), // Logical Maximum (1)
+        0x75.toByte(), 0x01.toByte(), // Report Size (1 bit per button)
+        0x95.toByte(), 0x08.toByte(), // Report Count (8 buttons)
+        0x81.toByte(), 0x02.toByte(), // Input (Data, Variable, Absolute)
+        
+        // Analog Stick X & Y (2 Bytes)
+        0x05.toByte(), 0x01.toByte(), // Usage Page (Generic Desktop)
+        0x09.toByte(), 0x30.toByte(), // Usage (X)
+        0x09.toByte(), 0x31.toByte(), // Usage (Y)
+        0x15.toByte(), 0x81.toByte(), // Logical Minimum (-127)
+        0x25.toByte(), 0x7F.toByte(), // Logical Maximum (127)
+        0x75.toByte(), 0x08.toByte(), // Report Size (8 bits)
+        0x95.toByte(), 0x02.toByte(), // Report Count (2 axes)
+        0x81.toByte(), 0x02.toByte(), // Input (Data, Variable, Absolute)
+        
+        0xC0.toByte()                 // End Collection
     )
 
-    // ── BLUETOOTH CONNECTION RECEIVER (AUTO-SWITCH FIX) ──
     private val btReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val action = intent.action
             if (action == BluetoothDevice.ACTION_ACL_CONNECTED) {
-                val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
-                connectedDevice = device
                 runOnUiThread {
-                    tvBtStatus.text = "● Auto-Connected!"
-                    tvBtStatus.setTextColor(Color.GREEN)
                     if (!onPage2) switchToPage2()
+                    tvConnected.text = "● BT Connected! Waiting for HID Channel..."
+                    tvConnected.setTextColor(Color.YELLOW)
                 }
             }
         }
@@ -123,21 +139,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         unregisterReceiver(btReceiver)
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 1 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startHid() 
-        } else {
-            tvBtStatus.text = "Permission Denied! Cannot start Gamepad."
-            tvBtStatus.setTextColor(Color.RED)
-        }
-    }
-
     @SuppressLint("MissingPermission")
     private fun startHid() {
         if (bluetoothAdapter == null) return
         
-        val proxySuccess = bluetoothAdapter?.getProfileProxy(this, object : BluetoothProfile.ServiceListener {
+        bluetoothAdapter?.getProfileProxy(this, object : BluetoothProfile.ServiceListener {
             override fun onServiceConnected(profile: Int, proxy: BluetoothProfile?) {
                 if (profile == BluetoothProfile.HID_DEVICE) {
                     hidDevice = proxy as BluetoothHidDevice
@@ -148,11 +154,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 hidDevice = null
             }
         }, BluetoothProfile.HID_DEVICE)
-
-        if (proxySuccess == false) {
-            tvBtStatus.text = "Hardware Error: Kernel blocks HID!"
-            tvBtStatus.setTextColor(Color.RED)
-        }
     }
 
     @SuppressLint("MissingPermission")
@@ -165,21 +166,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     when (state) {
                         BluetoothProfile.STATE_CONNECTED -> {
                             connectedDevice = device
-                            tvBtStatus.text = "● Connected: ${device?.name}"
-                            tvBtStatus.setTextColor(Color.GREEN)
-                            tvConnected.text = "● Connected to ${device?.name}"
+                            tvConnected.text = "● HID Active! Ready to Play."
+                            tvConnected.setTextColor(Color.GREEN)
                             if (!onPage2) switchToPage2()
                         }
                         BluetoothProfile.STATE_DISCONNECTED -> {
                             connectedDevice = null
-                            tvBtStatus.text = "○ Disconnected"
-                            tvBtStatus.setTextColor(Color.GRAY)
-                            if (onPage2) {
-                                onPage2 = false
-                                page1.visibility = View.VISIBLE
-                                page1.animate().alpha(1f).setDuration(500).start()
-                                page2.animate().alpha(0f).setDuration(300).withEndAction { page2.visibility = View.GONE }.start()
-                            }
+                            tvConnected.text = "○ HID Disconnected"
+                            tvConnected.setTextColor(Color.GRAY)
                         }
                     }
                 }
@@ -209,39 +203,28 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             setPadding(0, 20, 0, 40)
         }
 
-        // ── BUTTON 1: BLUETOOTH SETTINGS ──
         val btnConnect = Button(this).apply {
             text = "OPEN BLUETOOTH SETTINGS"
             setBackgroundColor(Color.parseColor("#00C853"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
             setOnClickListener {
                 val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
                 startActivity(intent)
             }
         }
 
-        // ── BUTTON 2: MANUAL START (FAILSAFE) ──
         val btnForceStart = Button(this).apply {
             text = "START CONTROLLER (Manual)"
             setBackgroundColor(Color.parseColor("#333333"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = 30 }
-            setOnClickListener { 
-                switchToPage2() 
-            }
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = 30 }
+            setOnClickListener { switchToPage2() }
         }
 
         root.addView(tvTitle)
         root.addView(tvBtStatus)
         root.addView(btnConnect)
-        root.addView(btnForceStart) // Added Manual Button!
+        root.addView(btnForceStart)
         return root
     }
 
@@ -253,7 +236,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         val topBar = LinearLayout(this).apply { setPadding(20, 20, 20, 20) }
-        tvConnected = TextView(this).apply { text = "● Controller Active"; setTextColor(Color.GREEN) }
+        tvConnected = TextView(this).apply { text = "● Waiting for connection..."; setTextColor(Color.YELLOW) }
         topBar.addView(tvConnected)
 
         val leftCol = LinearLayout(this).apply {
@@ -336,27 +319,25 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         val joyX = (tiltX * 15f).toInt().coerceIn(-127, 127).toByte()
         
-        var buttons1: Byte = 0x00 
-        var buttons2: Byte = 0x00 
+        var buttons: Byte = 0x00 
+        if (gasOn)    buttons = (buttons.toInt() or 0x01).toByte() // Button 1
+        if (brakeOn)  buttons = (buttons.toInt() or 0x02).toByte() // Button 2
+        if (gearUp)   buttons = (buttons.toInt() or 0x04).toByte() // Button 3
+        if (gearDown) buttons = (buttons.toInt() or 0x08).toByte() // Button 4
 
-        if (gasOn)    buttons1 = (buttons1.toInt() or 0x01).toByte() 
-        if (brakeOn)  buttons1 = (buttons1.toInt() or 0x02).toByte() 
-        if (gearUp)   buttons1 = (buttons1.toInt() or 0x04).toByte() 
-        if (gearDown) buttons1 = (buttons1.toInt() or 0x08).toByte() 
-
-        val report = byteArrayOf(
-            buttons1, 
-            buttons2, 
-            joyX,          
-            0x00.toByte()  
-        )
+        // 3 Bytes exactly: [Buttons, Axis X, Axis Y]
+        val report = byteArrayOf(buttons, joyX, 0x00.toByte())
         
-        // Failsafe: Agar specific device miss ho gaya, toh connect hue kisi bhi device ko bhej do
         val devices = hidDevice?.connectedDevices
         if (!devices.isNullOrEmpty()) {
             hidDevice?.sendReport(devices[0], 1, report)
+            // ── LIVE DEBUGGER UPDATE ──
+            runOnUiThread { tvConnected.text = "● TX: X=$joyX, Btn=$buttons" }
         } else if (connectedDevice != null) {
             hidDevice?.sendReport(connectedDevice, 1, report)
+            runOnUiThread { tvConnected.text = "● TX: X=$joyX, Btn=$buttons" }
+        } else {
+            runOnUiThread { tvConnected.text = "● Error: HID Channel Blocked!" }
         }
     }
 
@@ -365,11 +346,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME)
-        
-        // Auto-switch agar pehle se connected hai
-        if (hidDevice?.connectedDevices?.isNotEmpty() == true && !onPage2) {
-            switchToPage2()
-        }
     }
 
     override fun onPause() {
