@@ -3,6 +3,7 @@ package com.mrb.controller.pro
 import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.*
 import android.hardware.*
 import android.os.*
@@ -10,6 +11,7 @@ import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import kotlin.math.*
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
@@ -37,29 +39,34 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var tvConnected: TextView
     private var onPage2 = false
 
-    // ── TRUE GAMEPAD DESCRIPTOR (ANALOG X/Y AXIS) ──
+    // ── 100% PURE GAMEPAD (ONLY X AND Y AXIS, NO Z-AXIS!) ──
     private val HID_DESC = byteArrayOf(
-        0x05.toByte(), 0x01.toByte(), 
-        0x09.toByte(), 0x05.toByte(), 
-        0xA1.toByte(), 0x01.toByte(), 
-        0x85.toByte(), 0x01.toByte(), 
-        0x05.toByte(), 0x01.toByte(), 
-        0x09.toByte(), 0x30.toByte(), 
-        0x09.toByte(), 0x31.toByte(), 
-        0x15.toByte(), 0x81.toByte(), 
-        0x25.toByte(), 0x7F.toByte(), 
-        0x75.toByte(), 0x08.toByte(), 
-        0x95.toByte(), 0x02.toByte(), 
-        0x81.toByte(), 0x02.toByte(), 
-        0x05.toByte(), 0x09.toByte(), 
-        0x19.toByte(), 0x01.toByte(), 
-        0x29.toByte(), 0x08.toByte(), 
-        0x15.toByte(), 0x00.toByte(), 
-        0x25.toByte(), 0x01.toByte(), 
-        0x75.toByte(), 0x01.toByte(), 
-        0x95.toByte(), 0x08.toByte(), 
-        0x81.toByte(), 0x02.toByte(), 
-        0xC0.toByte()                 
+        0x05.toByte(), 0x01.toByte(), // Usage Page (Generic Desktop)
+        0x09.toByte(), 0x05.toByte(), // Usage (Gamepad)
+        0xA1.toByte(), 0x01.toByte(), // Collection (Application)
+        0x85.toByte(), 0x01.toByte(), // Report ID (1)
+        
+        // 16 Gamepad Buttons
+        0x05.toByte(), 0x09.toByte(), // Usage Page (Button)
+        0x19.toByte(), 0x01.toByte(), // Usage Minimum (Button 1)
+        0x29.toByte(), 0x10.toByte(), // Usage Maximum (Button 16)
+        0x15.toByte(), 0x00.toByte(), // Logical Minimum (0)
+        0x25.toByte(), 0x01.toByte(), // Logical Maximum (1)
+        0x75.toByte(), 0x01.toByte(), // Report Size (1 bit per button)
+        0x95.toByte(), 0x10.toByte(), // Report Count (16 buttons)
+        0x81.toByte(), 0x02.toByte(), // Input (Data, Variable, Absolute)
+        
+        // ONLY 2 Analog Axes (X and Y) - No Z Axis!
+        0x05.toByte(), 0x01.toByte(), // Usage Page (Generic Desktop)
+        0x09.toByte(), 0x30.toByte(), // Usage (X)
+        0x09.toByte(), 0x31.toByte(), // Usage (Y)
+        0x15.toByte(), 0x81.toByte(), // Logical Min (-127)
+        0x25.toByte(), 0x7F.toByte(), // Logical Max (127)
+        0x75.toByte(), 0x08.toByte(), // Report Size (8 bits)
+        0x95.toByte(), 0x02.toByte(), // Report Count (2 axes ONLY)
+        0x81.toByte(), 0x02.toByte(), // Input (Data, Variable, Absolute)
+        
+        0xC0.toByte()                 // End Collection
     )
 
     @SuppressLint("MissingPermission")
@@ -76,19 +83,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         window.decorView.setBackgroundColor(Color.parseColor("#0A0A0A"))
         requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
-        // ── PERMISSION FIX FOR SAMSUNG M02 ──
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ActivityCompat.requestPermissions(this, arrayOf(
-                android.Manifest.permission.BLUETOOTH_CONNECT,
-                android.Manifest.permission.BLUETOOTH_SCAN,
-                android.Manifest.permission.BLUETOOTH_ADVERTISE
-            ), 1)
-        } else {
-            ActivityCompat.requestPermissions(this, arrayOf(
-                android.Manifest.permission.ACCESS_FINE_LOCATION,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION
-            ), 1)
-        }
+        // ── STRONG PERMISSION CHECKER ──
+        checkAndRequestPermissions()
 
         val root = FrameLayout(this).apply {
             setBackgroundColor(Color.parseColor("#0A0A0A"))
@@ -116,6 +112,27 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
     }
 
+    private fun checkAndRequestPermissions() {
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            arrayOf(
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_SCAN,
+                android.Manifest.permission.BLUETOOTH_ADVERTISE
+            )
+        } else {
+            // Android 11 aur niche ke liye Location zaroori hai
+            arrayOf(
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        }
+
+        val needed = permissions.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+        if (needed.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, needed.toTypedArray(), 1)
+        }
+    }
+
     @SuppressLint("MissingPermission")
     private fun initHid() {
         val proxySuccess = bluetoothAdapter?.getProfileProxy(this, object : BluetoothProfile.ServiceListener {
@@ -131,14 +148,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }, BluetoothProfile.HID_DEVICE)
 
         if (proxySuccess == false) {
-            tvBtStatus.text = "Hardware Error: Samsung M02 kernel blocks HID Gamepad Profile!"
+            tvBtStatus.text = "Hardware Error: Kernel blocks HID Gamepad Profile!"
             tvBtStatus.setTextColor(Color.RED)
         }
     }
 
     @SuppressLint("MissingPermission")
     private fun registerHid() {
-        // FIX: Reverted to SUBCLASS1_COMBO which is valid in Android SDK!
         val sdp = BluetoothHidDeviceAppSdpSettings("MRB Gamepad Pro", "MRB Tilt Controller", "MeetDev", BluetoothHidDevice.SUBCLASS1_COMBO, HID_DESC)
         
         hidDevice?.registerApp(sdp, null, null, { it?.run() }, object : BluetoothHidDevice.Callback() {
@@ -291,15 +307,25 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun sendHIDReport() {
         if (hidDevice == null || connectedDevice == null) return
 
+        // X-Axis (-127 to 127) mapped from accelerometer
         val joyX = (tiltX * 15f).toInt().coerceIn(-127, 127).toByte()
         
-        var buttons: Byte = 0x00
-        if (gasOn)    buttons = (buttons.toInt() or 0x01).toByte() 
-        if (brakeOn)  buttons = (buttons.toInt() or 0x02).toByte() 
-        if (gearUp)   buttons = (buttons.toInt() or 0x04).toByte() 
-        if (gearDown) buttons = (buttons.toInt() or 0x08).toByte() 
+        var buttons1: Byte = 0x00 
+        var buttons2: Byte = 0x00 
 
-        val report = byteArrayOf(joyX, 0x00.toByte(), buttons)
+        if (gasOn)    buttons1 = (buttons1.toInt() or 0x01).toByte() 
+        if (brakeOn)  buttons1 = (buttons1.toInt() or 0x02).toByte() 
+        if (gearUp)   buttons1 = (buttons1.toInt() or 0x04).toByte() 
+        if (gearDown) buttons1 = (buttons1.toInt() or 0x08).toByte() 
+
+        // EXACTLY 4 BYTES NOW: [Buttons 1-8, Buttons 9-16, Axis X, Axis Y]
+        val report = byteArrayOf(
+            buttons1, 
+            buttons2, 
+            joyX,          // X Axis (Steering)
+            0x00.toByte()  // Y Axis (Always Center, we use buttons for gas/brake)
+        )
+        
         hidDevice?.sendReport(connectedDevice, 1, report)
     }
 
