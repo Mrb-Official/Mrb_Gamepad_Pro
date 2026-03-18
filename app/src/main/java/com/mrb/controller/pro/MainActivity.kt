@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var onPage2 = false
     private val cornerRadius = 16.dpToPx().toFloat()
 
-    // ── GAMEPAD DESCRIPTOR (8 Buttons + X & Y Axes) ──
+    // ── GAMEPAD DESCRIPTOR ──
     private val HID_DESC = byteArrayOf(
         0x05.toByte(), 0x01.toByte(), 0x09.toByte(), 0x05.toByte(), 0xA1.toByte(), 0x01.toByte(), 
         0x85.toByte(), 0x01.toByte(), 0x05.toByte(), 0x09.toByte(), 0x19.toByte(), 0x01.toByte(), 
@@ -203,11 +203,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         return root
     }
 
-    // ── PERFECT ABSOLUTE LAYOUT (EXACT DIMENSIONS & OFFSETS) ──
     private fun buildPage2(): View {
         val root = RelativeLayout(this).apply { setBackgroundColor(Color.parseColor("#080808")) }
 
-        // Top Left Status
         val topStatusContainer = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -227,52 +225,50 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
         topStatusContainer.addView(greenDot); topStatusContainer.addView(tvTopStatus)
 
-        // ── BUTTONS WITH EXACT SIZES ──
-        
-        // 1. BRAKE (150x200) - Left aligned, Bottom aligned
+        // BRAKE (150x200)
         val brakePedal = buildGameBtn("BRAKE", Color.parseColor("#D32F2F"), getHandPath(), 150, 200) { on -> brakeOn = on; sendHIDReport() }
         val brakeParams = RelativeLayout.LayoutParams(150.dpToPx(), 200.dpToPx()).apply {
             addRule(RelativeLayout.ALIGN_PARENT_LEFT)
             addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-            setMargins(20.dpToPx(), 0, 0, 40.dpToPx()) // Offset from edges
+            setMargins(20.dpToPx(), 0, 0, 40.dpToPx())
         }
         brakePedal.layoutParams = brakeParams
 
-        // 2. GAS (150x200) - Right aligned, Bottom aligned
+        // GAS (150x200)
         val gasPedal = buildGameBtn("GAS", Color.parseColor("#388E3C"), getSpeedoPath(), 150, 200) { on -> gasOn = on; sendHIDReport() }
-        gasPedal.id = View.generateViewId() // Need ID to place gears next to it
+        gasPedal.id = View.generateViewId() 
         val gasParams = RelativeLayout.LayoutParams(150.dpToPx(), 200.dpToPx()).apply {
             addRule(RelativeLayout.ALIGN_PARENT_RIGHT)
             addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-            setMargins(0, 0, 20.dpToPx(), 40.dpToPx()) // Offset from right edge
+            setMargins(0, 0, 20.dpToPx(), 40.dpToPx())
         }
         gasPedal.layoutParams = gasParams
 
-        // 3. GEARS (120x80 each) - Left of Gas Pedal
+        // GEARS (120x80 each)
         val gearsStack = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.BOTTOM
             layoutParams = RelativeLayout.LayoutParams(120.dpToPx(), RelativeLayout.LayoutParams.WRAP_CONTENT).apply {
                 addRule(RelativeLayout.LEFT_OF, gasPedal.id)
-                addRule(RelativeLayout.ALIGN_BOTTOM, gasPedal.id) // Aligns perfectly with bottom of Gas
-                setMargins(0, 0, 20.dpToPx(), 0) // Space between gears and gas
+                addRule(RelativeLayout.ALIGN_BOTTOM, gasPedal.id) 
+                setMargins(0, 0, 20.dpToPx(), 0) 
             }
         }
         val btnGearDown = buildGameBtn("REVERSE", Color.parseColor("#F57C00"), getUpArrowPath(), 120, 80) { on -> gearDown = on; sendHIDReport() }
         val btnGearUp = buildGameBtn("FRONT", Color.parseColor("#1976D2"), getDownArrowPath(), 120, 80) { on -> gearUp = on; sendHIDReport() }
         
         gearsStack.addView(btnGearDown)
-        gearsStack.addView(Space(this).apply { layoutParams = LinearLayout.LayoutParams(1, 16.dpToPx()) }) // Gap between gears
+        gearsStack.addView(Space(this).apply { layoutParams = LinearLayout.LayoutParams(1, 16.dpToPx()) }) 
         gearsStack.addView(btnGearUp)
 
-        // 4. STEERING WHEEL - Perfectly Centered
+        // STEERING WHEEL
         wheelView = WheelView(this).apply {
             layoutParams = RelativeLayout.LayoutParams(260.dpToPx(), 260.dpToPx()).apply { 
                 addRule(RelativeLayout.CENTER_IN_PARENT) 
             }
         }
 
-        // 5. TILT BAR - Bottom edge
+        // TILT BAR
         tiltBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
             max = 100; progress = 50 
             progressTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#9E9D24")) 
@@ -293,13 +289,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         return root
     }
 
-    // ── EXACT SIZE BUTTON BUILDER ──
     @SuppressLint("ClickableViewAccessibility")
     private fun buildGameBtn(label: String, activeThemeColor: Int, pathData: String, wDp: Int, hDp: Int, onPress: (Boolean) -> Unit): View {
         val btn = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            // Use Match_Parent here because the sizing is handled by the parent RelativeLayout/LinearLayout LayoutParams
             layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         }
 
@@ -312,7 +306,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val iconSize = (min(wDp, hDp) * 0.35f).toInt()
         val ivIcon = ImageView(this).apply {
             layoutParams = LinearLayout.LayoutParams(iconSize.dpToPx(), iconSize.dpToPx()).apply { bottomMargin = 8.dpToPx() }
-            setImageDrawable(getVectorDrawable(context, iconSize, baseTextColor, pathData))
+            setImageDrawable(getVectorDrawable(this@MainActivity, iconSize, baseTextColor, pathData)) // <--- FIX HERE
         }
 
         val tvLabel = TextView(this).apply {
@@ -329,14 +323,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     btn.background = getSolidDrawable(activeBgColor, activeThemeColor, cornerRadius)
-                    ivIcon.setImageDrawable(getVectorDrawable(context, iconSize, activeThemeColor, pathData))
+                    ivIcon.setImageDrawable(getVectorDrawable(this@MainActivity, iconSize, activeThemeColor, pathData)) // <--- FIX HERE
                     tvLabel.setTextColor(activeThemeColor)
                     onPress(true)
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     btn.background = getWireframeDrawable(baseColor, cornerRadius)
-                    ivIcon.setImageDrawable(getVectorDrawable(context, iconSize, baseTextColor, pathData))
+                    ivIcon.setImageDrawable(getVectorDrawable(this@MainActivity, iconSize, baseTextColor, pathData)) // <--- FIX HERE
                     tvLabel.setTextColor(baseTextColor)
                     onPress(false)
                     true
@@ -355,7 +349,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         page1.animate().alpha(0f).setDuration(300L).withEndAction { page1.visibility = View.GONE }.start()
     }
 
-    // ── STEERING LOGIC (Landscape Y-Axis) ──
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER && onPage2) {
             val yAxisTilt = event.values[1] 
@@ -396,7 +389,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 }
 
-// ── CUSTOM WHEEL (Exact Ditto Image 1) ──
 class WheelView(context: Context) : View(context) {
     private val paintWheel = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeWidth = 16f; color = Color.WHITE
