@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.mrb.controller.pro"
-        minSdk 29 // Samsung M02 ke liye Android 10 compatible
+        minSdk 28 
         targetSdk 34
         versionCode 1
         versionName "1.0"
@@ -27,5 +27,4 @@ android {
 dependencies {
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.11.0'
 }
