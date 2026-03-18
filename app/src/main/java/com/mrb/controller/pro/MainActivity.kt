@@ -2,8 +2,7 @@ package com.mrb.controller.pro
 
 import android.annotation.SuppressLint
 import android.bluetooth.*
-import android.content.Context
-import android.content.Intent
+import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.*
 import android.hardware.*
@@ -52,6 +51,22 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         0x95.toByte(), 0x02.toByte(), 0x81.toByte(), 0x02.toByte(), 0xC0.toByte()
     )
 
+    // ── BLUETOOTH CONNECTION RECEIVER (AUTO-SWITCH FIX) ──
+    private val btReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val action = intent.action
+            if (action == BluetoothDevice.ACTION_ACL_CONNECTED) {
+                val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+                connectedDevice = device
+                runOnUiThread {
+                    tvBtStatus.text = "● Auto-Connected!"
+                    tvBtStatus.setTextColor(Color.GREEN)
+                    if (!onPage2) switchToPage2()
+                }
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -64,6 +79,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         
         window.decorView.setBackgroundColor(Color.parseColor("#0A0A0A"))
         requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+
+        val filter = IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED)
+        registerReceiver(btReceiver, filter)
 
         val root = FrameLayout(this).apply {
             setBackgroundColor(Color.parseColor("#0A0A0A"))
@@ -83,9 +101,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = btManager.adapter
 
-        // ── SMART PERMISSION CHECK ──
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // iQOO (Android 12+) ke liye pop-up aayega
             val permissions = arrayOf(
                 android.Manifest.permission.BLUETOOTH_CONNECT,
                 android.Manifest.permission.BLUETOOTH_SCAN,
@@ -98,15 +114,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 startHid()
             }
         } else {
-            // Samsung M02 (Android 11) ke liye seedha start bina pop-up ke!
             startHid()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(btReceiver)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 1 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startHid() // Permission milne par iQOO me start karega
+            startHid() 
         } else {
             tvBtStatus.text = "Permission Denied! Cannot start Gamepad."
             tvBtStatus.setTextColor(Color.RED)
@@ -115,16 +135,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     @SuppressLint("MissingPermission")
     private fun startHid() {
-        if (bluetoothAdapter == null) {
-            tvBtStatus.text = "Error: Bluetooth not supported."
-            return
-        }
-        if (bluetoothAdapter?.isEnabled == false) {
-            tvBtStatus.text = "Bluetooth is OFF. Please turn it ON."
-            tvBtStatus.setTextColor(Color.RED)
-            return
-        }
-
+        if (bluetoothAdapter == null) return
+        
         val proxySuccess = bluetoothAdapter?.getProfileProxy(this, object : BluetoothProfile.ServiceListener {
             override fun onServiceConnected(profile: Int, proxy: BluetoothProfile?) {
                 if (profile == BluetoothProfile.HID_DEVICE) {
@@ -138,7 +150,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }, BluetoothProfile.HID_DEVICE)
 
         if (proxySuccess == false) {
-            tvBtStatus.text = "Hardware Error: Kernel blocks HID Gamepad Profile!"
+            tvBtStatus.text = "Hardware Error: Kernel blocks HID!"
             tvBtStatus.setTextColor(Color.RED)
         }
     }
@@ -197,7 +209,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             setPadding(0, 20, 0, 40)
         }
 
-        // ── INBUILT CONNECT BUTTON ──
+        // ── BUTTON 1: BLUETOOTH SETTINGS ──
         val btnConnect = Button(this).apply {
             text = "OPEN BLUETOOTH SETTINGS"
             setBackgroundColor(Color.parseColor("#00C853"))
@@ -212,9 +224,24 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
         }
 
+        // ── BUTTON 2: MANUAL START (FAILSAFE) ──
+        val btnForceStart = Button(this).apply {
+            text = "START CONTROLLER (Manual)"
+            setBackgroundColor(Color.parseColor("#333333"))
+            setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = 30 }
+            setOnClickListener { 
+                switchToPage2() 
+            }
+        }
+
         root.addView(tvTitle)
         root.addView(tvBtStatus)
         root.addView(btnConnect)
+        root.addView(btnForceStart) // Added Manual Button!
         return root
     }
 
@@ -226,7 +253,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         val topBar = LinearLayout(this).apply { setPadding(20, 20, 20, 20) }
-        tvConnected = TextView(this).apply { text = "● Connected"; setTextColor(Color.GREEN) }
+        tvConnected = TextView(this).apply { text = "● Controller Active"; setTextColor(Color.GREEN) }
         topBar.addView(tvConnected)
 
         val leftCol = LinearLayout(this).apply {
@@ -280,6 +307,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun switchToPage2() {
+        if (onPage2) return
         onPage2 = true
         page2.visibility = View.VISIBLE
         page2.animate().alpha(1f).setDuration(500).start()
@@ -304,7 +332,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     @SuppressLint("MissingPermission")
     private fun sendHIDReport() {
-        if (hidDevice == null || connectedDevice == null) return
+        if (hidDevice == null) return
 
         val joyX = (tiltX * 15f).toInt().coerceIn(-127, 127).toByte()
         
@@ -323,7 +351,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             0x00.toByte()  
         )
         
-        hidDevice?.sendReport(connectedDevice, 1, report)
+        // Failsafe: Agar specific device miss ho gaya, toh connect hue kisi bhi device ko bhej do
+        val devices = hidDevice?.connectedDevices
+        if (!devices.isNullOrEmpty()) {
+            hidDevice?.sendReport(devices[0], 1, report)
+        } else if (connectedDevice != null) {
+            hidDevice?.sendReport(connectedDevice, 1, report)
+        }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
@@ -331,6 +365,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME)
+        
+        // Auto-switch agar pehle se connected hai
+        if (hidDevice?.connectedDevices?.isNotEmpty() == true && !onPage2) {
+            switchToPage2()
+        }
     }
 
     override fun onPause() {
