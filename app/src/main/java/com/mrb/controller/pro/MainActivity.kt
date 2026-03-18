@@ -38,31 +38,28 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var onPage2 = false
 
     // ── TRUE GAMEPAD DESCRIPTOR (ANALOG X/Y AXIS) ──
-    // Ab ye Keyboard nahi, ek asli Joystick/Gamepad banega!
     private val HID_DESC = byteArrayOf(
-        0x05.toByte(), 0x01.toByte(), // Usage Page: Generic Desktop
-        0x09.toByte(), 0x05.toByte(), // Usage: Gamepad
-        0xA1.toByte(), 0x01.toByte(), // Collection: Application
-        0x85.toByte(), 0x01.toByte(), // Report ID: 1
-        // X and Y Axes (-127 to 127) for Analog Steering
-        0x05.toByte(), 0x01.toByte(), // Usage Page: Generic Desktop
-        0x09.toByte(), 0x30.toByte(), // Usage: X
-        0x09.toByte(), 0x31.toByte(), // Usage: Y
-        0x15.toByte(), 0x81.toByte(), // Logical Min: -127
-        0x25.toByte(), 0x7F.toByte(), // Logical Max: 127
-        0x75.toByte(), 0x08.toByte(), // Report Size: 8
-        0x95.toByte(), 0x02.toByte(), // Report Count: 2
-        0x81.toByte(), 0x02.toByte(), // Input: Data, Variable, Absolute
-        // 8 Buttons
-        0x05.toByte(), 0x09.toByte(), // Usage Page: Button
-        0x19.toByte(), 0x01.toByte(), // Usage Min: 1
-        0x29.toByte(), 0x08.toByte(), // Usage Max: 8
-        0x15.toByte(), 0x00.toByte(), // Logical Min: 0
-        0x25.toByte(), 0x01.toByte(), // Logical Max: 1
-        0x75.toByte(), 0x01.toByte(), // Report Size: 1
-        0x95.toByte(), 0x08.toByte(), // Report Count: 8
-        0x81.toByte(), 0x02.toByte(), // Input: Data, Variable, Absolute
-        0xC0.toByte()                 // End Collection
+        0x05.toByte(), 0x01.toByte(), 
+        0x09.toByte(), 0x05.toByte(), 
+        0xA1.toByte(), 0x01.toByte(), 
+        0x85.toByte(), 0x01.toByte(), 
+        0x05.toByte(), 0x01.toByte(), 
+        0x09.toByte(), 0x30.toByte(), 
+        0x09.toByte(), 0x31.toByte(), 
+        0x15.toByte(), 0x81.toByte(), 
+        0x25.toByte(), 0x7F.toByte(), 
+        0x75.toByte(), 0x08.toByte(), 
+        0x95.toByte(), 0x02.toByte(), 
+        0x81.toByte(), 0x02.toByte(), 
+        0x05.toByte(), 0x09.toByte(), 
+        0x19.toByte(), 0x01.toByte(), 
+        0x29.toByte(), 0x08.toByte(), 
+        0x15.toByte(), 0x00.toByte(), 
+        0x25.toByte(), 0x01.toByte(), 
+        0x75.toByte(), 0x01.toByte(), 
+        0x95.toByte(), 0x08.toByte(), 
+        0x81.toByte(), 0x02.toByte(), 
+        0xC0.toByte()                 
     )
 
     @SuppressLint("MissingPermission")
@@ -87,7 +84,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 android.Manifest.permission.BLUETOOTH_ADVERTISE
             ), 1)
         } else {
-            // Android 11 aur usse niche (Samsung M02) ke liye Location zaroori hai
             ActivityCompat.requestPermissions(this, arrayOf(
                 android.Manifest.permission.ACCESS_FINE_LOCATION,
                 android.Manifest.permission.ACCESS_COARSE_LOCATION
@@ -142,7 +138,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     @SuppressLint("MissingPermission")
     private fun registerHid() {
-        val sdp = BluetoothHidDeviceAppSdpSettings("MRB Gamepad Pro", "MRB Tilt Controller", "MeetDev", BluetoothHidDevice.SUBCLASS1_GAMEPAD, HID_DESC)
+        // FIX: Reverted to SUBCLASS1_COMBO which is valid in Android SDK!
+        val sdp = BluetoothHidDeviceAppSdpSettings("MRB Gamepad Pro", "MRB Tilt Controller", "MeetDev", BluetoothHidDevice.SUBCLASS1_COMBO, HID_DESC)
         
         hidDevice?.registerApp(sdp, null, null, { it?.run() }, object : BluetoothHidDevice.Callback() {
             override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
@@ -294,21 +291,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun sendHIDReport() {
         if (hidDevice == null || connectedDevice == null) return
 
-        // 1. ANALOG STEERING (-127 to 127)
-        // Amplifier: tiltX * 15f maps gravity to Joystick Axis
         val joyX = (tiltX * 15f).toInt().coerceIn(-127, 127).toByte()
         
-        // 2. BUTTONS (Bitmasking)
         var buttons: Byte = 0x00
-        if (gasOn)    buttons = (buttons.toInt() or 0x01).toByte() // Button 1
-        if (brakeOn)  buttons = (buttons.toInt() or 0x02).toByte() // Button 2
-        if (gearUp)   buttons = (buttons.toInt() or 0x04).toByte() // Button 3
-        if (gearDown) buttons = (buttons.toInt() or 0x08).toByte() // Button 4
+        if (gasOn)    buttons = (buttons.toInt() or 0x01).toByte() 
+        if (brakeOn)  buttons = (buttons.toInt() or 0x02).toByte() 
+        if (gearUp)   buttons = (buttons.toInt() or 0x04).toByte() 
+        if (gearDown) buttons = (buttons.toInt() or 0x08).toByte() 
 
-        // Payload size is exactly 3 bytes: [X_Axis, Y_Axis, Buttons]
-        // Y_Axis is kept at 0 (Center) because we use buttons for Gas/Brake
         val report = byteArrayOf(joyX, 0x00.toByte(), buttons)
-        
         hidDevice?.sendReport(connectedDevice, 1, report)
     }
 
@@ -325,7 +316,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 }
 
-// ── Custom Views & Extensions ─────────────────
 class WheelView(context: Context) : View(context) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
