@@ -3,113 +3,284 @@ package com.mrb.controller.pro
 import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.content.Context
+import android.graphics.*
 import android.hardware.*
-import android.os.Bundle
-import android.widget.TextView
-import android.widget.LinearLayout
-import android.view.Gravity
-import android.graphics.Color
+import android.os.*
+import android.view.*
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import kotlin.math.*
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
+    // ── Bluetooth HID ──────────────────────────
     private var hidDevice: BluetoothHidDevice? = null
     private var bluetoothAdapter: BluetoothAdapter? = null
-    private lateinit var sensorManager: SensorManager
-    private lateinit var statusText: TextView
-    private lateinit var dataText: TextView
+    private var connectedDevice: BluetoothDevice? = null
 
-    // Har ek literal ko .toByte() kiya hai taaki compiler error na de
-    private val HID_REPORT_DESC = byteArrayOf(
-        0x05.toByte(), 0x01.toByte(), 0x09.toByte(), 0x06.toByte(), 0xA1.toByte(), 0x01.toByte(), 
-        0x85.toByte(), 0x01.toByte(), 0x05.toByte(), 0x07.toByte(), 0x19.toByte(), 0xE0.toByte(), 
-        0x29.toByte(), 0xE7.toByte(), 0x15.toByte(), 0x00.toByte(), 0x25.toByte(), 0x01.toByte(), 
-        0x75.toByte(), 0x01.toByte(), 0x95.toByte(), 0x08.toByte(), 0x81.toByte(), 0x02.toByte(), 
-        0x95.toByte(), 0x01.toByte(), 0x75.toByte(), 0x08.toByte(), 0x81.toByte(), 0x01.toByte(), 
-        0x95.toByte(), 0x06.toByte(), 0x75.toByte(), 0x08.toByte(), 0x15.toByte(), 0x00.toByte(), 
-        0x25.toByte(), 0x65.toByte(), 0x19.toByte(), 0x00.toByte(), 0x29.toByte(), 0x65.toByte(), 
-        0x81.toByte(), 0x00.toByte(), 0xC0.toByte()
+    // ── Sensor ─────────────────────────────────
+    private lateinit var sensorManager: SensorManager
+    private var tiltX = 0f
+    private val alpha = 0.15f // Low pass filter
+    private var filtX = 0f
+
+    // ── State (Buttons) ────────────────────────
+    private var gasOn    = false
+    private var brakeOn  = false
+    private var gearUp   = false
+    private var gearDown = false
+
+    // ── UI ─────────────────────────────────────
+    private lateinit var page1: View
+    private lateinit var page2: View
+    private lateinit var tvBtStatus: TextView
+    private lateinit var wheelView: WheelView
+    private lateinit var tvTiltVal: TextView
+    private lateinit var tiltBar: ProgressBar
+    private lateinit var tvConnected: TextView
+    private var onPage2 = false
+
+    // ── Gamepad HID Descriptor (Keyboard Map) ──
+    private val HID_DESC = byteArrayOf(
+        0x05, 0x01, 0x09, 0x06, 0xa1.toByte(), 0x01, 0x85.toByte(), 0x01, 0x05, 0x07, 
+        0x19, 0xe0.toByte(), 0x29, 0xe7.toByte(), 0x15, 0x00, 0x25, 0x01, 0x75, 0x01, 
+        0x95, 0x08, 0x81.toByte(), 0x02, 0x95, 0x01, 0x75, 0x08, 0x81.toByte(), 0x01, 
+        0x95, 0x06, 0x75, 0x08, 0x15, 0x00, 0x25, 0x65, 0x19, 0x00, 
+        0x29, 0x65, 0x81.toByte(), 0x00, 0xc0.toByte()
     )
 
     @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN)
         
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            setBackgroundColor(Color.parseColor("#121212"))
+        window.decorView.setBackgroundColor(Color.parseColor("#0A0A0A"))
+        requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ActivityCompat.requestPermissions(this, arrayOf(
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_SCAN,
+                android.Manifest.permission.BLUETOOTH_ADVERTISE
+            ), 1)
         }
 
-        statusText = TextView(this).apply { 
-            text = "Initializing MRB..."; textSize = 20f; setTextColor(Color.GREEN)
-            setPadding(0, 0, 0, 50)
-        }
-        dataText = TextView(this).apply { 
-            text = "Tilt Phone to Start"; textSize = 18f; setTextColor(Color.WHITE)
+        val root = FrameLayout(this).apply {
+            setBackgroundColor(Color.parseColor("#0A0A0A"))
         }
 
-        layout.addView(statusText); layout.addView(dataText)
-        setContentView(layout)
+        page1 = buildPage1()
+        page2 = buildPage2()
+        page2.alpha = 0f
+        page2.visibility = View.GONE
+
+        root.addView(page1, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        root.addView(page2, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+
+        setContentView(root)
+
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
         val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = btManager.adapter
+        initHid()
+    }
 
+    @SuppressLint("MissingPermission")
+    private fun initHid() {
         bluetoothAdapter?.getProfileProxy(this, object : BluetoothProfile.ServiceListener {
             override fun onServiceConnected(profile: Int, proxy: BluetoothProfile?) {
                 if (profile == BluetoothProfile.HID_DEVICE) {
                     hidDevice = proxy as BluetoothHidDevice
-                    registerHidApp()
+                    registerHid()
                 }
             }
-            override fun onServiceDisconnected(profile: Int) {}
+            override fun onServiceDisconnected(profile: Int) {
+                hidDevice = null
+            }
         }, BluetoothProfile.HID_DEVICE)
-
-        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
     }
 
     @SuppressLint("MissingPermission")
-    private fun registerHidApp() {
-        val sdp = BluetoothHidDeviceAppSdpSettings(
-            "MRB_Gamepad", "Remote", "MeetDev", 
-            BluetoothHidDevice.SUBCLASS1_COMBO, HID_REPORT_DESC
-        )
+    private fun registerHid() {
+        val sdp = BluetoothHidDeviceAppSdpSettings("MRB Gamepad Pro", "MRB Tilt Controller", "MeetDev", BluetoothHidDevice.SUBCLASS1_COMBO, HID_DESC)
+        
         hidDevice?.registerApp(sdp, null, null, { it?.run() }, object : BluetoothHidDevice.Callback() {
             override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
                 runOnUiThread {
-                    statusText.text = if (state == BluetoothProfile.STATE_CONNECTED) "CONNECTED TO iQOO" else "PAIR iQOO IN SETTINGS"
-                    statusText.setTextColor(if (state == BluetoothProfile.STATE_CONNECTED) Color.CYAN else Color.RED)
+                    when (state) {
+                        BluetoothProfile.STATE_CONNECTED -> {
+                            connectedDevice = device
+                            tvBtStatus.text = "● Connected: ${device?.name}"
+                            tvBtStatus.setTextColor(Color.GREEN)
+                            tvConnected.text = "● Connected to ${device?.name}"
+                            if (!onPage2) switchToPage2()
+                        }
+                        BluetoothProfile.STATE_DISCONNECTED -> {
+                            connectedDevice = null
+                            tvBtStatus.text = "○ Disconnected"
+                            tvBtStatus.setTextColor(Color.GRAY)
+                            if (onPage2) {
+                                onPage2 = false
+                                page1.visibility = View.VISIBLE
+                                page1.animate().alpha(1f).setDuration(500).start()
+                                page2.animate().alpha(0f).setDuration(300).withEndAction { page2.visibility = View.GONE }.start()
+                            }
+                        }
+                    }
                 }
             }
         })
     }
 
-    @SuppressLint("MissingPermission")
-    override fun onSensorChanged(event: SensorEvent?) {
-        if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
-            val x = event.values[0] 
-            val y = event.values[1] 
+    private fun buildPage1(): View {
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(Color.parseColor("#0A0A0A"))
+        }
 
-            runOnUiThread { dataText.text = "X (Steer): ${"%.1f".format(x)} | Y (Gas): ${"%.1f".format(y)}" }
+        val tvTitle = TextView(this).apply {
+            text = "MRB Gamepad Pro"
+            textSize = 26f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+        }
 
-            var keyByte: Byte = 0x00
+        val tvHow = TextView(this).apply {
+            text = "\n1. Turn on Bluetooth on game device (iQOO)\n2. Pair with 'MRB Gamepad Pro'\n3. Start Racing!"
+            textSize = 14f
+            setTextColor(Color.LTGRAY)
+            gravity = Gravity.CENTER
+        }
 
-            // X-Axis: Left (A) / Right (D)
-            if (x > 3.5f) keyByte = 0x04.toByte()
-            else if (x < -3.5f) keyByte = 0x07.toByte()
-            
-            // Y-Axis: Gas (W) / Brake (S)
-            if (keyByte == 0x00.toByte()) {
-                if (y < -3.0f) keyByte = 0x1A.toByte()
-                else if (y > 3.0f) keyByte = 0x16.toByte()
-            }
+        tvBtStatus = TextView(this).apply {
+            text = "\nInitializing Bluetooth..."
+            textSize = 16f
+            setTextColor(Color.YELLOW)
+            gravity = Gravity.CENTER
+        }
 
-            val report = byteArrayOf(0, 0, keyByte, 0, 0, 0, 0, 0)
-            hidDevice?.getConnectedDevices()?.forEach { device ->
-                hidDevice?.sendReport(device, 1, report)
+        root.addView(tvTitle)
+        root.addView(tvHow)
+        root.addView(tvBtStatus)
+        return root
+    }
+
+    private fun buildPage2(): View {
+        val root = FrameLayout(this)
+
+        wheelView = WheelView(this).apply {
+            layoutParams = FrameLayout.LayoutParams(300.dpToPx(), 300.dpToPx()).apply { gravity = Gravity.CENTER }
+        }
+
+        val topBar = LinearLayout(this).apply { setPadding(20, 20, 20, 20) }
+        tvConnected = TextView(this).apply { text = "● Connected"; setTextColor(Color.GREEN) }
+        topBar.addView(tvConnected)
+
+        val leftCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = FrameLayout.LayoutParams(150.dpToPx(), FrameLayout.LayoutParams.MATCH_PARENT).apply { gravity = Gravity.START or Gravity.CENTER_VERTICAL }
+            gravity = Gravity.CENTER
+        }
+        val btnBrake = buildBtn("BRAKE", Color.RED) { on -> brakeOn = on; sendHIDReport() }
+        val btnGearDown = buildBtn("GEAR-", Color.MAGENTA) { on -> gearDown = on; sendHIDReport() }
+        leftCol.addView(btnGearDown); leftCol.addView(btnBrake)
+
+        val rightCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = FrameLayout.LayoutParams(150.dpToPx(), FrameLayout.LayoutParams.MATCH_PARENT).apply { gravity = Gravity.END or Gravity.CENTER_VERTICAL }
+            gravity = Gravity.CENTER
+        }
+        val btnGas = buildBtn("GAS", Color.GREEN) { on -> gasOn = on; sendHIDReport() }
+        val btnGearUp = buildBtn("GEAR+", Color.CYAN) { on -> gearUp = on; sendHIDReport() }
+        rightCol.addView(btnGearUp); rightCol.addView(btnGas)
+
+        val bottom = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.BOTTOM }
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 30)
+        }
+        tvTiltVal = TextView(this).apply { text = "0.0°"; setTextColor(Color.WHITE); textSize = 18f; gravity = Gravity.CENTER }
+        tiltBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100; progress = 50 }
+        bottom.addView(tvTiltVal); bottom.addView(tiltBar)
+
+        root.addView(wheelView); root.addView(topBar); root.addView(leftCol); root.addView(rightCol); root.addView(bottom)
+        return root
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun buildBtn(label: String, color: Int, onPress: (Boolean) -> Unit): View {
+        val btn = Button(this).apply {
+            text = label
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.parseColor("#222222"))
+            layoutParams = LinearLayout.LayoutParams(120.dpToPx(), 100.dpToPx()).apply { setMargins(10, 10, 10, 10) }
+        }
+        btn.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> { btn.setBackgroundColor(color); onPress(true); true }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { btn.setBackgroundColor(Color.parseColor("#222222")); onPress(false); true }
+                else -> false
             }
         }
+        return btn
     }
+
+    private fun switchToPage2() {
+        onPage2 = true
+        page2.visibility = View.VISIBLE
+        page2.animate().alpha(1f).setDuration(500).start()
+        page1.animate().alpha(0f).setDuration(300).withEndAction { page1.visibility = View.GONE }.start()
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER && onPage2) {
+            val x = event.values[0] 
+            
+            filtX = alpha * x + (1 - alpha) * filtX
+            tiltX = filtX
+
+            val rotationAngle = tiltX * -10f
+            wheelView.rotation = rotationAngle
+            tvTiltVal.text = "Steering: ${"%.1f".format(rotationAngle)}°"
+            tiltBar.progress = (50 + (tiltX * 5)).toInt().coerceIn(0, 100)
+
+            sendHIDReport()
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun sendHIDReport() {
+        if (hidDevice == null || connectedDevice == null) return
+
+        var key1: Byte = 0x00 
+        var key2: Byte = 0x00 
+        var key3: Byte = 0x00 
+
+        if (tiltX > 2.5f) key1 = 0x04.toByte()      // 'A' key
+        else if (tiltX < -2.5f) key1 = 0x07.toByte() // 'D' key
+
+        if (gasOn) key2 = 0x1A.toByte()             // 'W' key
+        else if (brakeOn) key2 = 0x16.toByte()      // 'S' key
+
+        if (gearDown) key3 = 0x14.toByte()          // 'Q' key
+        else if (gearUp) key3 = 0x08.toByte()       // 'E' key
+
+        val report = byteArrayOf(0, 0, key1, key2, key3, 0, 0, 0)
+        
+        hidDevice?.sendReport(connectedDevice, 1, report)
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
     override fun onResume() {
         super.onResume()
@@ -120,6 +291,36 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         super.onPause()
         sensorManager.unregisterListener(this)
     }
+}
 
-    override fun onAccuracyChanged(s: Sensor?, a: Int) {}
+// ── Custom Views & Extensions ─────────────────
+class WheelView(context: Context) : View(context) {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 20f
+        color = Color.parseColor("#444444")
+    }
+    private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.RED
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        val cx = width / 2f
+        val cy = height / 2f
+        val radius = min(cx, cy) - 20f
+        
+        canvas.drawCircle(cx, cy, radius, paint)
+        canvas.drawCircle(cx, cy, 30f, linePaint)
+        
+        canvas.drawLine(cx, cy, cx - radius, cy, paint)
+        canvas.drawLine(cx, cy, cx + radius, cy, paint)
+        canvas.drawLine(cx, cy, cx, cy + radius, paint)
+    }
+}
+
+fun Int.dpToPx(): Int {
+    val density = android.content.res.Resources.getSystem().displayMetrics.density
+    return (this * density).toInt()
 }
