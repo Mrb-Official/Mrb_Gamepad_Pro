@@ -30,23 +30,22 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var brakeOn  = false
     private var gearUp   = false
     private var gearDown = false
-    private var btnY     = false
-    private var btnX     = false
     private var btnA     = false
     private var btnB     = false
+    private var btnX     = false
+    private var btnY     = false
     private var tiltByte: Byte = 0
     private var filtX    = 0f
     private val alpha    = 0.15f
     private var lastSend = 0L
     private val SELECT_DEVICE = 42
 
-    // Standard Gamepad HID Descriptor
     private val HID_DESC = byteArrayOf(
-        0x05, 0x01,             // Usage Page: Generic Desktop
-        0x09, 0x05,             // Usage: Gamepad
-        0xa1.toByte(), 0x01,   // Collection: Application
-        0x85.toByte(), 0x01,   // Report ID: 1
-        // Buttons 1-8
+        0x05, 0x01,
+        0x09, 0x05,
+        0xa1.toByte(), 0x01,
+        0x85.toByte(), 0x01,
+        // 8 Buttons
         0x05, 0x09,
         0x19, 0x01,
         0x29, 0x08,
@@ -74,14 +73,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         0x75, 0x08,
         0x95.toByte(), 0x01,
         0x81.toByte(), 0x02,
-        // Z Axis = LT Brake 0-255
+        // Z = LT Brake
         0x09, 0x32,
         0x15, 0x00,
         0x25, 0x7f,
         0x75, 0x08,
         0x95.toByte(), 0x01,
         0x81.toByte(), 0x02,
-        // RZ Axis = RT Gas 0-255
+        // RZ = RT Gas
         0x09, 0x35,
         0x15, 0x00,
         0x25, 0x7f,
@@ -90,7 +89,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         0x81.toByte(), 0x02,
         0xc0.toByte()
     )
-        // Runtime permissions
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val perms = arrayOf(
                 android.Manifest.permission.BLUETOOTH_CONNECT,
@@ -100,9 +103,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 checkSelfPermission(it) !=
                 android.content.pm.PackageManager.PERMISSION_GRANTED
             }
-            if (missing.isNotEmpty()) {
-                requestPermissions(missing.toTypedArray(), 99)
-            }
+            if (missing.isNotEmpty()) requestPermissions(missing.toTypedArray(), 99)
         }
 
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
@@ -121,16 +122,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         bluetoothAdapter = (getSystemService(Context.BLUETOOTH_SERVICE)
             as BluetoothManager).adapter
 
-        // No manual pairing needed - HID auto connects
-
-        setupTouch(R.id.lay_gas,    "#1A2A1A", "#111111") { gasOn    = it }
-        setupTouch(R.id.lay_brake,  "#2A1A1A", "#111111") { brakeOn  = it }
-        setupTouch(R.id.lay_gear_up,   "#2A1A0A", "#111111") { gearUp   = it }
-        setupTouch(R.id.lay_gear_down, "#0A1A2A", "#111111") { gearDown = it }
-        setupTouch(R.id.btn_y, "#2A2A00", "#111111") { btnY = it }
-        setupTouch(R.id.btn_x, "#001A2A", "#111111") { btnX = it }
-        setupTouch(R.id.btn_a, "#002A00", "#111111") { btnA = it }
-        setupTouch(R.id.btn_b, "#2A0000", "#111111") { btnB = it }
+        setupTouch(R.id.lay_gas,      "#1A2A1A", "#111111") { gasOn    = it }
+        setupTouch(R.id.lay_brake,    "#2A1A1A", "#111111") { brakeOn  = it }
+        setupTouch(R.id.lay_gear_up,  "#2A1A0A", "#111111") { gearUp   = it }
+        setupTouch(R.id.lay_gear_down,"#0A1A2A", "#111111") { gearDown = it }
+        setupTouch(R.id.btn_a,        "#002A00", "#111111") { btnA     = it }
+        setupTouch(R.id.btn_b,        "#2A0000", "#111111") { btnB     = it }
+        setupTouch(R.id.btn_x,        "#001A2A", "#111111") { btnX     = it }
+        setupTouch(R.id.btn_y,        "#2A2A00", "#111111") { btnY     = it }
 
         setupHid()
     }
@@ -210,15 +209,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                                     when (state) {
                                         BluetoothProfile.STATE_CONNECTED -> {
                                             connectedDevice = device
-                                            txtStatus.text =
-                                                "● ${device?.name}"
+                                            txtStatus.text = "● ${device?.name}"
                                             txtStatus.setTextColor(
                                                 Color.parseColor("#00FF88"))
                                         }
                                         BluetoothProfile.STATE_DISCONNECTED -> {
                                             connectedDevice = null
-                                            txtStatus.text =
-                                                "Tap wheel to pair"
+                                            txtStatus.text = "Tap wheel to pair"
                                             txtStatus.setTextColor(
                                                 Color.argb(100,255,255,255))
                                         }
@@ -231,12 +228,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                                 }
                             }
                             override fun onAppStatusChanged(
-                                d: BluetoothDevice?,
-                                registered: Boolean) {
+                                d: BluetoothDevice?, registered: Boolean) {
                                 runOnUiThread {
                                     if (registered) {
-                                        txtStatus.text =
-                                            "Visible — Tap wheel to pair"
+                                        txtStatus.text = "Visible — Tap wheel to pair"
                                         txtStatus.setTextColor(
                                             Color.argb(150,255,255,255))
                                     }
@@ -252,10 +247,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type != Sensor.TYPE_ACCELEROMETER) return
-        // Landscape = values[1] for steering
         filtX = alpha * (-event.values[1]) + (1 - alpha) * filtX
-        tiltByte = (filtX / 10f * 127f).toInt()
-            .coerceIn(-127, 127).toByte()
+        tiltByte = (filtX / 10f * 127f).toInt().coerceIn(-127, 127).toByte()
 
         val now = System.currentTimeMillis()
         if (now - lastSend > 40) { sendReport(); lastSend = now }
@@ -263,8 +256,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         runOnUiThread {
             wheelView.angle = (filtX / 10f * 90f).coerceIn(-90f, 90f)
             txtTilt.text = "%.1f°".format(filtX * 9f)
-            tiltBar.progress =
-                (100 + (filtX/10f*100).toInt()).coerceIn(0, 200)
+            tiltBar.progress = (100 + (filtX/10f*100).toInt()).coerceIn(0, 200)
         }
     }
 
@@ -273,15 +265,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val device = connectedDevice ?: return
         val hid    = hidDevice ?: return
         var btns   = 0
-        if (gearUp)   btns = btns or 0x04
-        if (gearDown) btns = btns or 0x08
-        if (btnA)     btns = btns or 0x10
-        if (btnB)     btns = btns or 0x20
-        if (btnX)     btns = btns or 0x40
-        if (btnY)     btns = btns or 0x80.toInt()
-        // Payload: [buttons, padding, X-axis, Y-axis]
+        if (gearUp)   btns = btns or 0x01
+        if (gearDown) btns = btns or 0x02
+        if (btnA)     btns = btns or 0x04
+        if (btnB)     btns = btns or 0x08
+        if (btnX)     btns = btns or 0x10
+        if (btnY)     btns = btns or 0x20
+        val lt = if (brakeOn) 0x7f.toByte() else 0x00.toByte()
+        val rt = if (gasOn)   0x7f.toByte() else 0x00.toByte()
         hid.sendReport(device, 1,
-            byteArrayOf(btns.toByte(), 0x00, tiltByte, 0x00, if (brakeOn) 0x7f.toByte() else 0x00, if (gasOn) 0x7f.toByte() else 0x00))
+            byteArrayOf(btns.toByte(), 0x00, tiltByte, 0x00, lt, rt))
     }
 
     override fun onAccuracyChanged(s: Sensor?, a: Int) {}
@@ -305,9 +298,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 }
 
-class WheelView(context: Context,
+class WheelView(context: android.content.Context,
     attrs: android.util.AttributeSet? = null
-) : View(context, attrs) {
+) : android.view.View(context, attrs) {
 
     var angle: Float = 0f
         set(v) { field = v; invalidate() }
@@ -323,7 +316,7 @@ class WheelView(context: Context,
         strokeWidth = 7f
     }
     private val pSpoke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(160, 255, 255, 255)
+        color = Color.argb(160,255,255,255)
         style = Paint.Style.STROKE
         strokeWidth = 9f
         strokeCap = Paint.Cap.ROUND
@@ -333,34 +326,33 @@ class WheelView(context: Context,
         style = Paint.Style.FILL
     }
     private val pArc = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(40, 255, 255, 255)
+        color = Color.argb(40,255,255,255)
         style = Paint.Style.STROKE
         strokeWidth = 7f
         strokeCap = Paint.Cap.ROUND
     }
 
-    override fun onDraw(canvas: Canvas) {
-        val cx = width / 2f
-        val cy = height / 2f
-        val r  = minOf(width, height) / 2f - 12f
+    override fun onDraw(canvas: android.graphics.Canvas) {
+        val cx = width/2f
+        val cy = height/2f
+        val r  = minOf(width,height)/2f - 12f
 
         canvas.drawCircle(cx, cy, r, pRing)
-
-        val arc = RectF(cx-r*0.6f, cy-r*0.6f, cx+r*0.6f, cy+r*0.6f)
+        val arc = android.graphics.RectF(
+            cx-r*0.6f, cy-r*0.6f, cx+r*0.6f, cy+r*0.6f)
         canvas.drawArc(arc, -90f, -angle, false, pArc)
-
         canvas.save()
         canvas.rotate(-angle, cx, cy)
-        canvas.drawCircle(cx, cy, r * 0.22f, pHub)
+        canvas.drawCircle(cx, cy, r*0.22f, pHub)
         for (i in 0..2) {
-            val a = Math.toRadians(i * 120.0 - 90.0)
+            val a = Math.toRadians(i*120.0 - 90.0)
             canvas.drawLine(
-                cx + (r*0.22f*cos(a)).toFloat(),
-                cy + (r*0.22f*sin(a)).toFloat(),
-                cx + (r*cos(a)).toFloat(),
-                cy + (r*sin(a)).toFloat(), pSpoke)
+                cx+(r*0.22f*cos(a)).toFloat(),
+                cy+(r*0.22f*sin(a)).toFloat(),
+                cx+(r*cos(a)).toFloat(),
+                cy+(r*sin(a)).toFloat(), pSpoke)
         }
-        canvas.drawCircle(cx, cy - r + 9f, 7f, pDot)
+        canvas.drawCircle(cx, cy-r+9f, 7f, pDot)
         canvas.drawCircle(cx, cy, 5f, pDot)
         canvas.restore()
     }
