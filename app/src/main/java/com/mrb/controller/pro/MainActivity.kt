@@ -40,37 +40,58 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var lastSend = 0L
     private val SELECT_DEVICE = 42
 
-    // Gamepad descriptor - buttons + X axis only
+    // Simulation Controls descriptor
     private val HID_DESC = byteArrayOf(
-        0x05, 0x01,
-        0x09, 0x05,
-        0xa1.toByte(), 0x01,
-        0x85.toByte(), 0x01,
+        0x05, 0x01,               // Usage Page: Generic Desktop
+        0x09, 0x05,               // Usage: Gamepad
+        0xa1.toByte(), 0x01,      // Collection: Application
+        0x85.toByte(), 0x01,      // Report ID: 1
+
         // 16 Buttons
-        0x05, 0x09,
-        0x19, 0x01,
-        0x29, 0x10,
-        0x15, 0x00,
-        0x25, 0x01,
-        0x75, 0x01,
-        0x95.toByte(), 0x10,
-        0x81.toByte(), 0x02,
-        // X Axis steering
-        0x05, 0x01,
-        0x09, 0x30,
-        0x15, 0x81.toByte(),
-        0x25, 0x7f,
-        0x75, 0x08,
-        0x95.toByte(), 0x01,
-        0x81.toByte(), 0x02,
+        0x05, 0x09,               // Usage Page: Button
+        0x19, 0x01,               // Usage Min: 1
+        0x29, 0x10,               // Usage Max: 16
+        0x15, 0x00,               // Logical Min: 0
+        0x25, 0x01,               // Logical Max: 1
+        0x75, 0x01,               // Report Size: 1
+        0x95.toByte(), 0x10,      // Report Count: 16
+        0x81.toByte(), 0x02,      // Input: Data,Var,Abs
+
+        // X Axis (Steering) -127 to 127
+        0x05, 0x01,               // Usage Page: Generic Desktop
+        0x09, 0x30,               // Usage: X
+        0x15, 0x81.toByte(),      // Logical Min: -127
+        0x25, 0x7f,               // Logical Max: 127
+        0x75, 0x08,               // Report Size: 8
+        0x95.toByte(), 0x01,      // Report Count: 1
+        0x81.toByte(), 0x02,      // Input: Data,Var,Abs
+
         // Y Axis padding
-        0x09, 0x31,
+        0x09, 0x31,               // Usage: Y
         0x15, 0x81.toByte(),
         0x25, 0x7f,
         0x75, 0x08,
         0x95.toByte(), 0x01,
         0x81.toByte(), 0x02,
-        0xc0.toByte()
+
+        // Simulation Controls - Brake (0xC5)
+        0x05, 0x02,               // Usage Page: Simulation Controls
+        0x09, 0xC5.toByte(),      // Usage: Brake
+        0x15, 0x00,               // Logical Min: 0
+        0x25, 0x7f,               // Logical Max: 127
+        0x75, 0x08,               // Report Size: 8
+        0x95.toByte(), 0x01,      // Report Count: 1
+        0x81.toByte(), 0x02,      // Input: Data,Var,Abs
+
+        // Simulation Controls - Accelerator (0xC4)
+        0x09, 0xC4.toByte(),      // Usage: Accelerator
+        0x15, 0x00,               // Logical Min: 0
+        0x25, 0x7f,               // Logical Max: 127
+        0x75, 0x08,               // Report Size: 8
+        0x95.toByte(), 0x01,      // Report Count: 1
+        0x81.toByte(), 0x02,      // Input: Data,Var,Abs
+
+        0xc0.toByte()             // End Collection
     )
 
     @SuppressLint("ClickableViewAccessibility")
@@ -90,9 +111,24 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        window.decorView.windowInsetsController?.hide(
-            WindowInsets.Type.statusBars() or
-            WindowInsets.Type.navigationBars())
+
+        // Always fullscreen
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        window.decorView.setOnApplyWindowInsetsListener { view, insets ->
+            window.decorView.windowInsetsController?.apply {
+                hide(WindowInsets.Type.statusBars() or
+                    WindowInsets.Type.navigationBars())
+                systemBarsBehavior =
+                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+            view.onApplyWindowInsets(insets)
+        }
+        window.decorView.windowInsetsController?.apply {
+            hide(WindowInsets.Type.statusBars() or
+                WindowInsets.Type.navigationBars())
+            systemBarsBehavior =
+                WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
 
         setContentView(R.layout.activity_main)
 
@@ -138,6 +174,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             null, 0) { btnY = it }
 
         setupHid()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            window.decorView.windowInsetsController?.apply {
+                hide(WindowInsets.Type.statusBars() or
+                    WindowInsets.Type.navigationBars())
+                systemBarsBehavior =
+                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -249,30 +297,25 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val device = connectedDevice ?: return
         val hid    = hidDevice ?: return
 
-        // Button mapping:
-        // Gas    = Button 1  (1 shl 0)
-        // Brake  = Button 2  (1 shl 1)
-        // GearUp = Button 3  (1 shl 2)
-        // GearDn = Button 7  (1 shl 6)
-        // BtnA   = Button 1  = same as gas in game
-        // BtnB   = Button 2  = same as brake
-        // BtnX   = Button 13 (1 shl 12)
-        // BtnY   = Button 14 (1 shl 13)
+        // Buttons
         var btns = 0
-        if (gasOn)    btns = btns or (1 shl 0)   // Button 1 = Gas
-        if (brakeOn)  btns = btns or (1 shl 1)   // Button 2 = Brake
-        if (gearUp)   btns = btns or (1 shl 2)   // Button 3 = Gear+
-        if (gearDown) btns = btns or (1 shl 6)   // Button 7 = Gear-
+        if (gasOn)    btns = btns or (1 shl 0)   // Button 1
+        if (brakeOn)  btns = btns or (1 shl 1)   // Button 2
+        if (gearUp)   btns = btns or (1 shl 2)   // Button 3
+        if (gearDown) btns = btns or (1 shl 6)   // Button 7
         if (btnA)     btns = btns or (1 shl 0)   // Button 1
         if (btnB)     btns = btns or (1 shl 1)   // Button 2
         if (btnX)     btns = btns or (1 shl 12)  // Button 13
         if (btnY)     btns = btns or (1 shl 13)  // Button 14
 
-        // 2 bytes for 16 buttons + X axis + Y padding
-        val b0 = (btns and 0xFF).toByte()
-        val b1 = ((btns shr 8) and 0xFF).toByte()
+        val b0    = (btns and 0xFF).toByte()
+        val b1    = ((btns shr 8) and 0xFF).toByte()
+        val brake = if (brakeOn) 0x7f.toByte() else 0x00.toByte()
+        val gas   = if (gasOn)   0x7f.toByte() else 0x00.toByte()
+
+        // Payload: [btn0, btn1, X-axis, Y-pad, Brake, Gas]
         hid.sendReport(device, 1,
-            byteArrayOf(b0, b1, tiltByte, 0x00))
+            byteArrayOf(b0, b1, tiltByte, 0x00, brake, gas))
     }
 
     override fun onAccuracyChanged(s: Sensor?, a: Int) {}
@@ -305,37 +348,23 @@ class WheelView(
         set(v) { field = v; invalidate() }
 
     private val pRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
-        style = Paint.Style.STROKE
-        strokeWidth = 12f
-    }
+        color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 12f }
     private val pHub = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
-        style = Paint.Style.STROKE
-        strokeWidth = 7f
-    }
+        color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 7f }
     private val pSpoke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.argb(160,255,255,255)
-        style = Paint.Style.STROKE
-        strokeWidth = 9f
-        strokeCap = Paint.Cap.ROUND
-    }
+        style = Paint.Style.STROKE; strokeWidth = 9f
+        strokeCap = Paint.Cap.ROUND }
     private val pDot = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
-        style = Paint.Style.FILL
-    }
+        color = Color.WHITE; style = Paint.Style.FILL }
     private val pArc = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.argb(40,255,255,255)
-        style = Paint.Style.STROKE
-        strokeWidth = 7f
-        strokeCap = Paint.Cap.ROUND
-    }
+        style = Paint.Style.STROKE; strokeWidth = 7f
+        strokeCap = Paint.Cap.ROUND }
 
     override fun onDraw(canvas: android.graphics.Canvas) {
-        val cx = width/2f
-        val cy = height/2f
+        val cx = width/2f; val cy = height/2f
         val r  = minOf(width,height)/2f - 12f
-
         canvas.drawCircle(cx, cy, r, pRing)
         val arc = android.graphics.RectF(
             cx-r*0.6f, cy-r*0.6f, cx+r*0.6f, cy+r*0.6f)
@@ -346,10 +375,8 @@ class WheelView(
         for (i in 0..2) {
             val a = Math.toRadians(i*120.0 - 90.0)
             canvas.drawLine(
-                cx+(r*0.22f*cos(a)).toFloat(),
-                cy+(r*0.22f*sin(a)).toFloat(),
-                cx+(r*cos(a)).toFloat(),
-                cy+(r*sin(a)).toFloat(), pSpoke)
+                cx+(r*0.22f*cos(a)).toFloat(), cy+(r*0.22f*sin(a)).toFloat(),
+                cx+(r*cos(a)).toFloat(), cy+(r*sin(a)).toFloat(), pSpoke)
         }
         canvas.drawCircle(cx, cy-r+9f, 7f, pDot)
         canvas.drawCircle(cx, cy, 5f, pDot)
