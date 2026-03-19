@@ -5,12 +5,12 @@
     android:viewportWidth="512"
     android:viewportHeight="512">
 
-    <!-- Background black -->
+    <!-- Background -->
     <path
         android:fillColor="#000000"
         android:pathData="M0,0 L512,0 L512,512 L0,512 Z"/>
 
-    <!-- Wireless signal top -->
+    <!-- Wireless signal -->
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="14"
@@ -33,6 +33,7 @@
     <path
         android:fillColor="#777777"
         android:pathData="M180,270 L240,270 L240,284 L180,284 Z"/>
+
     <!-- D-Pad vertical -->
     <path
         android:fillColor="#777777"
@@ -68,7 +69,7 @@
         android:fillColor="#FFFFFF"
         android:pathData="M402,345 Q352,280 307,330 L332,395 Q387,370 402,345 Z"/>
 
-    <!-- PRO badge red bg -->
+    <!-- PRO badge -->
     <path
         android:fillColor="#FF3B3B"
         android:pathData="M344,202 L408,202 Q424,202 424,218 L424,244 Q424,260 408,260 L344,260 Q328,260 328,244 L328,218 Q328,202 344,202 Z"/>
@@ -77,11 +78,15 @@
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M334,210 L334,254 L342,254 L342,240 L354,240 Q364,240 364,226 Q364,210 354,210 Z M342,218 L353,218 Q356,218 356,226 Q356,234 353,234 L342,234 Z"/>
+
     <!-- R -->
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M368,210 L368,254 L376,254 L376,238 L382,238 L389,254 L398,254 L390,237 Q397,233 397,224 Q397,210 387,210 Z M376,218 L386,218 Q389,218 389,224 Q389,230 386,230 L376,230 Z"/>
+
     <!-- O -->
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M402,224 Q402,210 413,210 Q424,210 424,224 L424,242 Q424,254 413,254 Q402,254 402,242 Z M410,220 L410,244 Q410,246 413,246 Q416,246 416,242 L416,224 Q416,220 413,220 Q410,220 410,220 Z"/>
+
+</vector>
