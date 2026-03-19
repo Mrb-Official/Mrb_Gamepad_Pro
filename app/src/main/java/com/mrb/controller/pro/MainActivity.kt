@@ -38,60 +38,59 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var filtX    = 0f
     private val alpha    = 0.15f
     private var lastSend = 0L
-    private val SELECT_DEVICE = 42
 
-    // Simulation Controls descriptor
+    // Standard Xbox-style HID descriptor
+    // LT = Z axis, RT = Rz axis, range 0x00-0xFF
     private val HID_DESC = byteArrayOf(
-        0x05, 0x01,               // Usage Page: Generic Desktop
-        0x09, 0x05,               // Usage: Gamepad
-        0xa1.toByte(), 0x01,      // Collection: Application
-        0x85.toByte(), 0x01,      // Report ID: 1
+        0x05, 0x01,          // Usage Page: Generic Desktop
+        0x09, 0x05,          // Usage: Gamepad
+        0xa1.toByte(), 0x01, // Collection: Application
+        0x85.toByte(), 0x01, // Report ID: 1
 
-        // 16 Buttons
-        0x05, 0x09,               // Usage Page: Button
-        0x19, 0x01,               // Usage Min: 1
-        0x29, 0x10,               // Usage Max: 16
-        0x15, 0x00,               // Logical Min: 0
-        0x25, 0x01,               // Logical Max: 1
-        0x75, 0x01,               // Report Size: 1
-        0x95.toByte(), 0x10,      // Report Count: 16
-        0x81.toByte(), 0x02,      // Input: Data,Var,Abs
+        // 16 buttons
+        0x05, 0x09,
+        0x19, 0x01,
+        0x29, 0x10,
+        0x15, 0x00,
+        0x25, 0x01,
+        0x75, 0x01,
+        0x95.toByte(), 0x10,
+        0x81.toByte(), 0x02,
 
-        // X Axis (Steering) -127 to 127
-        0x05, 0x01,               // Usage Page: Generic Desktop
-        0x09, 0x30,               // Usage: X
-        0x15, 0x81.toByte(),      // Logical Min: -127
-        0x25, 0x7f,               // Logical Max: 127
-        0x75, 0x08,               // Report Size: 8
-        0x95.toByte(), 0x01,      // Report Count: 1
-        0x81.toByte(), 0x02,      // Input: Data,Var,Abs
-
-        // Y Axis padding
-        0x09, 0x31,               // Usage: Y
+        // X axis steering (-127 to 127)
+        0x05, 0x01,
+        0x09, 0x30,
         0x15, 0x81.toByte(),
         0x25, 0x7f,
         0x75, 0x08,
         0x95.toByte(), 0x01,
         0x81.toByte(), 0x02,
 
-        // Simulation Controls - Brake (0xC5)
-        0x05, 0x02,               // Usage Page: Simulation Controls
-        0x09, 0xC5.toByte(),      // Usage: Brake
-        0x15, 0x00,               // Logical Min: 0
-        0x25, 0x7f,               // Logical Max: 127
-        0x75, 0x08,               // Report Size: 8
-        0x95.toByte(), 0x01,      // Report Count: 1
-        0x81.toByte(), 0x02,      // Input: Data,Var,Abs
+        // Y axis (unused, center 0)
+        0x09, 0x31,
+        0x15, 0x81.toByte(),
+        0x25, 0x7f,
+        0x75, 0x08,
+        0x95.toByte(), 0x01,
+        0x81.toByte(), 0x02,
 
-        // Simulation Controls - Accelerator (0xC4)
-        0x09, 0xC4.toByte(),      // Usage: Accelerator
-        0x15, 0x00,               // Logical Min: 0
-        0x25, 0x7f,               // Logical Max: 127
-        0x75, 0x08,               // Report Size: 8
-        0x95.toByte(), 0x01,      // Report Count: 1
-        0x81.toByte(), 0x02,      // Input: Data,Var,Abs
+        // Z axis = LT Brake (0-255)
+        0x09, 0x32,
+        0x15, 0x00,
+        0x26, 0xff.toByte(), 0x00,
+        0x75, 0x08,
+        0x95.toByte(), 0x01,
+        0x81.toByte(), 0x02,
 
-        0xc0.toByte()             // End Collection
+        // Rz axis = RT Gas (0-255)
+        0x09, 0x35,
+        0x15, 0x00,
+        0x26, 0xff.toByte(), 0x00,
+        0x75, 0x08,
+        0x95.toByte(), 0x01,
+        0x81.toByte(), 0x02,
+
+        0xc0.toByte()
     )
 
     @SuppressLint("ClickableViewAccessibility")
@@ -111,18 +110,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-
-        // Always fullscreen
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        window.decorView.setOnApplyWindowInsetsListener { view, insets ->
-            window.decorView.windowInsetsController?.apply {
-                hide(WindowInsets.Type.statusBars() or
-                    WindowInsets.Type.navigationBars())
-                systemBarsBehavior =
-                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            }
-            view.onApplyWindowInsets(insets)
-        }
         window.decorView.windowInsetsController?.apply {
             hide(WindowInsets.Type.statusBars() or
                 WindowInsets.Type.navigationBars())
@@ -150,11 +138,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             R.id.ic_gas, 0xFF3CFF6B.toInt()) { gasOn = it }
 
         setupTouch(R.id.lay_gear_up,
-            R.drawable.btn_normal_r12, R.drawable.btn_press_orange,
+            R.drawable.btn_gear_normal, R.drawable.btn_press_orange,
             null, 0) { gearUp = it }
 
         setupTouch(R.id.lay_gear_down,
-            R.drawable.btn_normal_r12, R.drawable.btn_press_blue,
+            R.drawable.btn_gear_normal, R.drawable.btn_press_blue,
             null, 0) { gearDown = it }
 
         setupTouch(R.id.btn_a,
@@ -190,11 +178,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setupTouch(
-        id: Int,
-        normalRes: Int,
-        pressRes: Int,
-        iconId: Int?,
-        pressIconColor: Int,
+        id: Int, normalRes: Int, pressRes: Int,
+        iconId: Int?, pressIconColor: Int,
         onPress: (Boolean) -> Unit
     ) {
         val view = findViewById<View>(id) ?: return
@@ -223,15 +208,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun setupHid() {
         bluetoothAdapter?.getProfileProxy(this,
             object : BluetoothProfile.ServiceListener {
-                override fun onServiceConnected(
-                    p: Int, proxy: BluetoothProfile?) {
+                override fun onServiceConnected(p: Int, proxy: BluetoothProfile?) {
                     hidDevice = proxy as BluetoothHidDevice
                     val sdp = BluetoothHidDeviceAppSdpSettings(
-                        "MRB Gamepad Pro",
-                        "Tilt Controller",
-                        "MeetDev",
-                        0x08.toByte(),
-                        HID_DESC)
+                        "MRB Gamepad Pro", "Tilt Controller", "MeetDev",
+                        0x08.toByte(), HID_DESC)
                     hidDevice?.registerApp(sdp, null, null,
                         { it?.run() },
                         object : BluetoothHidDevice.Callback() {
@@ -271,9 +252,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             }
                         })
                 }
-                override fun onServiceDisconnected(p: Int) {
-                    hidDevice = null
-                }
+                override fun onServiceDisconnected(p: Int) { hidDevice = null }
             }, BluetoothProfile.HID_DEVICE)
     }
 
@@ -297,10 +276,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val device = connectedDevice ?: return
         val hid    = hidDevice ?: return
 
-        // Buttons
         var btns = 0
-        if (gasOn)    btns = btns or (1 shl 0)   // Button 1
-        if (brakeOn)  btns = btns or (1 shl 1)   // Button 2
         if (gearUp)   btns = btns or (1 shl 2)   // Button 3
         if (gearDown) btns = btns or (1 shl 6)   // Button 7
         if (btnA)     btns = btns or (1 shl 0)   // Button 1
@@ -308,14 +284,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (btnX)     btns = btns or (1 shl 12)  // Button 13
         if (btnY)     btns = btns or (1 shl 13)  // Button 14
 
-        val b0    = (btns and 0xFF).toByte()
-        val b1    = ((btns shr 8) and 0xFF).toByte()
-        val brake = if (brakeOn) 0x7f.toByte() else 0x00.toByte()
-        val gas   = if (gasOn)   0x7f.toByte() else 0x00.toByte()
+        val b0  = (btns and 0xFF).toByte()
+        val b1  = ((btns shr 8) and 0xFF).toByte()
 
-        // Payload: [btn0, btn1, X-axis, Y-pad, Brake, Gas]
+        // Z = LT Brake, Rz = RT Gas
+        // Range 0x00 (idle) to 0xFF (full press)
+        val lt = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
+        val rt = if (gasOn)   0xFF.toByte() else 0x00.toByte()
+
+        // [btn0, btn1, X, Y, LT(Z), RT(Rz)]
         hid.sendReport(device, 1,
-            byteArrayOf(b0, b1, tiltByte, 0x00, brake, gas))
+            byteArrayOf(b0, b1, tiltByte, 0x00, lt, rt))
     }
 
     override fun onAccuracyChanged(s: Sensor?, a: Int) {}
