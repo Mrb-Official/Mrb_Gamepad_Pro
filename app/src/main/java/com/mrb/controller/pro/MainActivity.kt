@@ -68,6 +68,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             ), 99)
         }
 
+        // Runtime BT permissions Android 12+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            requestPermissions(arrayOf(
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_SCAN,
+                android.Manifest.permission.BLUETOOTH_ADVERTISE
+            ), 99)
+        }
+
         try {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             window.decorView.windowInsetsController?.hide(
