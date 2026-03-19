@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#080808">
+
+    <!-- LEFT = BRAKE -->
+    <LinearLayout
+        android:layout_width="160dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_gravity="start|center_vertical"
+        android:padding="8dp">
+
+        <FrameLayout
+            android:id="@+id/lay_gear_down"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:background="#111111"
+            android:layout_marginBottom="8dp">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="▼"
+                android:textSize="26sp"
+                android:textColor="#FF6D00"
+                android:gravity="center"/>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="GEAR-"
+                android:textSize="9sp"
+                android:textColor="#FF6D00"
+                android:gravity="bottom|center_horizontal"
+                android:paddingBottom="6dp"/>
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/lay_brake"
+            android:layout_width="match_parent"
+            android:layout_height="130dp"
+            android:background="#111111">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="✋"
+                android:textSize="34sp"
+                android:gravity="center"/>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="BRAKE"
+                android:textSize="9sp"
+                android:textColor="#888888"
+                android:gravity="bottom|center_horizontal"
+                android:paddingBottom="6dp"/>
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <!-- CENTER = Steering + Status + TiltBar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingStart="168dp"
+        android:paddingEnd="168dp">
+
+        <TextView
+            android:id="@+id/txt_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tap wheel to connect"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:alpha="0.5"
+            android:paddingBottom="10dp"/>
+
+        <com.mrb.controller.pro.WheelView
+            android:id="@+id/lay_steering"
+            android:layout_width="220dp"
+            android:layout_height="220dp"
+            android:layout_gravity="center"
+            android:clickable="true"
+            android:focusable="true"/>
+
+        <ProgressBar
+            android:id="@+id/tilt_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:layout_marginTop="14dp"
+            android:max="200"
+            android:progress="100"/>
+
+        <TextView
+            android:id="@+id/txt_tilt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="0.0°"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:fontFamily="monospace"
+            android:paddingTop="6dp"
+            android:alpha="0.7"/>
+
+    </LinearLayout>
+
+    <!-- RIGHT = GAS + GEAR+ -->
+    <LinearLayout
+        android:layout_width="160dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_gravity="end|center_vertical"
+        android:padding="8dp">
+
+        <FrameLayout
+            android:id="@+id/lay_gear_up"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:background="#111111"
+            android:layout_marginBottom="8dp">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="▲"
+                android:textSize="26sp"
+                android:textColor="#00C853"
+                android:gravity="center"/>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="GEAR+"
+                android:textSize="9sp"
+                android:textColor="#00C853"
+                android:gravity="bottom|center_horizontal"
+                android:paddingBottom="6dp"/>
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/lay_gas"
+            android:layout_width="match_parent"
+            android:layout_height="130dp"
+            android:background="#111111">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="⚡"
+                android:textSize="34sp"
+                android:gravity="center"/>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="GAS"
+                android:textSize="9sp"
+                android:textColor="#888888"
+                android:gravity="bottom|center_horizontal"
+                android:paddingBottom="6dp"/>
+        </FrameLayout>
+
+    </LinearLayout>
+
+</FrameLayout>
