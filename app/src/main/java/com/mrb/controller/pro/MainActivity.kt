@@ -11,14 +11,15 @@ import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 
+// YEH LINE MISSING THI JISKI WAJAH SE BUILD FAIL HUI
+import com.mrb.controller.pro.R
+
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private var hidDevice: BluetoothHidDevice? = null
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var connectedDevice: BluetoothDevice? = null
     private lateinit var sensorManager: SensorManager
-    
-    // Yahan crash hota tha, isliye ab isko nullable (?) bana diya hai taaki crash na ho
     private var txtStatus: TextView? = null
     
     private var gasOn = false
@@ -41,7 +42,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE)
         
         try {
-            // Wapas direct R class use kar rahe hain
             setContentView(R.layout.activity_main)
 
             val btnGas = findViewById<View>(R.id.lay_gas)
@@ -73,7 +73,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             setupHid()
             
         } catch (e: Exception) {
-            Toast.makeText(this, "UI Load Safe Catch: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Load Error: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -94,10 +94,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }, null)
             
         } catch (e: Exception) {
-            // Agar Companion Device Manager (Google Popup) crash kare toh direct Bluetooth Setting khol do
             Toast.makeText(this, "Opening Bluetooth Settings...", Toast.LENGTH_SHORT).show()
-            val intent = Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
-            startActivity(intent)
+            startActivity(Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
         }
     }
 
