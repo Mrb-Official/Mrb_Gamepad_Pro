@@ -178,7 +178,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (req == SELECT_DEVICE && res == RESULT_OK) {
             connectedDevice = data?.getParcelableExtra(
                 CompanionDeviceManager.EXTRA_DEVICE)
-            txtStatus.text = "Connecting..."
+            txtStatus.text = "Ready — Tap wheel"
         }
     }
 
@@ -216,7 +216,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                                                 Color.argb(128,255,255,255))
                                         }
                                         BluetoothProfile.STATE_CONNECTING -> {
-                                            txtStatus.text = "Connecting..."
+                                            txtStatus.text = "Ready — Tap wheel"
                                             txtStatus.setTextColor(
                                                 Color.parseColor("#FFD700"))
                                         }
