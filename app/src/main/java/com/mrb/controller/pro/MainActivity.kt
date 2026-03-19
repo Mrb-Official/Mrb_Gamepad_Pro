@@ -276,15 +276,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val device = connectedDevice ?: return
         val hid    = hidDevice ?: return
 
-        var btnByte1 = 0  // Buttons 1-8
-        var btnByte2 = 0  // Buttons 9-16
-
-        if (btnA)     btnByte1 = btnByte1 or (1 shl 0)  // Button 1
-        if (btnB)     btnByte1 = btnByte1 or (1 shl 1)  // Button 2
-        if (gearUp)   btnByte1 = btnByte1 or (1 shl 6)  // Button 7 = REVERSE
-        if (gearDown) btnByte1 = btnByte1 or (1 shl 3)  // Button 4 = FRONT
-        if (btnX)     btnByte2 = btnByte2 or (1 shl 4)  // Button 13
-        if (btnY)     btnByte2 = btnByte2 or (1 shl 5)  // Button 14
+        var btnByte1 = 0
+        var btnByte2 = 0
+        if (btnA)     btnByte1 = btnByte1 or (1 shl 0)
+        if (btnB)     btnByte1 = btnByte1 or (1 shl 1)
+        if (gearUp)   btnByte1 = btnByte1 or (1 shl 6)
+        if (gearDown) btnByte1 = btnByte1 or (1 shl 3)
+        if (btnX)     btnByte2 = btnByte2 or (1 shl 4)
+        if (btnY)     btnByte2 = btnByte2 or (1 shl 5)
 
         // GAS = Accelerator (0xC4), BRAKE = Brake (0xC5)
         // 0xFF = full press, 0x00 = not pressed
