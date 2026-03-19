@@ -5,7 +5,7 @@ import android.bluetooth.*
 import android.companion.*
 import android.content.*
 import android.content.pm.ActivityInfo
-import android.graphics.Color
+import android.graphics.*
 import android.hardware.*
 import android.os.*
 import android.view.*
@@ -31,128 +31,96 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var gearUp   = false
     private var gearDown = false
     private var tiltByte: Byte = 0
-    private var filtX = 0f
-    private val alpha = 0.15f
+    private var filtX    = 0f
+    private val alpha    = 0.15f
     private var lastSend = 0L
-
     private val SELECT_DEVICE = 42
 
+    // Standard Gamepad HID Descriptor
     private val HID_DESC = byteArrayOf(
-        // Usage Page: Generic Desktop
-        0x05.toByte(), 0x01.toByte(),
-        // Usage: Gamepad
-        0x09.toByte(), 0x05.toByte(),
-        // Collection: Application
-        0xa1.toByte(), 0x01.toByte(),
-        // Report ID 1
-        0x85.toByte(), 0x01.toByte(),
-        // 8 Buttons
-        0x05.toByte(), 0x09.toByte(),
-        0x19.toByte(), 0x01.toByte(),
-        0x29.toByte(), 0x08.toByte(),
-        0x15.toByte(), 0x00.toByte(),
-        0x25.toByte(), 0x01.toByte(),
-        0x75.toByte(), 0x01.toByte(),
-        0x95.toByte(), 0x08.toByte(),
-        0x81.toByte(), 0x02.toByte(),
-        // Padding 8 bits
-        0x75.toByte(), 0x08.toByte(),
-        0x95.toByte(), 0x01.toByte(),
-        0x81.toByte(), 0x01.toByte(),
-        // X Axis steering -127 to 127
-        0x05.toByte(), 0x01.toByte(),
-        0x09.toByte(), 0x30.toByte(),
-        0x15.toByte(), 0x81.toByte(),
-        0x25.toByte(), 0x7f.toByte(),
-        0x75.toByte(), 0x08.toByte(),
-        0x95.toByte(), 0x01.toByte(),
-        0x81.toByte(), 0x02.toByte(),
-        // Y Axis gas/brake -127 to 127
-        0x09.toByte(), 0x31.toByte(),
-        0x15.toByte(), 0x81.toByte(),
-        0x25.toByte(), 0x7f.toByte(),
-        0x75.toByte(), 0x08.toByte(),
-        0x95.toByte(), 0x01.toByte(),
-        0x81.toByte(), 0x02.toByte(),
-        // End Collection
-        0xc0.toByte()
+        0x05, 0x01,       // Usage Page: Generic Desktop
+        0x09, 0x05,       // Usage: Gamepad
+        0xa1.toByte(), 0x01, // Collection: Application
+        0x85.toByte(), 0x01, // Report ID: 1
+        // Buttons 1-8
+        0x05, 0x09,       // Usage Page: Button
+        0x19, 0x01,       // Usage Min: 1
+        0x29, 0x08,       // Usage Max: 8
+        0x15, 0x00,       // Logical Min: 0
+        0x25, 0x01,       // Logical Max: 1
+        0x75, 0x01,       // Report Size: 1
+        0x95.toByte(), 0x08, // Report Count: 8
+        0x81.toByte(), 0x02, // Input: Data,Var,Abs
+        // Padding 1 byte
+        0x75, 0x08,       // Report Size: 8
+        0x95.toByte(), 0x01, // Report Count: 1
+        0x81.toByte(), 0x01, // Input: Const
+        // X Axis (steering)
+        0x05, 0x01,       // Usage Page: Generic Desktop
+        0x09, 0x30,       // Usage: X
+        0x15, 0x81.toByte(), // Logical Min: -127
+        0x25, 0x7f,       // Logical Max: 127
+        0x75, 0x08,       // Report Size: 8
+        0x95.toByte(), 0x01, // Report Count: 1
+        0x81.toByte(), 0x02, // Input: Data,Var,Abs
+        // Y Axis
+        0x09, 0x31,       // Usage: Y
+        0x15, 0x81.toByte(),
+        0x25, 0x7f,
+        0x75, 0x08,
+        0x95.toByte(), 0x01,
+        0x81.toByte(), 0x02,
+        0xc0.toByte()     // End Collection
     )
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Global crash handler
-        Thread.setDefaultUncaughtExceptionHandler { _, e ->
-            android.util.Log.e("MRB_CRASH", e.stackTraceToString())
-            runOnUiThread {
-                Toast.makeText(this,
-                    "Crash: ${e.message}", Toast.LENGTH_LONG).show()
+        // Runtime permissions
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val perms = arrayOf(
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_SCAN,
+                android.Manifest.permission.BLUETOOTH_ADVERTISE)
+            val missing = perms.filter {
+                checkSelfPermission(it) !=
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
+            if (missing.isNotEmpty()) {
+                requestPermissions(missing.toTypedArray(), 99)
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            requestPermissions(arrayOf(
-                android.Manifest.permission.BLUETOOTH_CONNECT,
-                android.Manifest.permission.BLUETOOTH_SCAN,
-                android.Manifest.permission.BLUETOOTH_ADVERTISE
-            ), 99)
-        }
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        window.decorView.windowInsetsController?.hide(
+            WindowInsets.Type.statusBars() or
+            WindowInsets.Type.navigationBars())
 
-        // Runtime BT permissions Android 12+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            requestPermissions(arrayOf(
-                android.Manifest.permission.BLUETOOTH_CONNECT,
-                android.Manifest.permission.BLUETOOTH_SCAN,
-                android.Manifest.permission.BLUETOOTH_ADVERTISE
-            ), 99)
-        }
+        setContentView(R.layout.activity_main)
 
-        try {
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            window.decorView.windowInsetsController?.hide(
-                WindowInsets.Type.statusBars() or
-                WindowInsets.Type.navigationBars())
+        txtStatus = findViewById(R.id.txt_status)
+        txtTilt   = findViewById(R.id.txt_tilt)
+        tiltBar   = findViewById(R.id.tilt_bar)
+        wheelView = findViewById(R.id.lay_steering)
 
-            setContentView(R.layout.activity_main)
+        sensorManager    = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        bluetoothAdapter = (getSystemService(Context.BLUETOOTH_SERVICE)
+            as BluetoothManager).adapter
 
-            txtStatus = findViewById(R.id.txt_status)
-            txtTilt   = findViewById(R.id.txt_tilt)
-            tiltBar   = findViewById(R.id.tilt_bar)
-            wheelView = findViewById(R.id.lay_steering)
+        wheelView.setOnClickListener { pairDevice() }
 
-            sensorManager    = getSystemService(
-                Context.SENSOR_SERVICE) as SensorManager
-            bluetoothAdapter = (getSystemService(
-                Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+        setupTouch(R.id.lay_gas,    "#1A2A1A", "#111111") { gasOn    = it }
+        setupTouch(R.id.lay_brake,  "#2A1A1A", "#111111") { brakeOn  = it }
+        setupTouch(R.id.lay_gear_up,   "#2A1A0A", "#111111") { gearUp   = it }
+        setupTouch(R.id.lay_gear_down, "#0A1A2A", "#111111") { gearDown = it }
 
-            wheelView.setOnClickListener { pairDevice() }
-
-            setupTouchBtn(R.id.lay_gas,
-                "#1A2A1A", "#111111") { gasOn = it }
-            setupTouchBtn(R.id.lay_brake,
-                "#2A1A1A", "#111111") { brakeOn = it }
-            setupTouchBtn(R.id.lay_gear_up,
-                "#1A2A1A", "#111111") { gearUp = it }
-            setupTouchBtn(R.id.lay_gear_down,
-                "#2A1A1A", "#111111") { gearDown = it }
-
-            setupHid()
-
-        } catch (e: Exception) {
-            android.util.Log.e("MRB_CRASH", e.stackTraceToString())
-            Toast.makeText(this,
-                "Init Error: ${e.message}", Toast.LENGTH_LONG).show()
-        }
+        setupHid()
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private fun setupTouchBtn(
-        id: Int,
-        pressColor: String,
-        normalColor: String,
-        onPress: (Boolean) -> Unit
-    ) {
+    private fun setupTouch(id: Int, pressColor: String,
+        normalColor: String, onPress: (Boolean) -> Unit) {
         findViewById<View>(id)?.setOnTouchListener { v, e ->
             when (e.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -172,14 +140,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun pairDevice() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            requestPermissions(arrayOf(
-                android.Manifest.permission.BLUETOOTH_CONNECT,
-                android.Manifest.permission.BLUETOOTH_SCAN,
-                android.Manifest.permission.BLUETOOTH_ADVERTISE
-            ), 99)
-        }
-
         try {
             val dm = getSystemService(
                 Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
@@ -197,8 +157,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 }
             }, null)
         } catch (e: Exception) {
-            Toast.makeText(this,
-                "BT Error: ${e.message}", Toast.LENGTH_LONG).show()
             startActivity(Intent(
                 android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
         }
@@ -209,7 +167,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (req == SELECT_DEVICE && res == RESULT_OK) {
             connectedDevice = data?.getParcelableExtra(
                 CompanionDeviceManager.EXTRA_DEVICE)
-            txtStatus.text = "Ready — Tap wheel"
+            txtStatus.text = "Connecting..."
         }
     }
 
@@ -236,18 +194,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                                         BluetoothProfile.STATE_CONNECTED -> {
                                             connectedDevice = device
                                             txtStatus.text =
-                                                "● ${device?.name ?: "Connected"}"
+                                                "● ${device?.name}"
                                             txtStatus.setTextColor(
                                                 Color.parseColor("#00FF88"))
                                         }
                                         BluetoothProfile.STATE_DISCONNECTED -> {
                                             connectedDevice = null
-                                            txtStatus.text = "Tap wheel to pair"
+                                            txtStatus.text =
+                                                "Tap wheel to pair"
                                             txtStatus.setTextColor(
-                                                Color.argb(128,255,255,255))
+                                                Color.argb(100,255,255,255))
                                         }
                                         BluetoothProfile.STATE_CONNECTING -> {
-                                            txtStatus.text = "Ready — Tap wheel"
+                                            txtStatus.text = "Connecting..."
                                             txtStatus.setTextColor(
                                                 Color.parseColor("#FFD700"))
                                         }
@@ -257,11 +216,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             override fun onAppStatusChanged(
                                 d: BluetoothDevice?,
                                 registered: Boolean) {
-                                if (registered) runOnUiThread {
-                                    txtStatus.text =
-                                        "Visible as 'MRB Gamepad Pro'"
-                                    txtStatus.setTextColor(
-                                        Color.argb(180,255,255,255))
+                                runOnUiThread {
+                                    if (registered) {
+                                        txtStatus.text =
+                                            "Visible — Tap wheel to pair"
+                                        txtStatus.setTextColor(
+                                            Color.argb(150,255,255,255))
+                                    }
                                 }
                             }
                         })
@@ -274,21 +235,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type != Sensor.TYPE_ACCELEROMETER) return
+        // Landscape = values[1] for steering
         filtX = alpha * event.values[1] + (1 - alpha) * filtX
         tiltByte = (filtX / 10f * 127f).toInt()
             .coerceIn(-127, 127).toByte()
 
         val now = System.currentTimeMillis()
-        if (now - lastSend > 40) {
-            sendReport()
-            lastSend = now
-        }
+        if (now - lastSend > 40) { sendReport(); lastSend = now }
 
         runOnUiThread {
             wheelView.angle = (filtX / 10f * 90f).coerceIn(-90f, 90f)
             txtTilt.text = "%.1f°".format(filtX * 9f)
             tiltBar.progress =
-                (100 + (filtX / 10f * 100).toInt()).coerceIn(0, 200)
+                (100 + (filtX/10f*100).toInt()).coerceIn(0, 200)
         }
     }
 
@@ -301,6 +260,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (brakeOn)  btns = btns or 0x02
         if (gearUp)   btns = btns or 0x04
         if (gearDown) btns = btns or 0x08
+        // Payload: [buttons, padding, X-axis, Y-axis]
         hid.sendReport(device, 1,
             byteArrayOf(btns.toByte(), 0x00, tiltByte, 0x00))
     }
@@ -318,75 +278,71 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         super.onPause()
         sensorManager.unregisterListener(this)
     }
+
+    override fun onRequestPermissionsResult(
+        req: Int, perms: Array<String>, results: IntArray) {
+        super.onRequestPermissionsResult(req, perms, results)
+        if (req == 99) setupHid()
+    }
 }
 
-class WheelView(
-    context: Context,
+class WheelView(context: Context,
     attrs: android.util.AttributeSet? = null
 ) : View(context, attrs) {
 
     var angle: Float = 0f
         set(v) { field = v; invalidate() }
 
-    private val pRing = android.graphics.Paint(
-        android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+    private val pRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
-        style = android.graphics.Paint.Style.STROKE
-        strokeWidth = 14f
+        style = Paint.Style.STROKE
+        strokeWidth = 12f
     }
-    private val pHub = android.graphics.Paint(
-        android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+    private val pHub = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
-        style = android.graphics.Paint.Style.STROKE
-        strokeWidth = 8f
+        style = Paint.Style.STROKE
+        strokeWidth = 7f
     }
-    private val pSpoke = android.graphics.Paint(
-        android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(180,255,255,255)
-        style = android.graphics.Paint.Style.STROKE
-        strokeWidth = 10f
-        strokeCap = android.graphics.Paint.Cap.ROUND
+    private val pSpoke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.argb(160, 255, 255, 255)
+        style = Paint.Style.STROKE
+        strokeWidth = 9f
+        strokeCap = Paint.Cap.ROUND
     }
-    private val pDot = android.graphics.Paint(
-        android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+    private val pDot = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
-        style = android.graphics.Paint.Style.FILL
+        style = Paint.Style.FILL
     }
-    private val pArc = android.graphics.Paint(
-        android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(50,255,255,255)
-        style = android.graphics.Paint.Style.STROKE
-        strokeWidth = 8f
-        strokeCap = android.graphics.Paint.Cap.ROUND
+    private val pArc = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.argb(40, 255, 255, 255)
+        style = Paint.Style.STROKE
+        strokeWidth = 7f
+        strokeCap = Paint.Cap.ROUND
     }
 
-    override fun onDraw(canvas: android.graphics.Canvas) {
-        val cx = width/2f
-        val cy = height/2f
-        val r  = minOf(width,height)/2f - 14f
+    override fun onDraw(canvas: Canvas) {
+        val cx = width / 2f
+        val cy = height / 2f
+        val r  = minOf(width, height) / 2f - 12f
 
         canvas.drawCircle(cx, cy, r, pRing)
 
-        val arc = android.graphics.RectF(
-            cx-r*0.6f, cy-r*0.6f, cx+r*0.6f, cy+r*0.6f)
+        val arc = RectF(cx-r*0.6f, cy-r*0.6f, cx+r*0.6f, cy+r*0.6f)
         canvas.drawArc(arc, -90f, -angle, false, pArc)
 
         canvas.save()
         canvas.rotate(-angle, cx, cy)
-        canvas.drawCircle(cx, cy, r*0.24f, pHub)
+        canvas.drawCircle(cx, cy, r * 0.22f, pHub)
         for (i in 0..2) {
-            val a = Math.toRadians(i*120.0 - 90.0)
+            val a = Math.toRadians(i * 120.0 - 90.0)
             canvas.drawLine(
-                cx+(r*0.24f*cos(a)).toFloat(),
-                cy+(r*0.24f*sin(a)).toFloat(),
-                cx+(r*cos(a)).toFloat(),
-                cy+(r*sin(a)).toFloat(),
-                pSpoke)
+                cx + (r*0.22f*cos(a)).toFloat(),
+                cy + (r*0.22f*sin(a)).toFloat(),
+                cx + (r*cos(a)).toFloat(),
+                cy + (r*sin(a)).toFloat(), pSpoke)
         }
-        canvas.drawCircle(cx, cy-r+10f, 8f, pDot)
+        canvas.drawCircle(cx, cy - r + 9f, 7f, pDot)
         canvas.drawCircle(cx, cy, 5f, pDot)
         canvas.restore()
     }
 }
-
-// Permission result - restart init
