@@ -40,24 +40,21 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var lastSend = 0L
     private val SELECT_DEVICE = 42
 
+    // Gamepad descriptor - buttons + X axis only
     private val HID_DESC = byteArrayOf(
         0x05, 0x01,
         0x09, 0x05,
         0xa1.toByte(), 0x01,
         0x85.toByte(), 0x01,
-        // 8 Buttons
+        // 16 Buttons
         0x05, 0x09,
         0x19, 0x01,
-        0x29, 0x08,
+        0x29, 0x10,
         0x15, 0x00,
         0x25, 0x01,
         0x75, 0x01,
-        0x95.toByte(), 0x08,
+        0x95.toByte(), 0x10,
         0x81.toByte(), 0x02,
-        // Padding
-        0x75, 0x08,
-        0x95.toByte(), 0x01,
-        0x81.toByte(), 0x01,
         // X Axis steering
         0x05, 0x01,
         0x09, 0x30,
@@ -66,23 +63,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         0x75, 0x08,
         0x95.toByte(), 0x01,
         0x81.toByte(), 0x02,
-        // Y Axis
+        // Y Axis padding
         0x09, 0x31,
         0x15, 0x81.toByte(),
-        0x25, 0x7f,
-        0x75, 0x08,
-        0x95.toByte(), 0x01,
-        0x81.toByte(), 0x02,
-        // Z = LT Brake
-        0x09, 0x32,
-        0x15, 0x00,
-        0x25, 0x7f,
-        0x75, 0x08,
-        0x95.toByte(), 0x01,
-        0x81.toByte(), 0x02,
-        // RZ = RT Gas
-        0x09, 0x35,
-        0x15, 0x00,
         0x25, 0x7f,
         0x75, 0x08,
         0x95.toByte(), 0x01,
@@ -122,36 +105,34 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         bluetoothAdapter = (getSystemService(Context.BLUETOOTH_SERVICE)
             as BluetoothManager).adapter
 
-        // Brake - red border on press
         setupTouch(R.id.lay_brake,
             R.drawable.btn_normal_r12, R.drawable.btn_press_red,
             R.id.ic_brake, 0xFFFF4B4B.toInt()) { brakeOn = it }
 
-        // Gas - green border on press
         setupTouch(R.id.lay_gas,
             R.drawable.btn_normal_r12, R.drawable.btn_press_green,
             R.id.ic_gas, 0xFF3CFF6B.toInt()) { gasOn = it }
 
-        // Gear up - orange
         setupTouch(R.id.lay_gear_up,
             R.drawable.btn_normal_r12, R.drawable.btn_press_orange,
             null, 0) { gearUp = it }
 
-        // Gear down - blue
         setupTouch(R.id.lay_gear_down,
             R.drawable.btn_normal_r12, R.drawable.btn_press_blue,
             null, 0) { gearDown = it }
 
-        // Xbox buttons
         setupTouch(R.id.btn_a,
             R.drawable.btn_xbox_green, R.drawable.btn_xbox_green_press,
             null, 0) { btnA = it }
+
         setupTouch(R.id.btn_b,
             R.drawable.btn_xbox_red, R.drawable.btn_xbox_red_press,
             null, 0) { btnB = it }
+
         setupTouch(R.id.btn_x,
             R.drawable.btn_xbox_blue, R.drawable.btn_xbox_blue_press,
             null, 0) { btnX = it }
+
         setupTouch(R.id.btn_y,
             R.drawable.btn_xbox_yellow, R.drawable.btn_xbox_yellow_press,
             null, 0) { btnY = it }
@@ -267,17 +248,31 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun sendReport() {
         val device = connectedDevice ?: return
         val hid    = hidDevice ?: return
-        var btns   = 0
-        if (btnA)     btns = btns or (1 shl 0)
-        if (btnB)     btns = btns or (1 shl 1)
-        if (gearUp)   btns = btns or (1 shl 2)
-        if (gearDown) btns = btns or (1 shl 6)
-        if (btnX)     btns = btns or (1 shl 12)
-        if (btnY)     btns = btns or (1 shl 13)
-        val lt = if (brakeOn) 0x7f.toByte() else 0x00.toByte()
-        val rt = if (gasOn)   0x7f.toByte() else 0x00.toByte()
+
+        // Button mapping:
+        // Gas    = Button 1  (1 shl 0)
+        // Brake  = Button 2  (1 shl 1)
+        // GearUp = Button 3  (1 shl 2)
+        // GearDn = Button 7  (1 shl 6)
+        // BtnA   = Button 1  = same as gas in game
+        // BtnB   = Button 2  = same as brake
+        // BtnX   = Button 13 (1 shl 12)
+        // BtnY   = Button 14 (1 shl 13)
+        var btns = 0
+        if (gasOn)    btns = btns or (1 shl 0)   // Button 1 = Gas
+        if (brakeOn)  btns = btns or (1 shl 1)   // Button 2 = Brake
+        if (gearUp)   btns = btns or (1 shl 2)   // Button 3 = Gear+
+        if (gearDown) btns = btns or (1 shl 6)   // Button 7 = Gear-
+        if (btnA)     btns = btns or (1 shl 0)   // Button 1
+        if (btnB)     btns = btns or (1 shl 1)   // Button 2
+        if (btnX)     btns = btns or (1 shl 12)  // Button 13
+        if (btnY)     btns = btns or (1 shl 13)  // Button 14
+
+        // 2 bytes for 16 buttons + X axis + Y padding
+        val b0 = (btns and 0xFF).toByte()
+        val b1 = ((btns shr 8) and 0xFF).toByte()
         hid.sendReport(device, 1,
-            byteArrayOf(btns.toByte(), 0x00, tiltByte, 0x00, lt, rt))
+            byteArrayOf(b0, b1, tiltByte, 0x00))
     }
 
     override fun onAccuracyChanged(s: Sensor?, a: Int) {}
