@@ -37,15 +37,46 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private val SELECT_DEVICE = 42
 
-    private val HID_DESC = intArrayOf(
-        0x05,0x01, 0x09,0x05, 0xa1,0x01, 0x85,0x01,
-        0x05,0x09, 0x19,0x01, 0x29,0x08,
-        0x15,0x00, 0x25,0x01, 0x75,0x01, 0x95,0x08, 0x81,0x02,
-        0x05,0x01, 0x09,0x30, 0x09,0x31,
-        0x15,0x81.toByte().toInt(), 0x25,0x7f,
-        0x75,0x08, 0x95,0x02, 0x81,0x02,
-        0xc0
-    ).map { it.toByte() }.toByteArray()
+    private val HID_DESC = byteArrayOf(
+        // Usage Page: Generic Desktop
+        0x05.toByte(), 0x01.toByte(),
+        // Usage: Gamepad
+        0x09.toByte(), 0x05.toByte(),
+        // Collection: Application
+        0xa1.toByte(), 0x01.toByte(),
+        // Report ID 1
+        0x85.toByte(), 0x01.toByte(),
+        // 8 Buttons
+        0x05.toByte(), 0x09.toByte(),
+        0x19.toByte(), 0x01.toByte(),
+        0x29.toByte(), 0x08.toByte(),
+        0x15.toByte(), 0x00.toByte(),
+        0x25.toByte(), 0x01.toByte(),
+        0x75.toByte(), 0x01.toByte(),
+        0x95.toByte(), 0x08.toByte(),
+        0x81.toByte(), 0x02.toByte(),
+        // Padding 8 bits
+        0x75.toByte(), 0x08.toByte(),
+        0x95.toByte(), 0x01.toByte(),
+        0x81.toByte(), 0x01.toByte(),
+        // X Axis steering -127 to 127
+        0x05.toByte(), 0x01.toByte(),
+        0x09.toByte(), 0x30.toByte(),
+        0x15.toByte(), 0x81.toByte(),
+        0x25.toByte(), 0x7f.toByte(),
+        0x75.toByte(), 0x08.toByte(),
+        0x95.toByte(), 0x01.toByte(),
+        0x81.toByte(), 0x02.toByte(),
+        // Y Axis gas/brake -127 to 127
+        0x09.toByte(), 0x31.toByte(),
+        0x15.toByte(), 0x81.toByte(),
+        0x25.toByte(), 0x7f.toByte(),
+        0x75.toByte(), 0x08.toByte(),
+        0x95.toByte(), 0x01.toByte(),
+        0x81.toByte(), 0x02.toByte(),
+        // End Collection
+        0xc0.toByte()
+    )
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -271,7 +302,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (gearUp)   btns = btns or 0x04
         if (gearDown) btns = btns or 0x08
         hid.sendReport(device, 1,
-            byteArrayOf(btns.toByte(), tiltByte, 0x00))
+            byteArrayOf(btns.toByte(), 0x00, tiltByte, 0x00))
     }
 
     override fun onAccuracyChanged(s: Sensor?, a: Int) {}
