@@ -265,12 +265,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val device = connectedDevice ?: return
         val hid    = hidDevice ?: return
         var btns   = 0
-        if (gearUp)   btns = btns or 0x01
-        if (gearDown) btns = btns or 0x02
-        if (btnA)     btns = btns or 0x04
-        if (btnB)     btns = btns or 0x08
-        if (btnX)     btns = btns or 0x10
-        if (btnY)     btns = btns or 0x20
+        if (btnA)     btns = btns or (1 shl 0)   // Button 1
+        if (btnB)     btns = btns or (1 shl 1)   // Button 2
+        if (gearUp)   btns = btns or (1 shl 2)   // Button 3
+        if (gearDown) btns = btns or (1 shl 6)   // Button 7
+        if (btnX)     btns = btns or (1 shl 12)  // Button 13
+        if (btnY)     btns = btns or (1 shl 13)  // Button 14
         val lt = if (brakeOn) 0x7f.toByte() else 0x00.toByte()
         val rt = if (gasOn)   0x7f.toByte() else 0x00.toByte()
         hid.sendReport(device, 1,

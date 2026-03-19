@@ -4,91 +4,137 @@
     android:layout_height="match_parent"
     android:background="#080808">
 
-    <!-- BRAKE left big -->
+    <!-- BRAKE left -->
     <FrameLayout
         android:id="@+id/lay_brake"
-        android:layout_width="200dp"
-        android:layout_height="280dp"
+        android:layout_width="160dp"
+        android:layout_height="240dp"
         android:layout_alignParentStart="true"
         android:layout_centerVertical="true"
-        android:layout_marginStart="12dp"
+        android:layout_marginStart="10dp"
         android:background="#111111"
         android:clickable="true"
         android:focusable="true">
         <ImageView
-            android:id="@+id/ic_brake"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
             android:layout_gravity="center_horizontal|top"
-            android:layout_marginTop="60dp"
+            android:layout_marginTop="40dp"
             android:src="@drawable/ic_hand"
             android:tint="#888888"/>
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="16dp"
             android:text="BRAKE"
             android:textColor="#888888"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:gravity="center"
             android:letterSpacing="0.15"/>
     </FrameLayout>
 
-    <!-- RIGHT SIDE container -->
-    <!-- GAS big -->
+    <!-- CENTER = Wheel -->
+    <LinearLayout
+        android:id="@+id/center_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_centerHorizontal="true"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/txt_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tap wheel to pair"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:gravity="center"
+            android:alpha="0.4"
+            android:paddingBottom="8dp"/>
+
+        <com.mrb.controller.pro.WheelView
+            android:id="@+id/lay_steering"
+            android:layout_width="260dp"
+            android:layout_height="260dp"
+            android:clickable="true"
+            android:focusable="true"/>
+
+        <ProgressBar
+            android:id="@+id/tilt_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="240dp"
+            android:layout_height="5dp"
+            android:layout_marginTop="12dp"
+            android:max="200"
+            android:progress="100"/>
+
+        <TextView
+            android:id="@+id/txt_tilt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0.0°"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:fontFamily="monospace"
+            android:paddingTop="4dp"
+            android:alpha="0.6"/>
+
+    </LinearLayout>
+
+    <!-- RIGHT side -->
+    <!-- GAS -->
     <FrameLayout
         android:id="@+id/lay_gas"
-        android:layout_width="200dp"
-        android:layout_height="280dp"
+        android:layout_width="160dp"
+        android:layout_height="240dp"
         android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginEnd="12dp"
-        android:layout_marginBottom="20dp"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="10dp"
         android:background="#111111"
         android:clickable="true"
         android:focusable="true">
         <ImageView
-            android:id="@+id/ic_gas"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
             android:layout_gravity="center_horizontal|top"
-            android:layout_marginTop="60dp"
+            android:layout_marginTop="40dp"
             android:src="@drawable/ic_speed"
             android:tint="#888888"/>
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="16dp"
             android:text="GAS"
             android:textColor="#888888"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:gravity="center"
             android:letterSpacing="0.15"/>
     </FrameLayout>
 
-    <!-- XBOX buttons row - above GAS -->
-    <LinearLayout
-        android:id="@+id/xbox_row"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
+    <!-- XBOX buttons - diamond shape above GAS -->
+    <RelativeLayout
+        android:id="@+id/xbox_layout"
+        android:layout_width="160dp"
+        android:layout_height="130dp"
         android:layout_alignParentEnd="true"
+        android:layout_marginEnd="10dp"
         android:layout_above="@id/lay_gas"
-        android:layout_marginEnd="12dp"
-        android:layout_marginBottom="8dp"
-        android:orientation="horizontal"
-        android:gravity="center">
+        android:layout_marginBottom="8dp">
 
-        <!-- Y button - yellow -->
+        <!-- Y top -->
         <FrameLayout
             android:id="@+id/btn_y"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:background="#111111"
-            android:layout_margin="4dp"
+            android:layout_centerHorizontal="true"
+            android:layout_alignParentTop="true"
+            android:background="@drawable/btn_round"
             android:clickable="true"
             android:focusable="true">
             <TextView
@@ -96,18 +142,19 @@
                 android:layout_height="match_parent"
                 android:text="Y"
                 android:textColor="#FFD700"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textStyle="bold"
                 android:gravity="center"/>
         </FrameLayout>
 
-        <!-- X button - blue -->
+        <!-- X left -->
         <FrameLayout
             android:id="@+id/btn_x"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:background="#111111"
-            android:layout_margin="4dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/btn_round"
             android:clickable="true"
             android:focusable="true">
             <TextView
@@ -115,37 +162,19 @@
                 android:layout_height="match_parent"
                 android:text="X"
                 android:textColor="#3DB9FF"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textStyle="bold"
                 android:gravity="center"/>
         </FrameLayout>
 
-        <!-- A button - green -->
-        <FrameLayout
-            android:id="@+id/btn_a"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="#111111"
-            android:layout_margin="4dp"
-            android:clickable="true"
-            android:focusable="true">
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:text="A"
-                android:textColor="#3CFF6B"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:gravity="center"/>
-        </FrameLayout>
-
-        <!-- B button - red -->
+        <!-- B right -->
         <FrameLayout
             android:id="@+id/btn_b"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:background="#111111"
-            android:layout_margin="4dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/btn_round"
             android:clickable="true"
             android:focusable="true">
             <TextView
@@ -153,22 +182,40 @@
                 android:layout_height="match_parent"
                 android:text="B"
                 android:textColor="#FF4B4B"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textStyle="bold"
                 android:gravity="center"/>
         </FrameLayout>
 
-    </LinearLayout>
+        <!-- A bottom -->
+        <FrameLayout
+            android:id="@+id/btn_a"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_centerHorizontal="true"
+            android:layout_alignParentBottom="true"
+            android:background="@drawable/btn_round"
+            android:clickable="true"
+            android:focusable="true">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="A"
+                android:textColor="#3CFF6B"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:gravity="center"/>
+        </FrameLayout>
 
-    <!-- REVERSE + FRONT - right middle -->
+    </RelativeLayout>
+
+    <!-- REVERSE + FRONT - middle right -->
     <LinearLayout
-        android:id="@+id/gear_col"
-        android:layout_width="200dp"
+        android:layout_width="160dp"
         android:layout_height="wrap_content"
         android:layout_toStartOf="@id/lay_gas"
-        android:layout_alignParentBottom="true"
-        android:layout_marginEnd="10dp"
-        android:layout_marginBottom="20dp"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="8dp"
         android:orientation="vertical">
 
         <FrameLayout
@@ -193,7 +240,7 @@
                 android:layout_marginBottom="8dp"
                 android:text="REVERSE"
                 android:textColor="#FF6D00"
-                android:textSize="10sp"
+                android:textSize="9sp"
                 android:textStyle="bold"
                 android:gravity="center"
                 android:letterSpacing="0.1"/>
@@ -220,62 +267,11 @@
                 android:layout_marginBottom="8dp"
                 android:text="FRONT"
                 android:textColor="#00B4D8"
-                android:textSize="10sp"
+                android:textSize="9sp"
                 android:textStyle="bold"
                 android:gravity="center"
                 android:letterSpacing="0.1"/>
         </FrameLayout>
-
-    </LinearLayout>
-
-    <!-- CENTER wheel -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:paddingStart="220dp"
-        android:paddingEnd="420dp">
-
-        <TextView
-            android:id="@+id/txt_status"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Tap wheel to pair"
-            android:textColor="#FFFFFF"
-            android:textSize="11sp"
-            android:gravity="center"
-            android:alpha="0.4"
-            android:paddingBottom="10dp"/>
-
-        <com.mrb.controller.pro.WheelView
-            android:id="@+id/lay_steering"
-            android:layout_width="220dp"
-            android:layout_height="220dp"
-            android:layout_gravity="center"
-            android:clickable="true"
-            android:focusable="true"/>
-
-        <ProgressBar
-            android:id="@+id/tilt_bar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="5dp"
-            android:layout_marginTop="14dp"
-            android:max="200"
-            android:progress="100"/>
-
-        <TextView
-            android:id="@+id/txt_tilt"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="0.0°"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:gravity="center"
-            android:fontFamily="monospace"
-            android:paddingTop="6dp"
-            android:alpha="0.6"/>
 
     </LinearLayout>
 
