@@ -122,37 +122,49 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         bluetoothAdapter = (getSystemService(Context.BLUETOOTH_SERVICE)
             as BluetoothManager).adapter
 
-        setupTouch(R.id.lay_gas,      "#1A2A1A", "#111111") { gasOn    = it }
-        setupTouch(R.id.lay_brake,    "#2A1A1A", "#111111") { brakeOn  = it }
-        setupTouch(R.id.lay_gear_up,  "#2A1A0A", "#111111") { gearUp   = it }
-        setupTouch(R.id.lay_gear_down,"#0A1A2A", "#111111") { gearDown = it }
-        setupTouch(R.id.btn_a,        "#002A00", "#111111") { btnA     = it }
-        setupTouch(R.id.btn_b,        "#2A0000", "#111111") { btnB     = it }
-        setupTouch(R.id.btn_x,        "#001A2A", "#111111") { btnX     = it }
-        setupTouch(R.id.btn_y,        "#2A2A00", "#111111") { btnY     = it }
+        setupTouch(R.id.lay_gas,       R.drawable.btn_normal_r12,      R.drawable.btn_press_green,  R.id.ic_gas,   0xFF3CFF6B.toInt()) { gasOn    = it }
+        setupTouch(R.id.lay_brake,     R.drawable.btn_normal_r12,      R.drawable.btn_press_red,    R.id.ic_brake, 0xFFFF4B4B.toInt()) { brakeOn  = it }
+        setupTouch(R.id.lay_gear_up,   R.drawable.btn_normal_r12,      R.drawable.btn_press_orange, null, 0)                              { gearUp   = it }
+        setupTouch(R.id.lay_gear_down, R.drawable.btn_normal_r12,      R.drawable.btn_press_blue,   null, 0)                              { gearDown = it }
+        setupTouch(R.id.btn_a,         R.drawable.btn_xbox_green,      R.drawable.btn_xbox_green_press, null, 0)                         { btnA     = it }
+        setupTouch(R.id.btn_b,         R.drawable.btn_xbox_red,        R.drawable.btn_xbox_red_press,   null, 0)                         { btnB     = it }
+        setupTouch(R.id.btn_x,         R.drawable.btn_xbox_blue,       R.drawable.btn_xbox_blue_press,  null, 0)                         { btnX     = it }
+        setupTouch(R.id.btn_y,         R.drawable.btn_xbox_yellow,     R.drawable.btn_xbox_yellow_press,null, 0)                         { btnY     = it }
 
         setupHid()
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private fun setupTouch(id: Int, pressColor: String,
-        normalColor: String, onPress: (Boolean) -> Unit) {
-        findViewById<View>(id)?.setOnTouchListener { v, e ->
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setupTouch(
+        id: Int,
+        normalRes: Int,
+        pressRes: Int,
+        iconId: Int?,
+        pressIconColor: Int,
+        onPress: (Boolean) -> Unit
+    ) {
+        val view = findViewById<View>(id) ?: return
+        val icon = iconId?.let { findViewById<android.widget.ImageView>(it) }
+        view.setOnTouchListener { _, e ->
             when (e.action) {
                 MotionEvent.ACTION_DOWN -> {
                     onPress(true)
-                    v.setBackgroundColor(Color.parseColor(pressColor))
+                    view.setBackgroundResource(pressRes)
+                    if (pressIconColor != 0) icon?.setColorFilter(pressIconColor)
                     true
                 }
                 MotionEvent.ACTION_UP,
                 MotionEvent.ACTION_CANCEL -> {
                     onPress(false)
-                    v.setBackgroundColor(Color.parseColor(normalColor))
+                    view.setBackgroundResource(normalRes)
+                    icon?.setColorFilter(Color.parseColor("#888888"))
                     true
                 }
                 else -> false
             }
         }
+    }
     }
 
     private fun pairDevice() {
