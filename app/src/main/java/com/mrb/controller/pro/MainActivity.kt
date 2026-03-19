@@ -182,12 +182,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         var btnByte1 = 0
         var btnByte2 = 0
-        if (btnA)     btnByte1 = btnByte1 or (1 shl 0) // Button 1 (A)
-        if (btnB)     btnByte1 = btnByte1 or (1 shl 1) // Button 2 (B)
-        if (btnX)     btnByte1 = btnByte1 or (1 shl 2) // Button 3 (X)
+        if (btnA)     btnByte1 = btnByte1 or (1 shl 0) // Button 1
+        if (btnB)     btnByte1 = btnByte1 or (1 shl 1) // Button 2
         if (gearDown) btnByte1 = btnByte1 or (1 shl 3) // EXACT Button 4 (LB)
-        if (btnY)     btnByte1 = btnByte1 or (1 shl 4) // Button 5 (Y)
-        if (gearUp)   btnByte1 = btnByte1 or (1 shl 7) // EXACT Button 7 (RT) - The Magic Bit!
+        if (gearUp)   btnByte1 = btnByte1 or (1 shl 7) // EXACT Button 7 (RT)
+
+        // Yahan se Byte 2 shuru (Buttons 9-16)
+        if (btnX)     btnByte2 = btnByte2 or (1 shl 4) // Button 13
+        if (btnY)     btnByte2 = btnByte2 or (1 shl 5) // Button 14
 
         val gas   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
         val brake = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
