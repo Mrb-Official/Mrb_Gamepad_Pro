@@ -20,88 +20,120 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var gasOn = false
     private var brakeOn = false
     private var tiltValue: Byte = 0
+    private var lastSendTime = 0L
 
-    // Standard Gamepad Descriptor with strict Byte casting
+    // ── FIXED DESCRIPTOR WITH 4-BIT PADDING ──
     private val HID_DESC = byteArrayOf(
-        0x05.toByte(), 0x01.toByte(), 0x09.toByte(), 0x04.toByte(), 0xa1.toByte(), 0x01.toByte(), 
-        0x85.toByte(), 0x01.toByte(), 0x05.toByte(), 0x09.toByte(), 0x19.toByte(), 0x01.toByte(), 
-        0x29.toByte(), 0x04.toByte(), 0x15.toByte(), 0x00.toByte(), 0x25.toByte(), 0x01.toByte(), 
-        0x75.toByte(), 0x01.toByte(), 0x95.toByte(), 0x04.toByte(), 0x81.toByte(), 0x02.toByte(),
-        0x05.toByte(), 0x01.toByte(), 0x09.toByte(), 0x30.toByte(), 0x09.toByte(), 0x31.toByte(), 
-        0x15.toByte(), 0x81.toByte(), 0x25.toByte(), 0x7f.toByte(), 0x75.toByte(), 0x08.toByte(), 
-        0x95.toByte(), 0x02.toByte(), 0x81.toByte(), 0x02.toByte(), 0xc0.toByte()
+        0x05, 0x01, 0x09, 0x04, 0xa1.toByte(), 0x01, 0x85.toByte(), 0x01,
+        0x05, 0x09, 0x19, 0x01, 0x29, 0x04, 0x15, 0x00, 0x25, 0x01, 0x75, 0x01, 0x95, 0x04, 0x81.toByte(), 0x02,
+        0x75, 0x04, 0x95, 0x01, 0x81.toByte(), 0x03, // <-- PADDING FIX (Ye Android ko batata hai ki byte pura ho gaya)
+        0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95, 0x02, 0x81.toByte(), 0x02,
+        0xc0.toByte()
     )
 
     @SuppressLint("ClickableViewAccessibility", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
-        tvStatus = TextView(this).apply { 
-            text = "INITIALIZING..."; setTextColor(Color.WHITE); gravity = Gravity.CENTER 
-        }
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE)
         
+        // ── PURANA UI (Solid Black Background) ──
+        val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
+        
+        // Text Center mein
+        tvStatus = TextView(this).apply { 
+            text = "MRB PRO: WAITING"; setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            textSize = 20f
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, 
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, 50, 0, 0) }
+        }
+
         val btnGas = Button(this).apply {
-            text = "GAS"; setBackgroundColor(Color.DKGRAY); setTextColor(Color.WHITE)
-            layoutParams = FrameLayout.LayoutParams(300, 500).apply { gravity = Gravity.END or Gravity.CENTER_VERTICAL; setMargins(0,0,100,0) }
-            setOnTouchListener { v, e ->
-                if(e.action == MotionEvent.ACTION_DOWN) { gasOn = true; v.setBackgroundColor(Color.GREEN) }
-                if(e.action == MotionEvent.ACTION_UP) { gasOn = false; v.setBackgroundColor(Color.DKGRAY) }
-                sendReport(); true
+            text = "GAS"; setBackgroundColor(Color.DKGRAY); setTextColor(Color.WHITE); textSize = 24f
+            layoutParams = FrameLayout.LayoutParams(350, 350).apply { 
+                gravity = Gravity.END or Gravity.CENTER_VERTICAL; setMargins(0,0,100,0) 
+            }
+            setOnTouchListener { v, event ->
+                when(event.action) {
+                    MotionEvent.ACTION_DOWN -> { gasOn = true; v.setBackgroundColor(Color.GREEN); sendHIDReport(); true }
+                    MotionEvent.ACTION_UP -> { gasOn = false; v.setBackgroundColor(Color.DKGRAY); sendHIDReport(); true }
+                    else -> false
+                }
             }
         }
 
-        root.addView(tvStatus); root.addView(btnGas)
+        val btnBrake = Button(this).apply {
+            text = "BRAKE"; setBackgroundColor(Color.DKGRAY); setTextColor(Color.WHITE); textSize = 24f
+            layoutParams = FrameLayout.LayoutParams(350, 350).apply { 
+                gravity = Gravity.START or Gravity.CENTER_VERTICAL; setMargins(100,0,0,0) 
+            }
+            setOnTouchListener { v, event ->
+                when(event.action) {
+                    MotionEvent.ACTION_DOWN -> { brakeOn = true; v.setBackgroundColor(Color.RED); sendHIDReport(); true }
+                    MotionEvent.ACTION_UP -> { brakeOn = false; v.setBackgroundColor(Color.DKGRAY); sendHIDReport(); true }
+                    else -> false
+                }
+            }
+        }
+
+        root.addView(tvStatus)
+        root.addView(btnBrake)
+        root.addView(btnGas)
         setContentView(root)
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         bluetoothAdapter = (getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+        
         setupHid()
-    }
-
-    private val hidCallback = object : BluetoothHidDevice.Callback() {
-        override fun onAppStatusChanged(device: BluetoothDevice?, registered: Boolean) {
-            runOnUiThread { tvStatus.text = if(registered) "READY TO PAIR" else "ERROR" }
-        }
-        override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
-            if (state == BluetoothProfile.STATE_CONNECTED) {
-                connectedDevice = device
-                runOnUiThread { tvStatus.text = "CONNECTED" }
-            } else {
-                connectedDevice = null
-                runOnUiThread { tvStatus.text = "DISCONNECTED" }
-            }
-        }
     }
 
     @SuppressLint("MissingPermission")
     private fun setupHid() {
         bluetoothAdapter?.getProfileProxy(this, object : BluetoothProfile.ServiceListener {
-            override fun onServiceConnected(p: Int, proxy: BluetoothProfile?) {
+            override fun onServiceConnected(profile: Int, proxy: BluetoothProfile?) {
                 hidDevice = proxy as BluetoothHidDevice
                 val sdp = BluetoothHidDeviceAppSdpSettings("Mrb Pad", "Gamepad", "Meet", 0x40.toByte(), HID_DESC)
-                hidDevice?.registerApp(sdp, null, null, { it?.run() }, hidCallback)
+                hidDevice?.registerApp(sdp, null, null, { it?.run() }, object : BluetoothHidDevice.Callback() {
+                    override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
+                        if (state == BluetoothProfile.STATE_CONNECTED) {
+                            connectedDevice = device
+                            runOnUiThread { tvStatus.text = "CONNECTED" }
+                        } else {
+                            connectedDevice = null
+                            runOnUiThread { tvStatus.text = "DISCONNECTED" }
+                        }
+                    }
+                })
             }
-            override fun onServiceDisconnected(p: Int) {}
+            override fun onServiceDisconnected(p0: Int) {}
         }, BluetoothProfile.HID_DEVICE)
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
             tiltValue = (event.values[1] * 12).toInt().coerceIn(-127, 127).toByte()
-            sendReport()
+            val now = System.currentTimeMillis()
+            if (now - lastSendTime > 40) { // 25Hz speed limit (Smooth data)
+                sendHIDReport()
+                lastSendTime = now
+            }
         }
     }
 
     @SuppressLint("MissingPermission")
-    private fun sendReport() {
-        val dev = connectedDevice ?: return
-        var b = 0
-        if (gasOn) b = b or 0x01
-        if (brakeOn) b = b or 0x02
-        hidDevice?.sendReport(dev, 1, byteArrayOf(b.toByte(), tiltValue, 0x00))
+    private fun sendHIDReport() {
+        val device = connectedDevice ?: return
+        var buttons = 0
+        if (gasOn) buttons = buttons or 0x01
+        if (brakeOn) buttons = buttons or 0x02
+        
+        // Exact 3 Bytes Payload: [Buttons, X-Axis, Y-Axis]
+        hidDevice?.sendReport(device, 1, byteArrayOf(buttons.toByte(), tiltValue, 0x00))
     }
 
-    override fun onAccuracyChanged(s: Sensor?, a: Int) {}
+    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
     override fun onResume() { 
         super.onResume()
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME)
