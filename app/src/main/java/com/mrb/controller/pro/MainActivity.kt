@@ -277,8 +277,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val hid    = hidDevice ?: return
 
         var btns = 0
-        if (gearUp)   btns = btns or (1 shl 2)
-        if (gearDown) btns = btns or (1 shl 6)
+        if (gearUp)   btns = btns or (1 shl 6)
+        if (gearDown) btns = btns or (1 shl 3)
         if (btnA)     btns = btns or (1 shl 0)
         if (btnB)     btns = btns or (1 shl 1)
         if (btnX)     btns = btns or (1 shl 12)
