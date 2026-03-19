@@ -4,6 +4,7 @@ plugins {
 }
 
 android {
+    namespace "com.mrb.controller.pro"
     namespace 'com.mrb.controller.pro'
     compileSdk 34
 
