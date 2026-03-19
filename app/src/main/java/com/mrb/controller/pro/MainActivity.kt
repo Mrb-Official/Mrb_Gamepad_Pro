@@ -276,16 +276,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val device = connectedDevice ?: return
         val hid    = hidDevice ?: return
 
-        var btns = 0
-        if (gearUp)   btns = btns or (1 shl 6)
-        if (gearDown) btns = btns or (1 shl 2)
-        if (btnA)     btns = btns or (1 shl 0)
-        if (btnB)     btns = btns or (1 shl 1)
-        if (btnX)     btns = btns or (1 shl 12)
-        if (btnY)     btns = btns or (1 shl 13)
+        var btnByte1 = 0  // Buttons 1-8
+        var btnByte2 = 0  // Buttons 9-16
 
-        val b0  = (btns and 0xFF).toByte()
-        val b1  = ((btns shr 8) and 0xFF).toByte()
+        if (btnA)     btnByte1 = btnByte1 or (1 shl 0)  // Button 1
+        if (btnB)     btnByte1 = btnByte1 or (1 shl 1)  // Button 2
+        if (gearUp)   btnByte1 = btnByte1 or (1 shl 3)  // Button 4 = REVERSE
+        if (gearDown) btnByte1 = btnByte1 or (1 shl 6)  // Button 7 = FRONT
+        if (btnX)     btnByte2 = btnByte2 or (1 shl 4)  // Button 13
+        if (btnY)     btnByte2 = btnByte2 or (1 shl 5)  // Button 14
 
         // GAS = Accelerator (0xC4), BRAKE = Brake (0xC5)
         // 0xFF = full press, 0x00 = not pressed
@@ -294,7 +293,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         // [btn0, btn1, X, Y, GAS, BRAKE]
         hid.sendReport(device, 1,
-            byteArrayOf(b0, b1, tiltByte, 0x00, gas, brake))
+            byteArrayOf(btnByte1.toByte(), btnByte2.toByte(), tiltByte, 0x00, gas, brake))
     }
 
     override fun onAccuracyChanged(s: Sensor?, a: Int) {}
