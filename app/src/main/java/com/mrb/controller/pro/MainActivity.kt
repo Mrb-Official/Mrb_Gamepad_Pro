@@ -42,45 +42,54 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     // Standard Gamepad HID Descriptor
     private val HID_DESC = byteArrayOf(
-        0x05, 0x01,       // Usage Page: Generic Desktop
-        0x09, 0x05,       // Usage: Gamepad
-        0xa1.toByte(), 0x01, // Collection: Application
-        0x85.toByte(), 0x01, // Report ID: 1
+        0x05, 0x01,             // Usage Page: Generic Desktop
+        0x09, 0x05,             // Usage: Gamepad
+        0xa1.toByte(), 0x01,   // Collection: Application
+        0x85.toByte(), 0x01,   // Report ID: 1
         // Buttons 1-8
-        0x05, 0x09,       // Usage Page: Button
-        0x19, 0x01,       // Usage Min: 1
-        0x29, 0x08,       // Usage Max: 8
-        0x15, 0x00,       // Logical Min: 0
-        0x25, 0x01,       // Logical Max: 1
-        0x75, 0x01,       // Report Size: 1
-        0x95.toByte(), 0x08, // Report Count: 8
-        0x81.toByte(), 0x02, // Input: Data,Var,Abs
-        // Padding 1 byte
-        0x75, 0x08,       // Report Size: 8
-        0x95.toByte(), 0x01, // Report Count: 1
-        0x81.toByte(), 0x01, // Input: Const
-        // X Axis (steering)
-        0x05, 0x01,       // Usage Page: Generic Desktop
-        0x09, 0x30,       // Usage: X
-        0x15, 0x81.toByte(), // Logical Min: -127
-        0x25, 0x7f,       // Logical Max: 127
-        0x75, 0x08,       // Report Size: 8
-        0x95.toByte(), 0x01, // Report Count: 1
-        0x81.toByte(), 0x02, // Input: Data,Var,Abs
-        // Y Axis
-        0x09, 0x31,       // Usage: Y
+        0x05, 0x09,
+        0x19, 0x01,
+        0x29, 0x08,
+        0x15, 0x00,
+        0x25, 0x01,
+        0x75, 0x01,
+        0x95.toByte(), 0x08,
+        0x81.toByte(), 0x02,
+        // Padding
+        0x75, 0x08,
+        0x95.toByte(), 0x01,
+        0x81.toByte(), 0x01,
+        // X Axis steering
+        0x05, 0x01,
+        0x09, 0x30,
         0x15, 0x81.toByte(),
         0x25, 0x7f,
         0x75, 0x08,
         0x95.toByte(), 0x01,
         0x81.toByte(), 0x02,
-        0xc0.toByte()     // End Collection
+        // Y Axis
+        0x09, 0x31,
+        0x15, 0x81.toByte(),
+        0x25, 0x7f,
+        0x75, 0x08,
+        0x95.toByte(), 0x01,
+        0x81.toByte(), 0x02,
+        // Z Axis = LT Brake 0-255
+        0x09, 0x32,
+        0x15, 0x00,
+        0x25, 0x7f,
+        0x75, 0x08,
+        0x95.toByte(), 0x01,
+        0x81.toByte(), 0x02,
+        // RZ Axis = RT Gas 0-255
+        0x09, 0x35,
+        0x15, 0x00,
+        0x25, 0x7f,
+        0x75, 0x08,
+        0x95.toByte(), 0x01,
+        0x81.toByte(), 0x02,
+        0xc0.toByte()
     )
-
-    @SuppressLint("ClickableViewAccessibility")
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
         // Runtime permissions
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val perms = arrayOf(
@@ -264,8 +273,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val device = connectedDevice ?: return
         val hid    = hidDevice ?: return
         var btns   = 0
-        if (gasOn)    btns = btns or 0x01
-        if (brakeOn)  btns = btns or 0x02
         if (gearUp)   btns = btns or 0x04
         if (gearDown) btns = btns or 0x08
         if (btnA)     btns = btns or 0x10
@@ -274,7 +281,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (btnY)     btns = btns or 0x80.toInt()
         // Payload: [buttons, padding, X-axis, Y-axis]
         hid.sendReport(device, 1,
-            byteArrayOf(btns.toByte(), 0x00, tiltByte, 0x00))
+            byteArrayOf(btns.toByte(), 0x00, tiltByte, 0x00, if (brakeOn) 0x7f.toByte() else 0x00, if (gasOn) 0x7f.toByte() else 0x00))
     }
 
     override fun onAccuracyChanged(s: Sensor?, a: Int) {}
