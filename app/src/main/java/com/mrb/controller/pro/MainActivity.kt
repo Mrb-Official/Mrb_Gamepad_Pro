@@ -182,15 +182,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         var btnByte1 = 0
         var btnByte2 = 0
-        // LB (Button 4) - Yeh tune confirm kiya tha
-        if (gearDown) btnByte1 = btnByte1 or (1 shl 2)
-        
-        // Ab hum baaki bache bits test kar rahe hain 7 dhoondhne ke liye:
-        if (gearUp)   btnByte1 = btnByte1 or (1 shl 3) // Test Bit 3
-        if (btnA)     btnByte1 = btnByte1 or (1 shl 4) // Test Bit 4
-        if (btnB)     btnByte1 = btnByte1 or (1 shl 5) // Test Bit 5
-        if (btnX)     btnByte1 = btnByte1 or (1 shl 7) // Test Bit 7
-        if (btnY)     btnByte2 = btnByte2 or (1 shl 0) // Test Byte2 Bit 0
+        if (btnA)     btnByte1 = btnByte1 or (1 shl 0) // Button 1 (A)
+        if (btnB)     btnByte1 = btnByte1 or (1 shl 1) // Button 2 (B)
+        if (btnX)     btnByte1 = btnByte1 or (1 shl 2) // Button 3 (X)
+        if (gearDown) btnByte1 = btnByte1 or (1 shl 3) // EXACT Button 4 (LB)
+        if (btnY)     btnByte1 = btnByte1 or (1 shl 4) // Button 5 (Y)
+        if (gearUp)   btnByte1 = btnByte1 or (1 shl 7) // EXACT Button 7 (RT) - The Magic Bit!
 
         val gas   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
         val brake = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
