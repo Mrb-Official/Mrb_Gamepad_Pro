@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         bluetoothAdapter = (getSystemService(Context.BLUETOOTH_SERVICE)
             as BluetoothManager).adapter
 
-        wheelView.setOnClickListener { pairDevice() }
+        // No manual pairing needed - HID auto connects
 
         setupTouch(R.id.lay_gas,    "#1A2A1A", "#111111") { gasOn    = it }
         setupTouch(R.id.lay_brake,  "#2A1A1A", "#111111") { brakeOn  = it }
