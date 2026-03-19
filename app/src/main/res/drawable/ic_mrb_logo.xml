@@ -5,38 +5,36 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Background circle -->
+    <!-- Background -->
     <path
         android:fillColor="#0A0A0A"
         android:pathData="M0,0 L108,0 L108,108 L0,108 Z"/>
 
-    <!-- Steering wheel outer ring -->
+    <!-- Outer ring -->
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="4"
         android:fillColor="#00000000"
-        android:pathData="M54,18 m-36,36 a36,36 0 1,0 72,0 a36,36 0 1,0 -72,0"/>
+        android:pathData="M54,18 A36,36 0 1,0 54,90 A36,36 0 1,0 54,18 Z"/>
 
-    <!-- Steering wheel inner ring -->
+    <!-- Inner hub -->
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="2.5"
         android:fillColor="#00000000"
-        android:pathData="M54,54 m-12,0 a12,12 0 1,0 24,0 a12,12 0 1,0 -24,0"/>
+        android:pathData="M54,42 A12,12 0 1,0 54,66 A12,12 0 1,0 54,42 Z"/>
 
     <!-- Spoke top -->
-    <line
-        android:x1="54" android:y1="42"
-        android:x2="54" android:y2="22"
+    <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="4"
-        android:strokeLineCap="round"/>
+        android:strokeLineCap="round"
+        android:pathData="M54,42 L54,22"/>
 
     <!-- Spoke bottom-left -->
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="4"
-        android:fillColor="#00000000"
         android:strokeLineCap="round"
         android:pathData="M46,60 L30,76"/>
 
@@ -44,13 +42,12 @@
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="4"
-        android:fillColor="#00000000"
         android:strokeLineCap="round"
         android:pathData="M62,60 L78,76"/>
 
-    <!-- MRB text hint - dot top -->
+    <!-- Top dot -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,20 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0"/>
+        android:pathData="M54,17 A3,3 0 1,0 54,23 A3,3 0 1,0 54,17 Z"/>
 
 </vector>
