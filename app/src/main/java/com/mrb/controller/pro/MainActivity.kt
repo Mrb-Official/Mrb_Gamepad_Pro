@@ -30,6 +30,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var brakeOn  = false
     private var gearUp   = false
     private var gearDown = false
+    private var btnY     = false
+    private var btnX     = false
+    private var btnA     = false
+    private var btnB     = false
     private var tiltByte: Byte = 0
     private var filtX    = 0f
     private val alpha    = 0.15f
@@ -114,6 +118,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setupTouch(R.id.lay_brake,  "#2A1A1A", "#111111") { brakeOn  = it }
         setupTouch(R.id.lay_gear_up,   "#2A1A0A", "#111111") { gearUp   = it }
         setupTouch(R.id.lay_gear_down, "#0A1A2A", "#111111") { gearDown = it }
+        setupTouch(R.id.btn_y, "#2A2A00", "#111111") { btnY = it }
+        setupTouch(R.id.btn_x, "#001A2A", "#111111") { btnX = it }
+        setupTouch(R.id.btn_a, "#002A00", "#111111") { btnA = it }
+        setupTouch(R.id.btn_b, "#2A0000", "#111111") { btnB = it }
 
         setupHid()
     }
@@ -236,7 +244,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type != Sensor.TYPE_ACCELEROMETER) return
         // Landscape = values[1] for steering
-        filtX = alpha * event.values[1] + (1 - alpha) * filtX
+        filtX = alpha * (-event.values[1]) + (1 - alpha) * filtX
         tiltByte = (filtX / 10f * 127f).toInt()
             .coerceIn(-127, 127).toByte()
 
@@ -260,6 +268,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (brakeOn)  btns = btns or 0x02
         if (gearUp)   btns = btns or 0x04
         if (gearDown) btns = btns or 0x08
+        if (btnA)     btns = btns or 0x10
+        if (btnB)     btns = btns or 0x20
+        if (btnX)     btns = btns or 0x40
+        if (btnY)     btns = btns or 0x80.toInt()
         // Payload: [buttons, padding, X-axis, Y-axis]
         hid.sendReport(device, 1,
             byteArrayOf(btns.toByte(), 0x00, tiltByte, 0x00))

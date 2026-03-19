@@ -7,8 +7,8 @@
     <!-- BRAKE left big -->
     <FrameLayout
         android:id="@+id/lay_brake"
-        android:layout_width="180dp"
-        android:layout_height="260dp"
+        android:layout_width="200dp"
+        android:layout_height="280dp"
         android:layout_alignParentStart="true"
         android:layout_centerVertical="true"
         android:layout_marginStart="12dp"
@@ -16,119 +16,217 @@
         android:clickable="true"
         android:focusable="true">
         <ImageView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:id="@+id/ic_brake"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:layout_gravity="center_horizontal|top"
-            android:layout_marginTop="44dp"
+            android:layout_marginTop="60dp"
             android:src="@drawable/ic_hand"
             android:tint="#888888"/>
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="20dp"
             android:text="BRAKE"
             android:textColor="#888888"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:gravity="center"
             android:letterSpacing="0.15"/>
     </FrameLayout>
 
-    <!-- GAS right big -->
+    <!-- RIGHT SIDE container -->
+    <!-- GAS big -->
     <FrameLayout
         android:id="@+id/lay_gas"
-        android:layout_width="180dp"
-        android:layout_height="260dp"
+        android:layout_width="200dp"
+        android:layout_height="280dp"
         android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
+        android:layout_alignParentBottom="true"
         android:layout_marginEnd="12dp"
+        android:layout_marginBottom="20dp"
         android:background="#111111"
         android:clickable="true"
         android:focusable="true">
         <ImageView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:id="@+id/ic_gas"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:layout_gravity="center_horizontal|top"
-            android:layout_marginTop="44dp"
+            android:layout_marginTop="60dp"
             android:src="@drawable/ic_speed"
             android:tint="#888888"/>
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="20dp"
             android:text="GAS"
             android:textColor="#888888"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:gravity="center"
             android:letterSpacing="0.15"/>
     </FrameLayout>
 
-    <!-- REVERSE right-mid top -->
-    <FrameLayout
-        android:id="@+id/lay_gear_up"
-        android:layout_width="155dp"
-        android:layout_height="115dp"
-        android:layout_toStartOf="@id/lay_gas"
-        android:layout_marginEnd="10dp"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="60dp"
-        android:background="#111111"
-        android:clickable="true"
-        android:focusable="true">
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="∧"
-            android:textSize="30sp"
-            android:textColor="#FF6D00"
-            android:gravity="center"/>
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:layout_marginBottom="10dp"
-            android:text="REVERSE"
-            android:textColor="#FF6D00"
-            android:textSize="10sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:letterSpacing="0.1"/>
-    </FrameLayout>
+    <!-- XBOX buttons row - above GAS -->
+    <LinearLayout
+        android:id="@+id/xbox_row"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_above="@id/lay_gas"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="8dp"
+        android:orientation="horizontal"
+        android:gravity="center">
 
-    <!-- FRONT right-mid bottom -->
-    <FrameLayout
-        android:id="@+id/lay_gear_down"
-        android:layout_width="155dp"
-        android:layout_height="115dp"
+        <!-- Y button - yellow -->
+        <FrameLayout
+            android:id="@+id/btn_y"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="#111111"
+            android:layout_margin="4dp"
+            android:clickable="true"
+            android:focusable="true">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="Y"
+                android:textColor="#FFD700"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"/>
+        </FrameLayout>
+
+        <!-- X button - blue -->
+        <FrameLayout
+            android:id="@+id/btn_x"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="#111111"
+            android:layout_margin="4dp"
+            android:clickable="true"
+            android:focusable="true">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="X"
+                android:textColor="#3DB9FF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"/>
+        </FrameLayout>
+
+        <!-- A button - green -->
+        <FrameLayout
+            android:id="@+id/btn_a"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="#111111"
+            android:layout_margin="4dp"
+            android:clickable="true"
+            android:focusable="true">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="A"
+                android:textColor="#3CFF6B"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"/>
+        </FrameLayout>
+
+        <!-- B button - red -->
+        <FrameLayout
+            android:id="@+id/btn_b"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="#111111"
+            android:layout_margin="4dp"
+            android:clickable="true"
+            android:focusable="true">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="B"
+                android:textColor="#FF4B4B"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"/>
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <!-- REVERSE + FRONT - right middle -->
+    <LinearLayout
+        android:id="@+id/gear_col"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
         android:layout_toStartOf="@id/lay_gas"
-        android:layout_marginEnd="10dp"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="60dp"
-        android:background="#111111"
-        android:clickable="true"
-        android:focusable="true">
-        <TextView
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="20dp"
+        android:orientation="vertical">
+
+        <FrameLayout
+            android:id="@+id/lay_gear_up"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="∨"
-            android:textSize="30sp"
-            android:textColor="#00B4D8"
-            android:gravity="center"/>
-        <TextView
+            android:layout_height="100dp"
+            android:background="#111111"
+            android:layout_marginBottom="8dp"
+            android:clickable="true"
+            android:focusable="true">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="∧"
+                android:textSize="28sp"
+                android:textColor="#FF6D00"
+                android:gravity="center"/>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginBottom="8dp"
+                android:text="REVERSE"
+                android:textColor="#FF6D00"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:letterSpacing="0.1"/>
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/lay_gear_down"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:layout_marginBottom="10dp"
-            android:text="FRONT"
-            android:textColor="#00B4D8"
-            android:textSize="10sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:letterSpacing="0.1"/>
-    </FrameLayout>
+            android:layout_height="100dp"
+            android:background="#111111"
+            android:clickable="true"
+            android:focusable="true">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="∨"
+                android:textSize="28sp"
+                android:textColor="#00B4D8"
+                android:gravity="center"/>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginBottom="8dp"
+                android:text="FRONT"
+                android:textColor="#00B4D8"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:letterSpacing="0.1"/>
+        </FrameLayout>
+
+    </LinearLayout>
 
     <!-- CENTER wheel -->
     <LinearLayout
@@ -136,8 +234,8 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:gravity="center"
-        android:paddingStart="196dp"
-        android:paddingEnd="356dp">
+        android:paddingStart="220dp"
+        android:paddingEnd="420dp">
 
         <TextView
             android:id="@+id/txt_status"
