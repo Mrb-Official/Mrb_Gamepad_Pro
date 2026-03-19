@@ -122,19 +122,43 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         bluetoothAdapter = (getSystemService(Context.BLUETOOTH_SERVICE)
             as BluetoothManager).adapter
 
-        setupTouch(R.id.lay_gas,       R.drawable.btn_normal_r12,      R.drawable.btn_press_green,  R.id.ic_gas,   0xFF3CFF6B.toInt()) { gasOn    = it }
-        setupTouch(R.id.lay_brake,     R.drawable.btn_normal_r12,      R.drawable.btn_press_red,    R.id.ic_brake, 0xFFFF4B4B.toInt()) { brakeOn  = it }
-        setupTouch(R.id.lay_gear_up,   R.drawable.btn_normal_r12,      R.drawable.btn_press_orange, null, 0)                              { gearUp   = it }
-        setupTouch(R.id.lay_gear_down, R.drawable.btn_normal_r12,      R.drawable.btn_press_blue,   null, 0)                              { gearDown = it }
-        setupTouch(R.id.btn_a,         R.drawable.btn_xbox_green,      R.drawable.btn_xbox_green_press, null, 0)                         { btnA     = it }
-        setupTouch(R.id.btn_b,         R.drawable.btn_xbox_red,        R.drawable.btn_xbox_red_press,   null, 0)                         { btnB     = it }
-        setupTouch(R.id.btn_x,         R.drawable.btn_xbox_blue,       R.drawable.btn_xbox_blue_press,  null, 0)                         { btnX     = it }
-        setupTouch(R.id.btn_y,         R.drawable.btn_xbox_yellow,     R.drawable.btn_xbox_yellow_press,null, 0)                         { btnY     = it }
+        // Brake - red border on press
+        setupTouch(R.id.lay_brake,
+            R.drawable.btn_normal_r12, R.drawable.btn_press_red,
+            R.id.ic_brake, 0xFFFF4B4B.toInt()) { brakeOn = it }
+
+        // Gas - green border on press
+        setupTouch(R.id.lay_gas,
+            R.drawable.btn_normal_r12, R.drawable.btn_press_green,
+            R.id.ic_gas, 0xFF3CFF6B.toInt()) { gasOn = it }
+
+        // Gear up - orange
+        setupTouch(R.id.lay_gear_up,
+            R.drawable.btn_normal_r12, R.drawable.btn_press_orange,
+            null, 0) { gearUp = it }
+
+        // Gear down - blue
+        setupTouch(R.id.lay_gear_down,
+            R.drawable.btn_normal_r12, R.drawable.btn_press_blue,
+            null, 0) { gearDown = it }
+
+        // Xbox buttons
+        setupTouch(R.id.btn_a,
+            R.drawable.btn_xbox_green, R.drawable.btn_xbox_green_press,
+            null, 0) { btnA = it }
+        setupTouch(R.id.btn_b,
+            R.drawable.btn_xbox_red, R.drawable.btn_xbox_red_press,
+            null, 0) { btnB = it }
+        setupTouch(R.id.btn_x,
+            R.drawable.btn_xbox_blue, R.drawable.btn_xbox_blue_press,
+            null, 0) { btnX = it }
+        setupTouch(R.id.btn_y,
+            R.drawable.btn_xbox_yellow, R.drawable.btn_xbox_yellow_press,
+            null, 0) { btnY = it }
 
         setupHid()
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     @SuppressLint("ClickableViewAccessibility")
     private fun setupTouch(
         id: Int,
@@ -145,7 +169,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         onPress: (Boolean) -> Unit
     ) {
         val view = findViewById<View>(id) ?: return
-        val icon = iconId?.let { findViewById<android.widget.ImageView>(it) }
+        val icon = iconId?.let { findViewById<ImageView>(it) }
         view.setOnTouchListener { _, e ->
             when (e.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -163,39 +187,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 }
                 else -> false
             }
-        }
-    }
-    }
-
-    private fun pairDevice() {
-        try {
-            val dm = getSystemService(
-                Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
-            val req = AssociationRequest.Builder()
-                .addDeviceFilter(BluetoothDeviceFilter.Builder().build())
-                .setSingleDevice(false).build()
-            dm.associate(req, object : CompanionDeviceManager.Callback() {
-                override fun onDeviceFound(sender: IntentSender) {
-                    startIntentSenderForResult(
-                        sender, SELECT_DEVICE, null, 0, 0, 0)
-                }
-                override fun onFailure(e: CharSequence?) {
-                    startActivity(Intent(
-                        android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
-                }
-            }, null)
-        } catch (e: Exception) {
-            startActivity(Intent(
-                android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
-        }
-    }
-
-    override fun onActivityResult(req: Int, res: Int, data: Intent?) {
-        super.onActivityResult(req, res, data)
-        if (req == SELECT_DEVICE && res == RESULT_OK) {
-            connectedDevice = data?.getParcelableExtra(
-                CompanionDeviceManager.EXTRA_DEVICE)
-            txtStatus.text = "Connecting..."
         }
     }
 
@@ -277,12 +268,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val device = connectedDevice ?: return
         val hid    = hidDevice ?: return
         var btns   = 0
-        if (btnA)     btns = btns or (1 shl 0)   // Button 1
-        if (btnB)     btns = btns or (1 shl 1)   // Button 2
-        if (gearUp)   btns = btns or (1 shl 2)   // Button 3
-        if (gearDown) btns = btns or (1 shl 6)   // Button 7
-        if (btnX)     btns = btns or (1 shl 12)  // Button 13
-        if (btnY)     btns = btns or (1 shl 13)  // Button 14
+        if (btnA)     btns = btns or (1 shl 0)
+        if (btnB)     btns = btns or (1 shl 1)
+        if (gearUp)   btns = btns or (1 shl 2)
+        if (gearDown) btns = btns or (1 shl 6)
+        if (btnX)     btns = btns or (1 shl 12)
+        if (btnY)     btns = btns or (1 shl 13)
         val lt = if (brakeOn) 0x7f.toByte() else 0x00.toByte()
         val rt = if (gasOn)   0x7f.toByte() else 0x00.toByte()
         hid.sendReport(device, 1,
@@ -310,9 +301,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 }
 
-class WheelView(context: android.content.Context,
+class WheelView(
+    context: android.content.Context,
     attrs: android.util.AttributeSet? = null
-) : android.view.View(context, attrs) {
+) : View(context, attrs) {
 
     var angle: Float = 0f
         set(v) { field = v; invalidate() }
