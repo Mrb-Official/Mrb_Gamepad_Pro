@@ -37,20 +37,29 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE)
-        setContentView(R.layout.activity_main)
+        
+        // NO MORE 'R' CLASS ERRORS - Direct ID fetching
+        val layoutId = resources.getIdentifier("activity_main", "layout", packageName)
+        setContentView(layoutId)
 
-        val btnGas = findViewById<View>(R.id.lay_gas)
-        val btnBrake = findViewById<View>(R.id.lay_brake)
-        val btnConnect = findViewById<View>(R.id.lay_steering)
-        txtStatus = findViewById(R.id.txt_status)
+        val gasId = resources.getIdentifier("lay_gas", "id", packageName)
+        val btnGas = findViewById<View>(gasId)
+
+        val brakeId = resources.getIdentifier("lay_brake", "id", packageName)
+        val btnBrake = findViewById<View>(brakeId)
+
+        val connectId = resources.getIdentifier("lay_steering", "id", packageName)
+        val btnConnect = findViewById<View>(connectId)
+
+        val statusId = resources.getIdentifier("txt_status", "id", packageName)
+        txtStatus = findViewById(statusId)
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         bluetoothAdapter = (getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
 
-        // Center tap se Google Popup khulega
-        btnConnect.setOnClickListener { showGooglePairingPopup() }
+        btnConnect?.setOnClickListener { showGooglePairingPopup() }
 
-        btnGas.setOnTouchListener { v, event ->
+        btnGas?.setOnTouchListener { v, event ->
             when(event.action) {
                 MotionEvent.ACTION_DOWN -> { gasOn = true; v.setBackgroundColor(Color.parseColor("#33FF33")); sendHIDReport(); true }
                 MotionEvent.ACTION_UP -> { gasOn = false; v.setBackgroundColor(Color.parseColor("#1A1A1A")); sendHIDReport(); true }
@@ -58,7 +67,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
         }
 
-        btnBrake.setOnTouchListener { v, event ->
+        btnBrake?.setOnTouchListener { v, event ->
             when(event.action) {
                 MotionEvent.ACTION_DOWN -> { brakeOn = true; v.setBackgroundColor(Color.parseColor("#FF3333")); sendHIDReport(); true }
                 MotionEvent.ACTION_UP -> { brakeOn = false; v.setBackgroundColor(Color.parseColor("#1A1A1A")); sendHIDReport(); true }
