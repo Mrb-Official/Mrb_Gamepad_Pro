@@ -8,7 +8,7 @@
     <!-- Background black -->
     <path
         android:fillColor="#000000"
-        android:pathData="M90,0 L422,0 Q512,0 512,90 L512,422 Q512,512 422,512 L90,512 Q0,512 0,422 L0,90 Q0,0 90,0 Z"/>
+        android:pathData="M0,0 L512,0 L512,512 L0,512 Z"/>
 
     <!-- Wireless signal top -->
     <path
@@ -29,37 +29,31 @@
         android:fillColor="#222222"
         android:pathData="M140,260 C140,210 180,190 220,205 L292,205 C332,190 372,210 372,260 L372,310 C372,350 340,360 305,330 L207,330 C172,360 140,350 140,310 Z"/>
 
-    <!-- Controller body border -->
-    <path
-        android:strokeColor="#444444"
-        android:strokeWidth="3"
-        android:fillColor="#00000000"
-        android:pathData="M140,260 C140,210 180,190 220,205 L292,205 C332,190 372,210 372,260 L372,310 C372,350 340,360 305,330 L207,330 C172,360 140,350 140,310 Z"/>
-
     <!-- D-Pad horizontal -->
     <path
         android:fillColor="#777777"
-        android:pathData="M180,270 L240,270 L240,284 L180,284 Z M180,270 Q183,270 183,273 L183,281 Q183,284 180,284 Z M240,270 Q237,270 237,273 L237,281 Q237,284 240,284 Z"/>
+        android:pathData="M180,270 L240,270 L240,284 L180,284 Z"/>
+    <!-- D-Pad vertical -->
     <path
         android:fillColor="#777777"
         android:pathData="M203,247 L217,247 L217,307 L203,307 Z"/>
 
-    <!-- Button Y - yellow top -->
+    <!-- Button Y yellow -->
     <path
         android:fillColor="#FFD500"
         android:pathData="M300,233 A12,12 0 1,0 300,257 A12,12 0 1,0 300,233 Z"/>
 
-    <!-- Button B - red right -->
+    <!-- Button B red -->
     <path
         android:fillColor="#FF4B4B"
         android:pathData="M325,258 A12,12 0 1,0 325,282 A12,12 0 1,0 325,258 Z"/>
 
-    <!-- Button A - green bottom -->
+    <!-- Button A green -->
     <path
         android:fillColor="#3CFF6B"
         android:pathData="M300,283 A12,12 0 1,0 300,307 A12,12 0 1,0 300,283 Z"/>
 
-    <!-- Button X - blue left -->
+    <!-- Button X blue -->
     <path
         android:fillColor="#3DB9FF"
         android:pathData="M263,258 A12,12 0 1,0 263,282 A12,12 0 1,0 263,258 Z"/>
@@ -74,14 +68,24 @@
         android:fillColor="#FFFFFF"
         android:pathData="M402,345 Q352,280 307,330 L332,395 Q387,370 402,345 Z"/>
 
-    <!-- PRO badge background -->
+    <!-- PRO badge red bg -->
     <path
         android:fillColor="#FF3B3B"
-        android:pathData="M348,206 L402,206 Q418,206 418,222 L418,242 Q418,258 402,258 L348,258 Q332,258 332,242 L332,222 Q332,206 348,206 Z"/>
+        android:pathData="M344,202 L408,202 Q424,202 424,218 L424,244 Q424,260 408,260 L344,260 Q328,260 328,244 L328,218 Q328,202 344,202 Z"/>
 
-    <!-- P letter -->
-    <path android:fillColor="#FFFFFF" android:pathData="M336,214 L336,256 L344,256 L344,238 L356,238 Q366,238 366,226 Q366,214 356,214 Z M344,220 L355,220 Q358,220 358,226 Q358,232 355,232 L344,232 Z"/>
-    <!-- R letter -->
-    <path android:fillColor="#FFFFFF" android:pathData="M370,214 L370,256 L378,256 L378,238 L384,238 L391,256 L400,256 L392,237 Q399,234 399,226 Q399,214 389,214 Z M378,220 L388,220 Q391,220 391,226 Q391,232 388,232 L378,232 Z"/>
-    <!-- O letter -->
-    <path android:fillColor="#FFFFFF" android:pathData="M403,226 Q403,214 413,214 Q423,214 423,226 L423,244 Q423,256 413,256 Q403,256 403,244 Z M411,220 L411,250 Q411,250 413,250 Q415,250 415,244 L415,226 Q415,220 413,220 Q411,220 411,220 Z"/>
+    <!-- P -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M336,212 L336,252 L343,252 L343,238 L353,238 Q362,238 362,225 Q362,212 353,212 Z M343,218 L352,218 Q355,218 355,225 Q355,232 352,232 L343,232 Z"/>
+
+    <!-- R -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M366,212 L366,252 L373,252 L373,236 L379,236 L385,252 L393,252 L386,235 Q392,232 392,224 Q392,212 383,212 Z M373,218 L382,218 Q385,218 385,224 Q385,230 382,230 L373,230 Z"/>
+
+    <!-- O -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M396,224 Q396,212 406,212 Q416,212 416,224 L416,240 Q416,252 406,252 Q396,252 396,240 Z M403,224 L403,240 Q403,245 406,245 Q409,245 409,240 L409,224 Q409,219 406,219 Q403,219 403,224 Z"/>
+
+</vector>
