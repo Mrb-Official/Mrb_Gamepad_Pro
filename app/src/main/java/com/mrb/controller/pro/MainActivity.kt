@@ -17,7 +17,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var connectedDevice: BluetoothDevice? = null
     private lateinit var sensorManager: SensorManager
-    private lateinit var txtStatus: TextView
+    
+    // Yahan crash hota tha, isliye ab isko nullable (?) bana diya hai taaki crash na ho
+    private var txtStatus: TextView? = null
     
     private var gasOn = false
     private var brakeOn = false
@@ -38,60 +40,65 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         super.onCreate(savedInstanceState)
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE)
         
-        // NO MORE 'R' CLASS ERRORS - Direct ID fetching
-        val layoutId = resources.getIdentifier("activity_main", "layout", packageName)
-        setContentView(layoutId)
+        try {
+            // Wapas direct R class use kar rahe hain
+            setContentView(R.layout.activity_main)
 
-        val gasId = resources.getIdentifier("lay_gas", "id", packageName)
-        val btnGas = findViewById<View>(gasId)
+            val btnGas = findViewById<View>(R.id.lay_gas)
+            val btnBrake = findViewById<View>(R.id.lay_brake)
+            val btnConnect = findViewById<View>(R.id.lay_steering)
+            txtStatus = findViewById(R.id.txt_status)
 
-        val brakeId = resources.getIdentifier("lay_brake", "id", packageName)
-        val btnBrake = findViewById<View>(brakeId)
+            sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+            bluetoothAdapter = (getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
 
-        val connectId = resources.getIdentifier("lay_steering", "id", packageName)
-        val btnConnect = findViewById<View>(connectId)
+            btnConnect?.setOnClickListener { showGooglePairingPopup() }
 
-        val statusId = resources.getIdentifier("txt_status", "id", packageName)
-        txtStatus = findViewById(statusId)
-
-        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        bluetoothAdapter = (getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
-
-        btnConnect?.setOnClickListener { showGooglePairingPopup() }
-
-        btnGas?.setOnTouchListener { v, event ->
-            when(event.action) {
-                MotionEvent.ACTION_DOWN -> { gasOn = true; v.setBackgroundColor(Color.parseColor("#33FF33")); sendHIDReport(); true }
-                MotionEvent.ACTION_UP -> { gasOn = false; v.setBackgroundColor(Color.parseColor("#1A1A1A")); sendHIDReport(); true }
-                else -> false
+            btnGas?.setOnTouchListener { v, event ->
+                when(event.action) {
+                    MotionEvent.ACTION_DOWN -> { gasOn = true; v.setBackgroundColor(Color.parseColor("#33FF33")); sendHIDReport(); true }
+                    MotionEvent.ACTION_UP -> { gasOn = false; v.setBackgroundColor(Color.parseColor("#1A1A1A")); sendHIDReport(); true }
+                    else -> false
+                }
             }
-        }
 
-        btnBrake?.setOnTouchListener { v, event ->
-            when(event.action) {
-                MotionEvent.ACTION_DOWN -> { brakeOn = true; v.setBackgroundColor(Color.parseColor("#FF3333")); sendHIDReport(); true }
-                MotionEvent.ACTION_UP -> { brakeOn = false; v.setBackgroundColor(Color.parseColor("#1A1A1A")); sendHIDReport(); true }
-                else -> false
+            btnBrake?.setOnTouchListener { v, event ->
+                when(event.action) {
+                    MotionEvent.ACTION_DOWN -> { brakeOn = true; v.setBackgroundColor(Color.parseColor("#FF3333")); sendHIDReport(); true }
+                    MotionEvent.ACTION_UP -> { brakeOn = false; v.setBackgroundColor(Color.parseColor("#1A1A1A")); sendHIDReport(); true }
+                    else -> false
+                }
             }
-        }
 
-        setupHid()
+            setupHid()
+            
+        } catch (e: Exception) {
+            Toast.makeText(this, "UI Load Safe Catch: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun showGooglePairingPopup() {
-        val deviceManager = getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
-        val pairingRequest = AssociationRequest.Builder()
-            .addDeviceFilter(BluetoothDeviceFilter.Builder().build())
-            .setSingleDevice(false)
-            .build()
+        try {
+            val deviceManager = getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
+            val pairingRequest = AssociationRequest.Builder()
+                .addDeviceFilter(BluetoothDeviceFilter.Builder().build())
+                .setSingleDevice(false)
+                .build()
 
-        deviceManager.associate(pairingRequest, object : CompanionDeviceManager.Callback() {
-            override fun onDeviceFound(chooserLauncher: IntentSender) {
-                try { startIntentSenderForResult(chooserLauncher, SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0) } 
-                catch (e: Exception) { runOnUiThread { txtStatus.text = "POPUP ERROR" } }
-            }
-            override fun onFailure(error: CharSequence?) { runOnUiThread { txtStatus.text = "NOT FOUND" } }
-        }, null)
+            deviceManager.associate(pairingRequest, object : CompanionDeviceManager.Callback() {
+                override fun onDeviceFound(chooserLauncher: IntentSender) {
+                    try { startIntentSenderForResult(chooserLauncher, SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0) } 
+                    catch (e: Exception) { runOnUiThread { txtStatus?.text = "POPUP ERROR" } }
+                }
+                override fun onFailure(error: CharSequence?) { runOnUiThread { txtStatus?.text = "NOT FOUND" } }
+            }, null)
+            
+        } catch (e: Exception) {
+            // Agar Companion Device Manager (Google Popup) crash kare toh direct Bluetooth Setting khol do
+            Toast.makeText(this, "Opening Bluetooth Settings...", Toast.LENGTH_SHORT).show()
+            val intent = Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+            startActivity(intent)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -100,7 +107,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             val deviceToPair: BluetoothDevice? = data?.getParcelableExtra(CompanionDeviceManager.EXTRA_DEVICE)
             deviceToPair?.let { 
                 connectedDevice = it
-                txtStatus.text = "CONNECTING..." 
+                txtStatus?.text = "CONNECTING..." 
             }
         }
     }
@@ -115,10 +122,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
                         if (state == BluetoothProfile.STATE_CONNECTED) {
                             connectedDevice = device
-                            runOnUiThread { txtStatus.text = "CONNECTED" }
+                            runOnUiThread { txtStatus?.text = "CONNECTED" }
                         } else {
                             connectedDevice = null
-                            runOnUiThread { txtStatus.text = "TAP TO CONNECT" }
+                            runOnUiThread { txtStatus?.text = "TAP TO CONNECT" }
                         }
                     }
                 })
