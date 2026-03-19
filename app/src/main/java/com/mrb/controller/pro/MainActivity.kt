@@ -22,13 +22,34 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var tiltValue: Byte = 0
     private var lastSendTime = 0L
 
-    // ── BULLETPROOF DESCRIPTOR: intArray mapped to ByteArray ──
+    // ── OFFICIAL GAMEPAD DESCRIPTOR (8 Buttons, 2 Axes) ──
     private val HID_DESC = intArrayOf(
-        0x05, 0x01, 0x09, 0x04, 0xa1, 0x01, 0x85, 0x01,
-        0x05, 0x09, 0x19, 0x01, 0x29, 0x04, 0x15, 0x00, 0x25, 0x01, 0x75, 0x01, 0x95, 0x04, 0x81, 0x02,
-        0x75, 0x04, 0x95, 0x01, 0x81, 0x03, // <-- PADDING FIX
-        0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x15, 0x81, 0x25, 0x7f, 0x75, 0x08, 0x95, 0x02, 0x81, 0x02,
-        0xc0
+        0x05, 0x01,         // USAGE_PAGE (Generic Desktop)
+        0x09, 0x05,         // USAGE (Gamepad) --> YEH 0x04 THA, ISLIYE DETECT NAHI HO RAHA THA
+        0xa1, 0x01,         // COLLECTION (Application)
+        0x85, 0x01,         //   REPORT_ID (1)
+        
+        // 8 Buttons (1 Byte)
+        0x05, 0x09,         //   USAGE_PAGE (Button)
+        0x19, 0x01,         //   USAGE_MINIMUM (Button 1)
+        0x29, 0x08,         //   USAGE_MAXIMUM (Button 8)
+        0x15, 0x00,         //   LOGICAL_MINIMUM (0)
+        0x25, 0x01,         //   LOGICAL_MAXIMUM (1)
+        0x75, 0x01,         //   REPORT_SIZE (1)
+        0x95, 0x08,         //   REPORT_COUNT (8)
+        0x81, 0x02,         //   INPUT (Data,Var,Abs)
+        
+        // X and Y Axis (2 Bytes)
+        0x05, 0x01,         //   USAGE_PAGE (Generic Desktop)
+        0x09, 0x30,         //   USAGE (X)
+        0x09, 0x31,         //   USAGE (Y)
+        0x15, 0x81,         //   LOGICAL_MINIMUM (-127)
+        0x25, 0x7f,         //   LOGICAL_MAXIMUM (127)
+        0x75, 0x08,         //   REPORT_SIZE (8)
+        0x95, 0x02,         //   REPORT_COUNT (2)
+        0x81, 0x02,         //   INPUT (Data,Var,Abs)
+        
+        0xc0                // END_COLLECTION
     ).map { it.toByte() }.toByteArray()
 
     @SuppressLint("ClickableViewAccessibility", "SetTextI18n")
@@ -92,12 +113,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         bluetoothAdapter?.getProfileProxy(this, object : BluetoothProfile.ServiceListener {
             override fun onServiceConnected(profile: Int, proxy: BluetoothProfile?) {
                 hidDevice = proxy as BluetoothHidDevice
-                val sdp = BluetoothHidDeviceAppSdpSettings("Mrb Pad", "Gamepad", "Meet", 0x40.toByte(), HID_DESC)
+                // 0x08 is the OFFICIAL SUBCLASS for Gamepad!
+                val sdp = BluetoothHidDeviceAppSdpSettings("MRB Gamepad", "Controller", "Meet", 0x08.toByte(), HID_DESC)
+                
                 hidDevice?.registerApp(sdp, null, null, { it?.run() }, object : BluetoothHidDevice.Callback() {
                     override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
                         if (state == BluetoothProfile.STATE_CONNECTED) {
                             connectedDevice = device
-                            runOnUiThread { tvStatus.text = "CONNECTED" }
+                            runOnUiThread { tvStatus.text = "CONNECTED TO DEVICE" }
                         } else {
                             connectedDevice = null
                             runOnUiThread { tvStatus.text = "DISCONNECTED" }
@@ -113,7 +136,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
             tiltValue = (event.values[1] * 12).toInt().coerceIn(-127, 127).toByte()
             val now = System.currentTimeMillis()
-            if (now - lastSendTime > 40) {
+            if (now - lastSendTime > 40) { // Throttle
                 sendHIDReport()
                 lastSendTime = now
             }
@@ -127,6 +150,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (gasOn) buttons = buttons or 0x01
         if (brakeOn) buttons = buttons or 0x02
         
+        // Final payload: [Buttons(1 Byte), X-Axis(1 Byte), Y-Axis(1 Byte)]
         hidDevice?.sendReport(device, 1, byteArrayOf(buttons.toByte(), tiltValue, 0x00))
     }
 
