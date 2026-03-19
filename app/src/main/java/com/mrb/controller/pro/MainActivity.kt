@@ -22,24 +22,22 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var tiltValue: Byte = 0
     private var lastSendTime = 0L
 
-    // ── FIXED DESCRIPTOR WITH 4-BIT PADDING ──
-    private val HID_DESC = byteArrayOf(
-        0x05, 0x01, 0x09, 0x04, 0xa1.toByte(), 0x01, 0x85.toByte(), 0x01,
-        0x05, 0x09, 0x19, 0x01, 0x29, 0x04, 0x15, 0x00, 0x25, 0x01, 0x75, 0x01, 0x95, 0x04, 0x81.toByte(), 0x02,
-        0x75, 0x04, 0x95, 0x01, 0x81.toByte(), 0x03, // <-- PADDING FIX (Ye Android ko batata hai ki byte pura ho gaya)
-        0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95, 0x02, 0x81.toByte(), 0x02,
-        0xc0.toByte()
-    )
+    // ── BULLETPROOF DESCRIPTOR: intArray mapped to ByteArray ──
+    private val HID_DESC = intArrayOf(
+        0x05, 0x01, 0x09, 0x04, 0xa1, 0x01, 0x85, 0x01,
+        0x05, 0x09, 0x19, 0x01, 0x29, 0x04, 0x15, 0x00, 0x25, 0x01, 0x75, 0x01, 0x95, 0x04, 0x81, 0x02,
+        0x75, 0x04, 0x95, 0x01, 0x81, 0x03, // <-- PADDING FIX
+        0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x15, 0x81, 0x25, 0x7f, 0x75, 0x08, 0x95, 0x02, 0x81, 0x02,
+        0xc0
+    ).map { it.toByte() }.toByteArray()
 
     @SuppressLint("ClickableViewAccessibility", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE)
         
-        // ── PURANA UI (Solid Black Background) ──
         val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
         
-        // Text Center mein
         tvStatus = TextView(this).apply { 
             text = "MRB PRO: WAITING"; setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
@@ -115,7 +113,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
             tiltValue = (event.values[1] * 12).toInt().coerceIn(-127, 127).toByte()
             val now = System.currentTimeMillis()
-            if (now - lastSendTime > 40) { // 25Hz speed limit (Smooth data)
+            if (now - lastSendTime > 40) {
                 sendHIDReport()
                 lastSendTime = now
             }
@@ -129,7 +127,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (gasOn) buttons = buttons or 0x01
         if (brakeOn) buttons = buttons or 0x02
         
-        // Exact 3 Bytes Payload: [Buttons, X-Axis, Y-Axis]
         hidDevice?.sendReport(device, 1, byteArrayOf(buttons.toByte(), tiltValue, 0x00))
     }
 
