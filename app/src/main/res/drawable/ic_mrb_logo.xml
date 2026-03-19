@@ -2,52 +2,81 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
+    android:viewportWidth="512"
+    android:viewportHeight="512">
 
-    <!-- Background -->
+    <!-- Background black -->
     <path
-        android:fillColor="#0A0A0A"
-        android:pathData="M0,0 L108,0 L108,108 L0,108 Z"/>
+        android:fillColor="#000000"
+        android:pathData="M90,0 L422,0 Q512,0 512,90 L512,422 Q512,512 422,512 L90,512 Q0,512 0,422 L0,90 Q0,0 90,0 Z"/>
 
-    <!-- Outer ring -->
+    <!-- Wireless signal top -->
     <path
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="4"
+        android:strokeWidth="14"
         android:fillColor="#00000000"
-        android:pathData="M54,18 A36,36 0 1,0 54,90 A36,36 0 1,0 54,18 Z"/>
-
-    <!-- Inner hub -->
+        android:strokeLineCap="round"
+        android:pathData="M180,110 Q256,60 332,110"/>
     <path
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
+        android:strokeWidth="14"
         android:fillColor="#00000000"
-        android:pathData="M54,42 A12,12 0 1,0 54,66 A12,12 0 1,0 54,42 Z"/>
-
-    <!-- Spoke top -->
-    <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="4"
         android:strokeLineCap="round"
-        android:pathData="M54,42 L54,22"/>
+        android:pathData="M210,145 Q256,110 302,145"/>
 
-    <!-- Spoke bottom-left -->
+    <!-- Controller body -->
     <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="4"
-        android:strokeLineCap="round"
-        android:pathData="M46,60 L30,76"/>
+        android:fillColor="#222222"
+        android:pathData="M140,260 C140,210 180,190 220,205 L292,205 C332,190 372,210 372,260 L372,310 C372,350 340,360 305,330 L207,330 C172,360 140,350 140,310 Z"/>
 
-    <!-- Spoke bottom-right -->
+    <!-- Controller body border -->
     <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="4"
-        android:strokeLineCap="round"
-        android:pathData="M62,60 L78,76"/>
+        android:strokeColor="#444444"
+        android:strokeWidth="3"
+        android:fillColor="#00000000"
+        android:pathData="M140,260 C140,210 180,190 220,205 L292,205 C332,190 372,210 372,260 L372,310 C372,350 340,360 305,330 L207,330 C172,360 140,350 140,310 Z"/>
 
-    <!-- Top dot -->
+    <!-- D-Pad horizontal -->
+    <path
+        android:fillColor="#777777"
+        android:pathData="M180,270 L240,270 L240,284 L180,284 Z M180,270 Q183,270 183,273 L183,281 Q183,284 180,284 Z M240,270 Q237,270 237,273 L237,281 Q237,284 240,284 Z"/>
+    <path
+        android:fillColor="#777777"
+        android:pathData="M203,247 L217,247 L217,307 L203,307 Z"/>
+
+    <!-- Button Y - yellow top -->
+    <path
+        android:fillColor="#FFD500"
+        android:pathData="M300,233 A12,12 0 1,0 300,257 A12,12 0 1,0 300,233 Z"/>
+
+    <!-- Button B - red right -->
+    <path
+        android:fillColor="#FF4B4B"
+        android:pathData="M325,258 A12,12 0 1,0 325,282 A12,12 0 1,0 325,258 Z"/>
+
+    <!-- Button A - green bottom -->
+    <path
+        android:fillColor="#3CFF6B"
+        android:pathData="M300,283 A12,12 0 1,0 300,307 A12,12 0 1,0 300,283 Z"/>
+
+    <!-- Button X - blue left -->
+    <path
+        android:fillColor="#3DB9FF"
+        android:pathData="M263,258 A12,12 0 1,0 263,282 A12,12 0 1,0 263,258 Z"/>
+
+    <!-- Left hand grip -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,17 A3,3 0 1,0 54,23 A3,3 0 1,0 54,17 Z"/>
+        android:pathData="M110,345 Q160,280 205,330 L180,395 Q125,370 110,345 Z"/>
+
+    <!-- Right hand grip -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M402,345 Q352,280 307,330 L332,395 Q387,370 402,345 Z"/>
+
+    <!-- PRO badge background -->
+    <path
+        android:fillColor="#FF3B3B"
+        android:pathData="M354,210 L396,210 Q410,210 410,224 L410,238 Q410,252 396,252 L354,252 Q340,252 340,238 L340,224 Q340,210 354,210 Z"/>
 
 </vector>
