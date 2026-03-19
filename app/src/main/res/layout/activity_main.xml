@@ -7,26 +7,30 @@
     <!-- BRAKE left -->
     <FrameLayout
         android:id="@+id/lay_brake"
-        android:layout_width="160dp"
-        android:layout_height="240dp"
+        android:layout_width="155dp"
+        android:layout_height="220dp"
         android:layout_alignParentStart="true"
         android:layout_centerVertical="true"
         android:layout_marginStart="10dp"
         android:background="#111111"
         android:clickable="true"
         android:focusable="true">
-        <ImageView
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:layout_gravity="center_horizontal|top"
-            android:layout_marginTop="40dp"
+            android:layout_marginTop="36dp"
             android:src="@drawable/ic_hand"
-            android:tint="#888888"/>
+            android:tint="#888888"
+            app:shapeAppearanceOverlay="@style/CircleImageView"
+            xmlns:app="http://schemas.android.com/apk/res-auto"/>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="14dp"
             android:text="BRAKE"
             android:textColor="#888888"
             android:textSize="11sp"
@@ -35,7 +39,7 @@
             android:letterSpacing="0.15"/>
     </FrameLayout>
 
-    <!-- CENTER = Wheel -->
+    <!-- CENTER wheel -->
     <LinearLayout
         android:id="@+id/center_layout"
         android:layout_width="wrap_content"
@@ -51,23 +55,22 @@
             android:text="Tap wheel to pair"
             android:textColor="#FFFFFF"
             android:textSize="11sp"
-            android:gravity="center"
             android:alpha="0.4"
             android:paddingBottom="8dp"/>
 
         <com.mrb.controller.pro.WheelView
             android:id="@+id/lay_steering"
-            android:layout_width="260dp"
-            android:layout_height="260dp"
+            android:layout_width="250dp"
+            android:layout_height="250dp"
             android:clickable="true"
             android:focusable="true"/>
 
         <ProgressBar
             android:id="@+id/tilt_bar"
             style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="240dp"
+            android:layout_width="230dp"
             android:layout_height="5dp"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="10dp"
             android:max="200"
             android:progress="100"/>
 
@@ -77,38 +80,41 @@
             android:layout_height="wrap_content"
             android:text="0.0°"
             android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:gravity="center"
+            android:textSize="11sp"
             android:fontFamily="monospace"
             android:paddingTop="4dp"
             android:alpha="0.6"/>
 
     </LinearLayout>
 
-    <!-- RIGHT side -->
-    <!-- GAS -->
+    <!-- GAS right bottom -->
     <FrameLayout
         android:id="@+id/lay_gas"
-        android:layout_width="160dp"
-        android:layout_height="240dp"
+        android:layout_width="155dp"
+        android:layout_height="220dp"
         android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
+        android:layout_alignParentBottom="true"
         android:layout_marginEnd="10dp"
+        android:layout_marginBottom="24dp"
         android:background="#111111"
         android:clickable="true"
         android:focusable="true">
-        <ImageView
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:layout_gravity="center_horizontal|top"
-            android:layout_marginTop="40dp"
+            android:layout_marginTop="36dp"
             android:src="@drawable/ic_speed"
-            android:tint="#888888"/>
+            android:tint="#888888"
+            app:shapeAppearanceOverlay="@style/CircleImageView"
+            xmlns:app="http://schemas.android.com/apk/res-auto"/>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="14dp"
             android:text="GAS"
             android:textColor="#888888"
             android:textSize="11sp"
@@ -117,24 +123,23 @@
             android:letterSpacing="0.15"/>
     </FrameLayout>
 
-    <!-- XBOX buttons - diamond shape above GAS -->
+    <!-- XBOX Diamond -->
     <RelativeLayout
         android:id="@+id/xbox_layout"
-        android:layout_width="160dp"
-        android:layout_height="130dp"
+        android:layout_width="155dp"
+        android:layout_height="140dp"
         android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
         android:layout_marginEnd="10dp"
-        android:layout_above="@id/lay_gas"
-        android:layout_marginBottom="8dp">
+        android:layout_marginTop="16dp">
 
-        <!-- Y top -->
         <FrameLayout
             android:id="@+id/btn_y"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:layout_centerHorizontal="true"
             android:layout_alignParentTop="true"
-            android:background="@drawable/btn_round"
+            android:background="@drawable/btn_xbox_yellow"
             android:clickable="true"
             android:focusable="true">
             <TextView
@@ -147,14 +152,13 @@
                 android:gravity="center"/>
         </FrameLayout>
 
-        <!-- X left -->
         <FrameLayout
             android:id="@+id/btn_x"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
-            android:background="@drawable/btn_round"
+            android:background="@drawable/btn_xbox_blue"
             android:clickable="true"
             android:focusable="true">
             <TextView
@@ -167,14 +171,13 @@
                 android:gravity="center"/>
         </FrameLayout>
 
-        <!-- B right -->
         <FrameLayout
             android:id="@+id/btn_b"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:background="@drawable/btn_round"
+            android:background="@drawable/btn_xbox_red"
             android:clickable="true"
             android:focusable="true">
             <TextView
@@ -187,14 +190,13 @@
                 android:gravity="center"/>
         </FrameLayout>
 
-        <!-- A bottom -->
         <FrameLayout
             android:id="@+id/btn_a"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:layout_centerHorizontal="true"
             android:layout_alignParentBottom="true"
-            android:background="@drawable/btn_round"
+            android:background="@drawable/btn_xbox_green"
             android:clickable="true"
             android:focusable="true">
             <TextView
@@ -209,9 +211,9 @@
 
     </RelativeLayout>
 
-    <!-- REVERSE + FRONT - middle right -->
+    <!-- REVERSE + FRONT -->
     <LinearLayout
-        android:layout_width="160dp"
+        android:layout_width="155dp"
         android:layout_height="wrap_content"
         android:layout_toStartOf="@id/lay_gas"
         android:layout_centerVertical="true"
@@ -221,7 +223,7 @@
         <FrameLayout
             android:id="@+id/lay_gear_up"
             android:layout_width="match_parent"
-            android:layout_height="100dp"
+            android:layout_height="95dp"
             android:background="#111111"
             android:layout_marginBottom="8dp"
             android:clickable="true"
@@ -230,14 +232,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:text="∧"
-                android:textSize="28sp"
+                android:textSize="26sp"
                 android:textColor="#FF6D00"
                 android:gravity="center"/>
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="7dp"
                 android:text="REVERSE"
                 android:textColor="#FF6D00"
                 android:textSize="9sp"
@@ -249,7 +251,7 @@
         <FrameLayout
             android:id="@+id/lay_gear_down"
             android:layout_width="match_parent"
-            android:layout_height="100dp"
+            android:layout_height="95dp"
             android:background="#111111"
             android:clickable="true"
             android:focusable="true">
@@ -257,14 +259,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:text="∨"
-                android:textSize="28sp"
+                android:textSize="26sp"
                 android:textColor="#00B4D8"
                 android:gravity="center"/>
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="7dp"
                 android:text="FRONT"
                 android:textColor="#00B4D8"
                 android:textSize="9sp"
