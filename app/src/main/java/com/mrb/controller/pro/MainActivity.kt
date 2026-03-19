@@ -168,7 +168,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                         "MRB Gamepad Pro",
                         "Tilt Controller",
                         "MeetDev",
-                        BluetoothHidDevice.SUBCLASS1_GAMEPAD,
+                        0x08.toByte(),
                         HID_DESC)
                     hidDevice?.registerApp(sdp, null, null,
                         { it?.run() },
