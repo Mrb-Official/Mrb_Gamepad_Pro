@@ -60,6 +60,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            requestPermissions(arrayOf(
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_SCAN,
+                android.Manifest.permission.BLUETOOTH_ADVERTISE
+            ), 99)
+        }
+
         try {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             window.decorView.windowInsetsController?.hide(
@@ -124,6 +132,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun pairDevice() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            requestPermissions(arrayOf(
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_SCAN,
+                android.Manifest.permission.BLUETOOTH_ADVERTISE
+            ), 99)
+        }
+
         try {
             val dm = getSystemService(
                 Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
@@ -332,3 +348,5 @@ class WheelView(
         canvas.restore()
     }
 }
+
+// Permission result - restart init
