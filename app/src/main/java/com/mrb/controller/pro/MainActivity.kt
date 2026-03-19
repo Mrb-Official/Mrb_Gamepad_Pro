@@ -180,17 +180,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val device = connectedDevice ?: return
         val hid    = hidDevice ?: return
 
-        var btnByte1 = 0 // Buttons 1-8
-        var btnByte2 = 0 // Buttons 9-16
-        if (btnA)     btnByte1 = btnByte1 or (1 shl 0) // Button 1
-        if (btnB)     btnByte1 = btnByte1 or (1 shl 1) // Button 2
-        
-        // Gears Shifted to Safe Buttons 9 and 10 in Byte 2
-        if (gearUp)   btnByte2 = btnByte2 or (1 shl 0) // Button 9
-        if (gearDown) btnByte2 = btnByte2 or (1 shl 1) // Button 10
-        
-        if (btnX)     btnByte2 = btnByte2 or (1 shl 4) // Button 13
-        if (btnY)     btnByte2 = btnByte2 or (1 shl 5) // Button 14
+        var btnByte1 = 0
+        var btnByte2 = 0
+        if (btnA)     btnByte1 = btnByte1 or (1 shl 0) // Button A
+        if (btnB)     btnByte1 = btnByte1 or (1 shl 1) // Button B
+        if (btnX)     btnByte1 = btnByte1 or (1 shl 2) // Button X
+        if (btnY)     btnByte1 = btnByte1 or (1 shl 3) // Button Y
+        if (gearDown) btnByte1 = btnByte1 or (1 shl 4) // LB (Left Bumper)
+        if (gearUp)   btnByte1 = btnByte1 or (1 shl 5) // RB (Right Bumper)
 
         val gas   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
         val brake = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
