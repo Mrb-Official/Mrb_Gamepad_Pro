@@ -229,13 +229,13 @@
             android:layout_marginBottom="6dp"
             android:clickable="true"
             android:focusable="true">
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:text="∧"
-                android:textSize="22sp"
-                android:textColor="#888888"
-                android:gravity="center"/>
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center_horizontal|top"
+                android:layout_marginTop="8dp"
+                android:src="@drawable/expand_circle_up_24"
+                android:tint="#888888"/>
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -255,13 +255,13 @@
             android:background="@drawable/btn_gear_normal"
             android:clickable="true"
             android:focusable="true">
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:text="∨"
-                android:textSize="22sp"
-                android:textColor="#888888"
-                android:gravity="center"/>
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center_horizontal|top"
+                android:layout_marginTop="8dp"
+                android:src="@drawable/expand_circle_down_24"
+                android:tint="#888888"/>
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -272,6 +272,7 @@
                 android:textSize="8sp"
                 android:textStyle="bold"
                 android:gravity="center"/>
+        </FrameLayout>
         </FrameLayout>
 
     </LinearLayout>
