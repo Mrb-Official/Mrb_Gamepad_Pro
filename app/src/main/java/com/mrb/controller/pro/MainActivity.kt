@@ -181,7 +181,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     }
                 }
                 step++
-                handler.postDelayed(this, 16)
+                handler.postDelayed(this, 25)
             }
         }
         handler.post(r)
