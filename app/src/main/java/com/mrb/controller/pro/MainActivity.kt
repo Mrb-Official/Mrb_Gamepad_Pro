@@ -23,22 +23,25 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var tiltBar: ProgressBar
     private lateinit var wheelView: WheelView
 
-    private var gasOn    = false
-    private var brakeOn  = false
-    private var gearUp   = false
-    private var gearDown = false
-    private var btnA     = false
-    private var btnB     = false
-    private var btnX     = false
-    private var btnY     = false
-    private var dpadUp   = false
-    private var dpadDown = false
-    private var dpadLeft = false
-    private var dpadRight= false
+    private var gasOn     = false
+    private var brakeOn   = false
+    private var gearUp    = false
+    private var gearDown  = false
+    private var btnA      = false
+    private var btnB      = false
+    private var btnX      = false
+    private var btnY      = false
+    private var dpadUp    = false
+    private var dpadDown  = false
+    private var dpadLeft  = false
+    private var dpadRight = false
     private var tiltByte: Byte = 0
-    private var filtX    = 0f
-    private val alpha    = 0.15f
-    private var lastSend = 0L
+    private var filtX     = 0f
+    private val alpha     = 0.15f
+    private var lastSend  = 0L
+    private var connectedAnimDone = false
+
+    private val handler = Handler(Looper.getMainLooper())
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,18 +75,30 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
-        setupTouch(R.id.lay_brake, R.drawable.btn_normal_r12, R.drawable.btn_press_red, R.id.ic_brake, 0xFFFF4B4B.toInt()) { brakeOn = it }
-        setupTouch(R.id.lay_gas, R.drawable.btn_normal_r12, R.drawable.btn_press_green, R.id.ic_gas, 0xFF3CFF6B.toInt()) { gasOn = it }
-        setupTouch(R.id.lay_gear_up, R.drawable.btn_gear_normal, R.drawable.btn_press_orange, R.id.ic_gear_up, 0xFFFF6D00.toInt()) { gearUp = it }
-        setupTouch(R.id.lay_gear_down, R.drawable.btn_gear_normal, R.drawable.btn_press_blue, R.id.ic_gear_down, 0xFF00B4D8.toInt()) { gearDown = it }
-        setupTouch(R.id.btn_a, R.drawable.btn_xbox_green, R.drawable.btn_xbox_green_press, null, 0) { btnA = it }
-        setupTouch(R.id.btn_b, R.drawable.btn_xbox_red, R.drawable.btn_xbox_red_press, null, 0) { btnB = it }
-        setupTouch(R.id.btn_x, R.drawable.btn_xbox_blue, R.drawable.btn_xbox_blue_press, null, 0) { btnX = it }
-        setupTouch(R.id.btn_y, R.drawable.btn_xbox_yellow, R.drawable.btn_xbox_yellow_press, null, 0) { btnY = it }
-        setupTouch(R.id.btn_dpad_up, R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadUp = it }
-        setupTouch(R.id.btn_dpad_down, R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadDown = it }
-        setupTouch(R.id.btn_dpad_left, R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadLeft = it }
-        setupTouch(R.id.btn_dpad_right, R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadRight = it }
+        setupTouch(R.id.lay_brake, R.drawable.btn_normal_r12, R.drawable.btn_press_red,
+            R.id.ic_brake, 0xFFFF4B4B.toInt()) { brakeOn = it }
+        setupTouch(R.id.lay_gas, R.drawable.btn_normal_r12, R.drawable.btn_press_green,
+            R.id.ic_gas, 0xFF3CFF6B.toInt()) { gasOn = it }
+        setupTouch(R.id.lay_gear_up, R.drawable.btn_gear_normal, R.drawable.btn_press_orange,
+            R.id.ic_gear_up, 0xFFFF6D00.toInt()) { gearUp = it }
+        setupTouch(R.id.lay_gear_down, R.drawable.btn_gear_normal, R.drawable.btn_press_blue,
+            R.id.ic_gear_down, 0xFF00B4D8.toInt()) { gearDown = it }
+        setupTouch(R.id.btn_a, R.drawable.btn_xbox_green, R.drawable.btn_xbox_green_press,
+            null, 0) { btnA = it }
+        setupTouch(R.id.btn_b, R.drawable.btn_xbox_red, R.drawable.btn_xbox_red_press,
+            null, 0) { btnB = it }
+        setupTouch(R.id.btn_x, R.drawable.btn_xbox_blue, R.drawable.btn_xbox_blue_press,
+            null, 0) { btnX = it }
+        setupTouch(R.id.btn_y, R.drawable.btn_xbox_yellow, R.drawable.btn_xbox_yellow_press,
+            null, 0) { btnY = it }
+        setupTouch(R.id.btn_dpad_up, R.drawable.btn_normal_r12, R.drawable.btn_press_white,
+            null, 0) { dpadUp = it }
+        setupTouch(R.id.btn_dpad_down, R.drawable.btn_normal_r12, R.drawable.btn_press_white,
+            null, 0) { dpadDown = it }
+        setupTouch(R.id.btn_dpad_left, R.drawable.btn_normal_r12, R.drawable.btn_press_white,
+            null, 0) { dpadLeft = it }
+        setupTouch(R.id.btn_dpad_right, R.drawable.btn_normal_r12, R.drawable.btn_press_white,
+            null, 0) { dpadRight = it }
 
         setupHid()
     }
@@ -94,6 +109,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (connectedDevice != null) {
             txtStatus.text = "● ${connectedDevice?.name}"
             txtStatus.setTextColor(Color.parseColor("#00FF88"))
+            if (!connectedAnimDone) playConnectedAnim()
         } else {
             txtStatus.text = "Waiting for device..."
             txtStatus.setTextColor(Color.argb(100,255,255,255))
@@ -102,6 +118,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         HidService.onDisconnected = {
             runOnUiThread {
                 connectedDevice = null
+                connectedAnimDone = false
                 txtStatus.text = "Disconnected"
                 txtStatus.setTextColor(Color.argb(100,255,255,255))
             }
@@ -112,8 +129,53 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 connectedDevice = device
                 txtStatus.text = "● ${device.name}"
                 txtStatus.setTextColor(Color.parseColor("#00FF88"))
+                if (!connectedAnimDone) playConnectedAnim()
             }
         }
+    }
+
+    private fun playConnectedAnim() {
+        connectedAnimDone = true
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        var totalAngle = 0f
+        val totalSpin = 720f // 2 full rotations
+        val steps = 60
+        val stepAngle = totalSpin / steps
+        var step = 0
+
+        val spinRunnable = object : Runnable {
+            override fun run() {
+                if (step >= steps) {
+                    // Come back to center
+                    wheelView.angle = 0f
+                    // Final haptic
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(VibrationEffect.createOneShot(
+                            80, VibrationEffect.DEFAULT_AMPLITUDE))
+                    }
+                    return
+                }
+                totalAngle += stepAngle
+                // Sin wave for realistic spin feel
+                val progress = step.toFloat() / steps
+                val eased = if (progress < 0.5f)
+                    2f * progress * progress
+                else
+                    1f - 2f * (1f - progress) * (1f - progress)
+                wheelView.angle = eased * totalSpin - totalSpin / 2f
+
+                // Haptic every half rotation
+                if (step % (steps / 4) == 0) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(VibrationEffect.createOneShot(
+                            30, VibrationEffect.DEFAULT_AMPLITUDE))
+                    }
+                }
+                step++
+                handler.postDelayed(this, 16) // ~60fps
+            }
+        }
+        handler.post(spinRunnable)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -124,7 +186,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     ) {
         val view = findViewById<View>(id) ?: return
         val icon = iconId?.let { findViewById<ImageView>(it) }
-        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         view.setOnTouchListener { _, e ->
             when (e.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -132,8 +194,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     view.setBackgroundResource(pressRes)
                     if (pressIconColor != 0) icon?.setColorFilter(pressIconColor)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        vibrator.vibrate(VibrationEffect.createOneShot(30,
-                            VibrationEffect.DEFAULT_AMPLITUDE))
+                        vibrator.vibrate(VibrationEffect.createOneShot(
+                            30, VibrationEffect.DEFAULT_AMPLITUDE))
                     } else {
                         @Suppress("DEPRECATION")
                         vibrator.vibrate(30)
@@ -158,7 +220,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val now = System.currentTimeMillis()
         if (now - lastSend > 40) { sendReport(); lastSend = now }
         runOnUiThread {
-            wheelView.angle = (filtX / 10f * 90f).coerceIn(-90f, 90f)
+            // Flip sign for UI only - game data same
+            wheelView.angle = -(filtX / 10f * 90f).coerceIn(-90f, 90f)
             txtTilt.text = "%.1f°".format(filtX * 9f)
             tiltBar.progress = (100 + (filtX/10f*100).toInt()).coerceIn(0, 200)
         }
@@ -176,12 +239,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (btnB)     btnByte1 = btnByte1 or (1 shl 1)
         if (gearDown) btnByte1 = btnByte1 or (1 shl 6)
         if (gearUp)   btnByte1 = btnByte1 or (1 shl 7)
-        if (btnX)     btnByte1 = btnByte1 or (1 shl 2)
         if (btnY)     btnByte1 = btnByte1 or (1 shl 4)
+        if (btnX)     btnByte2 = btnByte2 or (1 shl 4)
         if (dpadUp)   btnByte2 = btnByte2 or (1 shl 2)
         if (dpadDown) btnByte2 = btnByte2 or (1 shl 3)
         if (dpadLeft) btnByte2 = btnByte2 or (1 shl 6)
-        if (dpadRight)btnByte2 = btnByte2 or (1 shl 7)
+        if (dpadRight)btnByte2 = btnByte2 or (1 shl 5)
 
         val gas   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
         val brake = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
@@ -197,7 +260,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         sensorManager.registerListener(this,
             sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
             SensorManager.SENSOR_DELAY_GAME)
-        // Refresh connection
         connectedDevice = HidService.connectedDevice
         if (connectedDevice != null) {
             txtStatus.text = "● ${connectedDevice?.name}"
@@ -218,9 +280,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
     }
 
-    override fun onRequestPermissionsResult(
-        req: Int, perms: Array<String>, results: IntArray) {
-        super.onRequestPermissionsResult(req, perms, results)
+    override fun onDestroy() {
+        super.onDestroy()
+        handler.removeCallbacksAndMessages(null)
     }
 }
 

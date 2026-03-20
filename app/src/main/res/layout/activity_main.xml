@@ -17,8 +17,8 @@
 
         <FrameLayout
             android:id="@+id/btn_dpad_up"
-            android:layout_width="46dp"
-            android:layout_height="46dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_centerHorizontal="true"
             android:layout_alignParentTop="true"
             android:background="@drawable/btn_normal_r12"
@@ -35,8 +35,8 @@
 
         <FrameLayout
             android:id="@+id/btn_dpad_left"
-            android:layout_width="46dp"
-            android:layout_height="46dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
             android:background="@drawable/btn_normal_r12"
@@ -53,8 +53,8 @@
 
         <FrameLayout
             android:id="@+id/btn_dpad_right"
-            android:layout_width="46dp"
-            android:layout_height="46dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:background="@drawable/btn_normal_r12"
@@ -71,8 +71,8 @@
 
         <FrameLayout
             android:id="@+id/btn_dpad_down"
-            android:layout_width="46dp"
-            android:layout_height="46dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_centerHorizontal="true"
             android:layout_alignParentBottom="true"
             android:background="@drawable/btn_normal_r12"
@@ -201,20 +201,22 @@
             android:gravity="center"/>
     </FrameLayout>
 
-    <!-- XBOX Diamond top right -->
+    <!-- XBOX Diamond top right - auto size -->
     <RelativeLayout
         android:id="@+id/xbox_layout"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_alignParentTop="true"
         android:layout_marginEnd="10dp"
-        android:layout_marginTop="12dp">
+        android:layout_marginTop="12dp"
+        android:minWidth="130dp"
+        android:minHeight="130dp">
 
         <FrameLayout
             android:id="@+id/btn_y"
-            android:layout_width="46dp"
-            android:layout_height="46dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:layout_centerHorizontal="true"
             android:layout_alignParentTop="true"
             android:background="@drawable/btn_xbox_yellow"
@@ -225,15 +227,15 @@
                 android:layout_height="match_parent"
                 android:text="Y"
                 android:textColor="#FFD700"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:textStyle="bold"
                 android:gravity="center"/>
         </FrameLayout>
 
         <FrameLayout
             android:id="@+id/btn_x"
-            android:layout_width="46dp"
-            android:layout_height="46dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
             android:background="@drawable/btn_xbox_blue"
@@ -244,15 +246,15 @@
                 android:layout_height="match_parent"
                 android:text="X"
                 android:textColor="#3DB9FF"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:textStyle="bold"
                 android:gravity="center"/>
         </FrameLayout>
 
         <FrameLayout
             android:id="@+id/btn_b"
-            android:layout_width="46dp"
-            android:layout_height="46dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:background="@drawable/btn_xbox_red"
@@ -263,15 +265,15 @@
                 android:layout_height="match_parent"
                 android:text="B"
                 android:textColor="#FF4B4B"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:textStyle="bold"
                 android:gravity="center"/>
         </FrameLayout>
 
         <FrameLayout
             android:id="@+id/btn_a"
-            android:layout_width="46dp"
-            android:layout_height="46dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:layout_centerHorizontal="true"
             android:layout_alignParentBottom="true"
             android:background="@drawable/btn_xbox_green"
@@ -282,7 +284,7 @@
                 android:layout_height="match_parent"
                 android:text="A"
                 android:textColor="#3CFF6B"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:textStyle="bold"
                 android:gravity="center"/>
         </FrameLayout>
