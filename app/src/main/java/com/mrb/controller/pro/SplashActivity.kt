@@ -41,6 +41,20 @@ class SplashActivity : AppCompatActivity() {
 
         buildUI()
 
+        // Runtime BT permissions
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val perms = arrayOf(
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_SCAN,
+                android.Manifest.permission.BLUETOOTH_ADVERTISE)
+            val missing = perms.filter {
+                checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
+            if (missing.isNotEmpty()) {
+                requestPermissions(missing.toTypedArray(), 99)
+                return
+            }
+        }
         // Start HID Service
         startForegroundService(Intent(this, HidService::class.java))
 
@@ -212,4 +226,9 @@ class SplashActivity : AppCompatActivity() {
         mediaPlayer?.release()
         HidService.onConnected = null
     }
+}
+
+// Extension to handle permission result
+fun SplashActivity.onPermsGranted() {
+    startForegroundService(Intent(this, HidService::class.java))
 }
