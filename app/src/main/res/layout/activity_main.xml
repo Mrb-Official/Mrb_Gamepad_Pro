@@ -140,8 +140,9 @@
             android:alpha="0.4"
             android:paddingBottom="6dp"/>
 
-        <com.mrb.controller.pro.WheelView
+        <ImageView
             android:id="@+id/lay_steering"
+            android:src="@drawable/ic_steering_wheel"
             android:layout_width="200dp"
             android:layout_height="200dp"
             android:clickable="true"

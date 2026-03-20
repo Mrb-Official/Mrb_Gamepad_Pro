@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var txtStatus: TextView
     private lateinit var txtTilt: TextView
     private lateinit var tiltBar: ProgressBar
-    private lateinit var wheelView: WheelView
+    private lateinit var wheelView: android.widget.ImageView
 
     private var gasOn     = false
     private var brakeOn   = false
@@ -152,22 +152,22 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     step < phase1Steps -> {
                         val p = step.toFloat() / phase1Steps
                         val eased = if (p < 0.5f) 2f*p*p else 1f-2f*(1f-p)*(1f-p)
-                        wheelView.angle = -(eased * 360f)
+                        wheelView.rotation = -(eased * 360f)
                         if (step == 0 || step == phase1Steps/2) haptic(40)
                     }
                     step < phase1Steps + phase2Steps -> {
                         val p = (step - phase1Steps).toFloat() / phase2Steps
                         val eased = if (p < 0.5f) 2f*p*p else 1f-2f*(1f-p)*(1f-p)
-                        wheelView.angle = (eased * 360f)
+                        wheelView.rotation = (eased * 360f)
                         if (step == phase1Steps || step == phase1Steps + phase2Steps/2) haptic(40)
                     }
                     step < total -> {
                         val p = (step - phase1Steps - phase2Steps).toFloat() / phase3Steps
                         val eased = 1f - (1f-p)*(1f-p)
-                        wheelView.angle = 360f * (1f - eased)
+                        wheelView.rotation = 360f * (1f - eased)
                     }
                     else -> {
-                        wheelView.angle = 0f
+                        wheelView.rotation = 0f
                         haptic(80)
                         return
                     }
@@ -221,7 +221,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val now = System.currentTimeMillis()
         if (now - lastSend > 40) { sendReport(); lastSend = now }
         runOnUiThread {
-            wheelView.angle = -(filtX / 10f * 90f).coerceIn(-90f, 90f)
+            wheelView.rotation = (filtX / 10f * 90f).coerceIn(-90f, 90f)
             txtTilt.text = "%.1f°".format(filtX * 9f)
             tiltBar.progress = (100 + (filtX/10f*100).toInt()).coerceIn(0, 200)
         }
