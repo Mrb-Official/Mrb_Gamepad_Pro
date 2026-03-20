@@ -14,24 +14,7 @@ import org.json.JSONObject
 // byte1bit = bit position in btnByte1 (-1 = not in byte1)
 // byte2bit = bit position in btnByte2 (-1 = not in byte2)
 // isGas/isBrake = special axis buttons
-data class BtnDef(
-    val id: String,
-    val label: String,
-    val iconRes: Int,       // drawable resource
-    val pressColor: Int,
-    val byte1bit: Int = -1,
-    val byte2bit: Int = -1,
-    val isGas: Boolean = false,
-    val isBrake: Boolean = false
-)
 
-data class PlacedBtn(
-    val def: BtnDef,
-    var x: Float,
-    var y: Float,
-    var w: Int = 70,
-    var h: Int = 120
-)
 
 class CustomLayoutActivity : AppCompatActivity() {
 
