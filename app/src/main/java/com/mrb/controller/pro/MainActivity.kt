@@ -133,16 +133,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun playConnectedAnim() {
         connectedAnimDone = true
         val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        val phase1Steps = 50
-        val phase2Steps = 50
-        val phase3Steps = 25
+
+        // 3s = 3000ms / 16ms per frame = ~187 steps
+        val phase1Steps = 187  // 0 to -100 in 3s
+        val phase2Steps = 187  // -100 to +100 in 3s
+        val phase3Steps = 94   // +100 to 0 in 1.5s
         var step = 0
 
         fun haptic(ms: Long) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createOneShot(
-                    ms, VibrationEffect.DEFAULT_AMPLITUDE))
-            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                vibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
         }
 
         val r = object : Runnable {
@@ -150,21 +150,24 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 val total = phase1Steps + phase2Steps + phase3Steps
                 when {
                     step < phase1Steps -> {
+                        // Smooth 0 to -100
                         val p = step.toFloat() / phase1Steps
                         val eased = if (p < 0.5f) 2f*p*p else 1f-2f*(1f-p)*(1f-p)
-                        wheelView.rotation = -(eased * 360f)
-                        if (step == 0 || step == phase1Steps/2) haptic(40)
+                        wheelView.rotation = -(eased * 100f)
+                        if (step == 0) haptic(40)
                     }
                     step < phase1Steps + phase2Steps -> {
+                        // Smooth -100 to +100
                         val p = (step - phase1Steps).toFloat() / phase2Steps
                         val eased = if (p < 0.5f) 2f*p*p else 1f-2f*(1f-p)*(1f-p)
-                        wheelView.rotation = (eased * 360f)
-                        if (step == phase1Steps || step == phase1Steps + phase2Steps/2) haptic(40)
+                        wheelView.rotation = -100f + (eased * 200f)
+                        if (step == phase1Steps) haptic(40)
                     }
                     step < total -> {
+                        // Smooth +100 to 0
                         val p = (step - phase1Steps - phase2Steps).toFloat() / phase3Steps
                         val eased = 1f - (1f-p)*(1f-p)
-                        wheelView.rotation = 360f * (1f - eased)
+                        wheelView.rotation = 100f * (1f - eased)
                     }
                     else -> {
                         wheelView.rotation = 0f
@@ -173,7 +176,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     }
                 }
                 step++
-                handler.postDelayed(this, 25)
+                handler.postDelayed(this, 16)
             }
         }
         handler.post(r)
@@ -240,7 +243,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (gearDown) btnByte1 = btnByte1 or (1 shl 6)
         if (gearUp)   btnByte1 = btnByte1 or (1 shl 7)
         if (btnY)     btnByte1 = btnByte1 or (1 shl 4)
-        if (btnX)     btnByte2 = btnByte2 or (1 shl 12)
+        if (btnX)     btnByte1 = btnByte1 or (1 shl 3)
         if (dpadUp)   btnByte2 = btnByte2 or (1 shl 2)
         if (dpadDown) btnByte2 = btnByte2 or (1 shl 3)
         if (dpadLeft) btnByte2 = btnByte2 or (1 shl 6)
