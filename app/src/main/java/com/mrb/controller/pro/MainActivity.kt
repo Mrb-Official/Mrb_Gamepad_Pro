@@ -137,47 +137,55 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun playConnectedAnim() {
         connectedAnimDone = true
         val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        var totalAngle = 0f
-        val totalSpin = 720f // 2 full rotations
-        val steps = 60
-        val stepAngle = totalSpin / steps
+
+        // Phase 1: Left 360, Phase 2: Right 360, Phase 3: Center
+        val phase1Steps = 40  // left 360
+        val phase2Steps = 40  // right 360
+        val phase3Steps = 20  // return center
         var step = 0
 
-        val spinRunnable = object : Runnable {
-            override fun run() {
-                if (step >= steps) {
-                    // Come back to center
-                    wheelView.angle = 0f
-                    // Final haptic
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        vibrator.vibrate(VibrationEffect.createOneShot(
-                            80, VibrationEffect.DEFAULT_AMPLITUDE))
-                    }
-                    return
-                }
-                totalAngle += stepAngle
-                // Sin wave for realistic spin feel
-                val progress = step.toFloat() / steps
-                val eased = if (progress < 0.5f)
-                    2f * progress * progress
-                else
-                    1f - 2f * (1f - progress) * (1f - progress)
-                wheelView.angle = eased * totalSpin - totalSpin / 2f
+        fun haptic(ms: Long) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
+            }
+        }
 
-                // Haptic every half rotation
-                if (step % (steps / 4) == 0) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        vibrator.vibrate(VibrationEffect.createOneShot(
-                            30, VibrationEffect.DEFAULT_AMPLITUDE))
+        val r = object : Runnable {
+            override fun run() {
+                val total = phase1Steps + phase2Steps + phase3Steps
+                when {
+                    step < phase1Steps -> {
+                        // Left 360
+                        val p = step.toFloat() / phase1Steps
+                        val eased = if (p < 0.5f) 2f*p*p else 1f - 2f*(1f-p)*(1f-p)
+                        wheelView.angle = -(eased * 360f)
+                        if (step == 0 || step == phase1Steps/2) haptic(40)
+                    }
+                    step < phase1Steps + phase2Steps -> {
+                        // Right 360
+                        val p = (step - phase1Steps).toFloat() / phase2Steps
+                        val eased = if (p < 0.5f) 2f*p*p else 1f - 2f*(1f-p)*(1f-p)
+                        wheelView.angle = (eased * 360f)
+                        if (step == phase1Steps || step == phase1Steps + phase2Steps/2) haptic(40)
+                    }
+                    step < total -> {
+                        // Return to center
+                        val p = (step - phase1Steps - phase2Steps).toFloat() / phase3Steps
+                        val eased = 1f - (1f-p)*(1f-p)
+                        wheelView.angle = 360f * (1f - eased)
+                    }
+                    else -> {
+                        wheelView.angle = 0f
+                        haptic(80)
+                        return
                     }
                 }
                 step++
-                handler.postDelayed(this, 16) // ~60fps
+                handler.postDelayed(this, 16)
             }
         }
-        handler.post(spinRunnable)
+        handler.post(r)
     }
-
     @SuppressLint("ClickableViewAccessibility")
     private fun setupTouch(
         id: Int, normalRes: Int, pressRes: Int,
