@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var dpadRight = false
     private var tiltByte: Byte = 0
     private var filtX     = 0f
-    private val alpha     = 0.15f
+    private val alpha     = 0.08f
     private var lastSend  = 0L
     private var connectedAnimDone = false
 
@@ -199,7 +199,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type != Sensor.TYPE_ACCELEROMETER) return
         filtX = alpha * event.values[1] + (1 - alpha) * filtX
-        tiltByte = (filtX * 12.7f).toInt().coerceIn(-127, 127).toByte()
+        tiltByte = (filtX * 127f / 9.8f).toInt().coerceIn(-127, 127).toByte()
         val now = System.currentTimeMillis()
         if (now - lastSend > 40) { sendReport(); lastSend = now }
         runOnUiThread {
