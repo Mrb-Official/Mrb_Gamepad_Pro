@@ -10,8 +10,7 @@ import android.os.*
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import kotlin.math.cos
-import kotlin.math.sin
+import kotlin.math.*
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
@@ -105,7 +104,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun setupHid() {
         connectedDevice = HidService.connectedDevice
-
         if (connectedDevice != null) {
             txtStatus.text = "● ${connectedDevice?.name}"
             txtStatus.setTextColor(Color.parseColor("#00FF88"))
@@ -114,7 +112,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             txtStatus.text = "Waiting for device..."
             txtStatus.setTextColor(Color.argb(100,255,255,255))
         }
-
         HidService.onDisconnected = {
             runOnUiThread {
                 connectedDevice = null
@@ -123,7 +120,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 txtStatus.setTextColor(Color.argb(100,255,255,255))
             }
         }
-
         HidService.onConnected = { device ->
             runOnUiThread {
                 connectedDevice = device
@@ -137,16 +133,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun playConnectedAnim() {
         connectedAnimDone = true
         val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-
-        // Phase 1: Left 360, Phase 2: Right 360, Phase 3: Center
-        val phase1Steps = 40  // left 360
-        val phase2Steps = 40  // right 360
-        val phase3Steps = 20  // return center
+        val phase1Steps = 50
+        val phase2Steps = 50
+        val phase3Steps = 25
         var step = 0
 
         fun haptic(ms: Long) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
+                vibrator.vibrate(VibrationEffect.createOneShot(
+                    ms, VibrationEffect.DEFAULT_AMPLITUDE))
             }
         }
 
@@ -155,21 +150,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 val total = phase1Steps + phase2Steps + phase3Steps
                 when {
                     step < phase1Steps -> {
-                        // Left 360
                         val p = step.toFloat() / phase1Steps
-                        val eased = if (p < 0.5f) 2f*p*p else 1f - 2f*(1f-p)*(1f-p)
+                        val eased = if (p < 0.5f) 2f*p*p else 1f-2f*(1f-p)*(1f-p)
                         wheelView.angle = -(eased * 360f)
                         if (step == 0 || step == phase1Steps/2) haptic(40)
                     }
                     step < phase1Steps + phase2Steps -> {
-                        // Right 360
                         val p = (step - phase1Steps).toFloat() / phase2Steps
-                        val eased = if (p < 0.5f) 2f*p*p else 1f - 2f*(1f-p)*(1f-p)
+                        val eased = if (p < 0.5f) 2f*p*p else 1f-2f*(1f-p)*(1f-p)
                         wheelView.angle = (eased * 360f)
                         if (step == phase1Steps || step == phase1Steps + phase2Steps/2) haptic(40)
                     }
                     step < total -> {
-                        // Return to center
                         val p = (step - phase1Steps - phase2Steps).toFloat() / phase3Steps
                         val eased = 1f - (1f-p)*(1f-p)
                         wheelView.angle = 360f * (1f - eased)
@@ -186,6 +178,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
         handler.post(r)
     }
+
     @SuppressLint("ClickableViewAccessibility")
     private fun setupTouch(
         id: Int, normalRes: Int, pressRes: Int,
@@ -228,7 +221,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val now = System.currentTimeMillis()
         if (now - lastSend > 40) { sendReport(); lastSend = now }
         runOnUiThread {
-            // Flip sign for UI only - game data same
             wheelView.angle = -(filtX / 10f * 90f).coerceIn(-90f, 90f)
             txtTilt.text = "%.1f°".format(filtX * 9f)
             tiltBar.progress = (100 + (filtX/10f*100).toInt()).coerceIn(0, 200)
@@ -248,7 +240,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (gearDown) btnByte1 = btnByte1 or (1 shl 6)
         if (gearUp)   btnByte1 = btnByte1 or (1 shl 7)
         if (btnY)     btnByte1 = btnByte1 or (1 shl 4)
-        if (btnX)     btnByte2 = btnByte2 or (1 shl 4)
+        if (btnX)     btnByte2 = btnByte2 or (1 shl 6)
         if (dpadUp)   btnByte2 = btnByte2 or (1 shl 2)
         if (dpadDown) btnByte2 = btnByte2 or (1 shl 3)
         if (dpadLeft) btnByte2 = btnByte2 or (1 shl 6)
@@ -302,38 +294,141 @@ class WheelView(
     var angle: Float = 0f
         set(v) { field = v; invalidate() }
 
+    // Outer ring
     private val pRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 12f }
-    private val pHub = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 7f }
+        color = Color.parseColor("#2A2A2A")
+        style = Paint.Style.STROKE
+        strokeWidth = 28f
+    }
+    // Outer ring highlight
+    private val pRingHL = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#444444")
+        style = Paint.Style.STROKE
+        strokeWidth = 4f
+    }
+    // Spokes
     private val pSpoke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(160,255,255,255)
-        style = Paint.Style.STROKE; strokeWidth = 9f
-        strokeCap = Paint.Cap.ROUND }
-    private val pDot = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE; style = Paint.Style.FILL }
-    private val pArc = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(40,255,255,255)
-        style = Paint.Style.STROKE; strokeWidth = 7f
-        strokeCap = Paint.Cap.ROUND }
+        color = Color.parseColor("#222222")
+        style = Paint.Style.STROKE
+        strokeWidth = 18f
+        strokeCap = Paint.Cap.ROUND
+    }
+    private val pSpokeHL = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#333333")
+        style = Paint.Style.STROKE
+        strokeWidth = 4f
+        strokeCap = Paint.Cap.ROUND
+    }
+    // Center hub
+    private val pHub = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#1A1A1A")
+        style = Paint.Style.FILL
+    }
+    private val pHubBorder = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#333333")
+        style = Paint.Style.STROKE
+        strokeWidth = 4f
+    }
+    // Center circle
+    private val pCenter = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#111111")
+        style = Paint.Style.FILL
+    }
+    // Grip texture on ring
+    private val pGrip = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#1A1A1A")
+        style = Paint.Style.STROKE
+        strokeWidth = 6f
+        strokeCap = Paint.Cap.ROUND
+    }
 
     override fun onDraw(canvas: android.graphics.Canvas) {
-        val cx = width/2f; val cy = height/2f
-        val r  = minOf(width,height)/2f - 12f
-        canvas.drawCircle(cx, cy, r, pRing)
-        val arc = android.graphics.RectF(cx-r*0.6f, cy-r*0.6f, cx+r*0.6f, cy+r*0.6f)
-        canvas.drawArc(arc, -90f, -angle, false, pArc)
+        val cx = width / 2f
+        val cy = height / 2f
+        val r  = minOf(width, height) / 2f - 20f
+
         canvas.save()
-        canvas.rotate(-angle, cx, cy)
-        canvas.drawCircle(cx, cy, r*0.22f, pHub)
-        for (i in 0..2) {
-            val a = Math.toRadians(i*120.0 - 90.0)
-            canvas.drawLine(
-                cx+(r*0.22f*cos(a)).toFloat(), cy+(r*0.22f*sin(a)).toFloat(),
-                cx+(r*cos(a)).toFloat(), cy+(r*sin(a)).toFloat(), pSpoke)
+        canvas.rotate(angle, cx, cy)
+
+        // Outer ring shadow
+        val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#0A0A0A")
+            style = Paint.Style.STROKE
+            strokeWidth = 32f
         }
-        canvas.drawCircle(cx, cy-r+9f, 7f, pDot)
-        canvas.drawCircle(cx, cy, 5f, pDot)
+        canvas.drawCircle(cx, cy + 3f, r, shadowPaint)
+
+        // Main outer ring
+        canvas.drawCircle(cx, cy, r, pRing)
+
+        // Ring outer highlight
+        val pRingOuter = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#555555")
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+        }
+        canvas.drawCircle(cx, cy, r + 12f, pRingOuter)
+
+        // Ring inner highlight
+        canvas.drawCircle(cx, cy, r - 12f, pRingHL)
+
+        // Grip lines on ring (3 groups)
+        for (g in 0..2) {
+            val baseAngle = g * 120.0
+            for (i in -2..2) {
+                val a = Math.toRadians(baseAngle + i * 8.0)
+                val innerR = r - 14f
+                val outerR = r + 10f
+                canvas.drawLine(
+                    cx + (innerR * sin(a)).toFloat(),
+                    cy - (innerR * cos(a)).toFloat(),
+                    cx + (outerR * sin(a)).toFloat(),
+                    cy - (outerR * cos(a)).toFloat(),
+                    pGrip)
+            }
+        }
+
+        // 3 Spokes
+        val hubR = r * 0.28f
+        val spokeAngles = listOf(-90.0, 30.0, 150.0)
+        for (sa in spokeAngles) {
+            val a = Math.toRadians(sa)
+            val startX = cx + (hubR * cos(a)).toFloat()
+            val startY = cy + (hubR * sin(a)).toFloat()
+            val endX   = cx + (r * 0.72f * cos(a)).toFloat()
+            val endY   = cy + (r * 0.72f * sin(a)).toFloat()
+
+            // Spoke shadow
+            val pSpokeShadow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor("#0A0A0A")
+                style = Paint.Style.STROKE
+                strokeWidth = 22f
+                strokeCap = Paint.Cap.ROUND
+            }
+            canvas.drawLine(startX, startY + 2f, endX, endY + 2f, pSpokeShadow)
+
+            // Main spoke
+            canvas.drawLine(startX, startY, endX, endY, pSpoke)
+            // Spoke highlight
+            canvas.drawLine(startX, startY, endX, endY, pSpokeHL)
+        }
+
+        // Hub background
+        canvas.drawCircle(cx, cy, hubR + 8f, pHub)
+        canvas.drawCircle(cx, cy, hubR + 8f, pHubBorder)
+
+        // Center circle
+        canvas.drawCircle(cx, cy, hubR, pCenter)
+
+        // Center ring detail
+        val pCenterRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#2A2A2A")
+            style = Paint.Style.STROKE
+            strokeWidth = 3f
+        }
+        canvas.drawCircle(cx, cy, hubR * 0.7f, pCenterRing)
+        canvas.drawCircle(cx, cy, hubR * 0.4f, pCenterRing)
+
         canvas.restore()
     }
 }
