@@ -36,7 +36,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var dpadRight = false
     private var tiltByte: Byte = 0
     private var filtX     = 0f
-    private val alpha     = 0.08f
+    private var filtXUI   = 0f
+    private val alpha     = 0.15f
     private var lastSend  = 0L
     private var connectedAnimDone = false
 
@@ -202,7 +203,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         tiltByte = (filtX * 127f / 9.8f).toInt().coerceIn(-127, 127).toByte()
         val now = System.currentTimeMillis()
         if (now - lastSend > 40) { sendReport(); lastSend = now }
-        runOnUiThread {
+            filtXUI = 0.08f * filtX + 0.92f * filtXUI
+            wheelView.rotation = (filtXUI * 9f).coerceIn(-180f, 180f)
             wheelView.rotation = (filtX * 9f).coerceIn(-180f, 180f)
             txtTilt.text = "%.1f°".format(filtX * 9f)
             tiltBar.progress = (100 + (filtX/10f*100).toInt()).coerceIn(0, 200)
