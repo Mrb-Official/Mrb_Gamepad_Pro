@@ -33,7 +33,6 @@
             android:screenOrientation="landscape"/>
 
         <activity
-            android:name=".CustomLayoutActivity"
             android:exported="false"
             android:screenOrientation="landscape"/>
 

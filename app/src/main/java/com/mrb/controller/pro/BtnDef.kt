@@ -10,3 +10,11 @@ data class BtnDef(
     val isGas: Boolean = false,
     val isBrake: Boolean = false
 )
+
+data class PlacedBtn(
+    val id: String,
+    var x: Float,
+    var y: Float,
+    var w: Int,
+    var h: Int
+)
