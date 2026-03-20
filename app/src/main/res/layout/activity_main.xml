@@ -5,7 +5,7 @@
     android:background="#080808"
     android:keepScreenOn="true">
 
-    <!-- BRAKE / LT left -->
+    <!-- BRAKE left -->
     <FrameLayout
         android:id="@+id/lay_brake"
         android:layout_width="130dp"
@@ -86,7 +86,7 @@
 
     </LinearLayout>
 
-    <!-- GAS / RT right bottom -->
+    <!-- GAS right bottom -->
     <FrameLayout
         android:id="@+id/lay_gas"
         android:layout_width="130dp"
@@ -211,7 +211,7 @@
 
     </RelativeLayout>
 
-    <!-- REVERSE + FRONT gears - aligned bottom with gas -->
+    <!-- REVERSE + FRONT gears -->
     <LinearLayout
         android:layout_width="130dp"
         android:layout_height="wrap_content"
@@ -272,7 +272,6 @@
                 android:textSize="8sp"
                 android:textStyle="bold"
                 android:gravity="center"/>
-        </FrameLayout>
         </FrameLayout>
 
     </LinearLayout>
