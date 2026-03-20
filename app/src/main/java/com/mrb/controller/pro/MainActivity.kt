@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         CustomBtn("cinematic",  "CIN",      R.drawable.ic_btn_camera,     0xFF6A1B9A.toInt(), byte1bit = -1),
         CustomBtn("slowmo",     "SLOW MO",  R.drawable.ic_btn_pause,      0xFF00838F.toInt(), byte1bit = -1),
         CustomBtn("screenshot", "SHOT",     R.drawable.ic_btn_camera,     0xFF558B2F.toInt(), byte1bit = -1),
-
+    )
 
     private val placedCustomBtns = mutableListOf<PlacedCustomBtn>()
     private val placedCustomViews = mutableMapOf<String, FrameLayout>()
@@ -200,7 +200,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             showEditBar()
             // Show drag handles on placed buttons
             for (pb in placedCustomBtns) {
-                placedCustomViews[pb.id]?.let { v ->
+                val v = placedCustomViews[pb.id]; if (v != null) {
                     v.removeAllViews()
                     val def = customButtons.find { btn -> btn.id == pb.id } ?: continue
                     buildCustomBtnView(def, pb, v, editMode = true)
@@ -209,7 +209,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         } else {
             hideEditBar()
             for (pb in placedCustomBtns) {
-                placedCustomViews[pb.id]?.let { v ->
+                val v = placedCustomViews[pb.id]; if (v != null) {
                     v.removeAllViews()
                     val def = customButtons.find { btn -> btn.id == pb.id } ?: continue
                     buildCustomBtnView(def, pb, v, editMode = false)
@@ -287,7 +287,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             setPadding(8, 8, 8, 8)
         }
 
-        customButtons.forEach { btn ->
+        for (btn in customButtons) {
             val placed = placedCustomBtns.any { it.id == btn.id }
             val chip = FrameLayout(this).apply {
                 layoutParams = GridLayout.LayoutParams().apply {
