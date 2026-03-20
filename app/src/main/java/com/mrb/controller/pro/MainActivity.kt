@@ -133,7 +133,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    @android.annotation.SuppressLint("ClickableViewAccessibility")
     private fun setupTouch(id: Int, normalRes: Int, pressRes: Int, iconId: Int?, pressIconColor: Int, onPress: (Boolean) -> Unit) {
         val view = findViewById<View>(id) ?: return
         val icon = iconId?.let { findViewById<ImageView>(it) }
