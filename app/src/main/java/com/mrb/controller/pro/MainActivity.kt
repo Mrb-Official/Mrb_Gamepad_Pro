@@ -16,8 +16,6 @@ import kotlin.math.sin
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
-    private var hidDevice: BluetoothHidDevice? = null
-    private var bluetoothAdapter: BluetoothAdapter? = null
     private var connectedDevice: BluetoothDevice? = null
     private lateinit var sensorManager: SensorManager
 
@@ -43,57 +41,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private val alpha    = 0.15f
     private var lastSend = 0L
 
-    private val HID_DESC = byteArrayOf(
-        0x05, 0x01,         // Usage Page: Generic Desktop
-        0x09, 0x05,         // Usage: Game Pad
-        0xa1.toByte(), 0x01, // Collection: Application
-        0x85.toByte(), 0x01, // Report ID: 1
-
-        // 16 Buttons defined as strictly separate bytes to fix byte scrambling on receiver
-        0x05, 0x09,         // Usage Page (Button)
-        // Byte 1: Buttons 1-8
-        0x19, 0x01,         // Usage Minimum (1)
-        0x29, 0x08,         // Usage Maximum (8)
-        0x15, 0x00,         // Logical Minimum (0)
-        0x25, 0x01,         // Logical Maximum (1)
-        0x75, 0x01,         // Report Size (1)
-        0x95.toByte(), 0x08, // Report Count (8)
-        0x81.toByte(), 0x02, // Input (Data,Var,Abs)
-        // Byte 2: Buttons 9-16
-        0x05, 0x09,         // Usage Page (Button)
-        0x19, 0x09,         // Usage Minimum (9)
-        0x29, 0x10,         // Usage Maximum (16)
-        0x15, 0x00,         // Logical Minimum (0)
-        0x25, 0x01,         // Logical Maximum (1)
-        0x75, 0x01,         // Report Size (1)
-        0x95.toByte(), 0x08, // Report Count (8)
-        0x81.toByte(), 0x02, // Input (Data,Var,Abs)
-
-        // X Axis steering -127 to 127
-        0x05, 0x01, 0x09, 0x30, 
-        0x15, 0x81.toByte(), 0x25, 0x7f, 
-        0x75, 0x08, 0x95.toByte(), 0x01, 
-        0x81.toByte(), 0x02,
-
-        // Y Axis 0 (unused)
-        0x09, 0x31, 
-        0x15, 0x81.toByte(), 0x25, 0x7f, 
-        0x75, 0x08, 0x95.toByte(), 0x01, 
-        0x81.toByte(), 0x02,
-
-        // Simulation Controls - Accelerator = GAS (0xC4)
-        0x05, 0x02, 0x09, 0xC4.toByte(), 
-        0x15, 0x00, 0x26, 0xff.toByte(), 0x00, 
-        0x75, 0x08, 0x95.toByte(), 0x01, 
-        0x81.toByte(), 0x02,
-
-        // Simulation Controls - Brake (0xC5)
-        0x09, 0xC5.toByte(), 
-        0x15, 0x00, 0x26, 0xff.toByte(), 0x00, 
-        0x75, 0x08, 0x95.toByte(), 0x01, 
-        0x81.toByte(), 0x02,
-
-        0xc0.toByte() // End Collection
     )
 
     @SuppressLint("ClickableViewAccessibility")
@@ -120,7 +67,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         wheelView = findViewById(R.id.lay_steering)
 
         sensorManager    = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        bluetoothAdapter = (getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
 
         setupTouch(R.id.lay_brake, R.drawable.btn_normal_r12, R.drawable.btn_press_red, R.id.ic_brake, 0xFFFF4B4B.toInt()) { brakeOn = it }
         setupTouch(R.id.lay_gas, R.drawable.btn_normal_r12, R.drawable.btn_press_green, R.id.ic_gas, 0xFF3CFF6B.toInt()) { gasOn = it }
@@ -169,25 +115,39 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     @SuppressLint("MissingPermission")
     private fun setupHid() {
-        bluetoothAdapter?.getProfileProxy(this, object : BluetoothProfile.ServiceListener {
-            override fun onServiceConnected(p: Int, proxy: BluetoothProfile?) {
-                hidDevice = proxy as BluetoothHidDevice
-                val sdp = BluetoothHidDeviceAppSdpSettings("MRB Gamepad Pro V3", "Tilt Controller", "MeetDev", 0x08.toByte(), HID_DESC)
-                hidDevice?.registerApp(sdp, null, null, { it?.run() }, object : BluetoothHidDevice.Callback() {
-                    override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
-                        runOnUiThread {
-                            when (state) {
-                                BluetoothProfile.STATE_CONNECTED -> { connectedDevice = device; txtStatus.text = "● ${device?.name}"; txtStatus.setTextColor(Color.parseColor("#00FF88")) }
-                                BluetoothProfile.STATE_DISCONNECTED -> { connectedDevice = null; txtStatus.text = "Tap wheel to pair"; txtStatus.setTextColor(Color.argb(100,255,255,255)) }
-                                BluetoothProfile.STATE_CONNECTING -> { txtStatus.text = "Connecting..."; txtStatus.setTextColor(Color.parseColor("#FFD700")) }
-                            }
-                        }
-                    }
-                    override fun onAppStatusChanged(d: BluetoothDevice?, registered: Boolean) { runOnUiThread { if (registered) { txtStatus.text = "Visible — Tap wheel to pair"; txtStatus.setTextColor(Color.argb(150,255,255,255)) } } }
-                })
+        // HidService se connected device lo
+        connectedDevice = HidService.connectedDevice
+        hidDevice = HidService.hidDevice
+
+        // Status update
+        if (connectedDevice != null) {
+            txtStatus.text = "● ${connectedDevice?.name}"
+            txtStatus.setTextColor(Color.parseColor("#00FF88"))
+        } else {
+            txtStatus.text = "Waiting for device..."
+            txtStatus.setTextColor(Color.argb(100,255,255,255))
+        }
+
+        // Listen for disconnect
+        HidService.onDisconnected = {
+            runOnUiThread {
+                connectedDevice = null
+                hidDevice = null
+                txtStatus.text = "Disconnected"
+                txtStatus.setTextColor(Color.argb(100,255,255,255))
             }
-            override fun onServiceDisconnected(p: Int) { hidDevice = null }
-        }, BluetoothProfile.HID_DEVICE)
+        }
+
+        // Listen for reconnect
+        HidService.onConnected = { device ->
+            runOnUiThread {
+                connectedDevice = device
+                hidDevice = HidService.hidDevice
+                txtStatus.text = "● ${device.name}"
+                txtStatus.setTextColor(Color.parseColor("#00FF88"))
+            }
+        }
+    }
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -205,8 +165,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     @SuppressLint("MissingPermission")
     private fun sendReport() {
-        val device = connectedDevice ?: return
-        val hid    = hidDevice ?: return
+        val device = HidService.connectedDevice ?: return
+        val hid    = HidService.hidDevice ?: return
 
         var btnByte1 = 0
         var btnByte2 = 0
