@@ -229,7 +229,22 @@
                 android:gravity="center"/>
         </FrameLayout>
 
+    
+    <!-- D-PAD above BRAKE -->
+    <RelativeLayout
+        android:id="@+id/dpad_layout"
+        android:layout_width="130dp"
+        android:layout_height="130dp"
+        android:layout_alignParentStart="true"
+        android:layout_above="@id/lay_brake"
+        android:layout_marginStart="10dp"
+        android:layout_marginBottom="8dp">
+        <FrameLayout android:id="@+id/btn_dpad_up" android:layout_width="40dp" android:layout_height="40dp" android:layout_centerHorizontal="true" android:layout_alignParentTop="true" android:background="@drawable/btn_normal_r12" android:clickable="true" android:focusable="true"><TextView android:layout_width="match_parent" android:layout_height="match_parent" android:text="▲" android:textColor="#888888" android:textSize="14sp" android:gravity="center"/></FrameLayout>
+        <FrameLayout android:id="@+id/btn_dpad_left" android:layout_width="40dp" android:layout_height="40dp" android:layout_alignParentStart="true" android:layout_centerVertical="true" android:background="@drawable/btn_normal_r12" android:clickable="true" android:focusable="true"><TextView android:layout_width="match_parent" android:layout_height="match_parent" android:text="◀" android:textColor="#888888" android:textSize="14sp" android:gravity="center"/></FrameLayout>
+        <FrameLayout android:id="@+id/btn_dpad_right" android:layout_width="40dp" android:layout_height="40dp" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:background="@drawable/btn_normal_r12" android:clickable="true" android:focusable="true"><TextView android:layout_width="match_parent" android:layout_height="match_parent" android:text="▶" android:textColor="#888888" android:textSize="14sp" android:gravity="center"/></FrameLayout>
+        <FrameLayout android:id="@+id/btn_dpad_down" android:layout_width="40dp" android:layout_height="40dp" android:layout_centerHorizontal="true" android:layout_alignParentBottom="true" android:background="@drawable/btn_normal_r12" android:clickable="true" android:focusable="true"><TextView android:layout_width="match_parent" android:layout_height="match_parent" android:text="▼" android:textColor="#888888" android:textSize="14sp" android:gravity="center"/></FrameLayout>
     </RelativeLayout>
+</RelativeLayout>
 
     <!-- REVERSE + FRONT gears -->
     <LinearLayout
@@ -296,4 +311,19 @@
 
     </LinearLayout>
 
+
+    <!-- D-PAD above BRAKE -->
+    <RelativeLayout
+        android:id="@+id/dpad_layout"
+        android:layout_width="130dp"
+        android:layout_height="130dp"
+        android:layout_alignParentStart="true"
+        android:layout_above="@id/lay_brake"
+        android:layout_marginStart="10dp"
+        android:layout_marginBottom="8dp">
+        <FrameLayout android:id="@+id/btn_dpad_up" android:layout_width="40dp" android:layout_height="40dp" android:layout_centerHorizontal="true" android:layout_alignParentTop="true" android:background="@drawable/btn_normal_r12" android:clickable="true" android:focusable="true"><TextView android:layout_width="match_parent" android:layout_height="match_parent" android:text="▲" android:textColor="#888888" android:textSize="14sp" android:gravity="center"/></FrameLayout>
+        <FrameLayout android:id="@+id/btn_dpad_left" android:layout_width="40dp" android:layout_height="40dp" android:layout_alignParentStart="true" android:layout_centerVertical="true" android:background="@drawable/btn_normal_r12" android:clickable="true" android:focusable="true"><TextView android:layout_width="match_parent" android:layout_height="match_parent" android:text="◀" android:textColor="#888888" android:textSize="14sp" android:gravity="center"/></FrameLayout>
+        <FrameLayout android:id="@+id/btn_dpad_right" android:layout_width="40dp" android:layout_height="40dp" android:layout_alignParentEnd="true" android:layout_centerVertical="true" android:background="@drawable/btn_normal_r12" android:clickable="true" android:focusable="true"><TextView android:layout_width="match_parent" android:layout_height="match_parent" android:text="▶" android:textColor="#888888" android:textSize="14sp" android:gravity="center"/></FrameLayout>
+        <FrameLayout android:id="@+id/btn_dpad_down" android:layout_width="40dp" android:layout_height="40dp" android:layout_centerHorizontal="true" android:layout_alignParentBottom="true" android:background="@drawable/btn_normal_r12" android:clickable="true" android:focusable="true"><TextView android:layout_width="match_parent" android:layout_height="match_parent" android:text="▼" android:textColor="#888888" android:textSize="14sp" android:gravity="center"/></FrameLayout>
+    </RelativeLayout>
 </RelativeLayout>
