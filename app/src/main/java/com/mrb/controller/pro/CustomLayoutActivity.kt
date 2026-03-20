@@ -10,76 +10,81 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONArray
 import org.json.JSONObject
-import kotlin.math.*
 
+// byte1bit = bit position in btnByte1 (-1 = not in byte1)
+// byte2bit = bit position in btnByte2 (-1 = not in byte2)
+// isGas/isBrake = special axis buttons
 data class BtnDef(
     val id: String,
     val label: String,
-    val icon: String,
+    val iconRes: Int,       // drawable resource
     val pressColor: Int,
-    val byte1: Int = -1,
-    val byte2: Int = -1
+    val byte1bit: Int = -1,
+    val byte2bit: Int = -1,
+    val isGas: Boolean = false,
+    val isBrake: Boolean = false
+)
+
+data class PlacedBtn(
+    val def: BtnDef,
+    var x: Float,
+    var y: Float,
+    var w: Int = 70,
+    var h: Int = 120
 )
 
 class CustomLayoutActivity : AppCompatActivity() {
 
-    private lateinit var rootFrame: FrameLayout
     private lateinit var gameArea: FrameLayout
-    private lateinit var wheelImg: ImageView
-    private var editMode = false
-    private val placedViews = mutableMapOf<String, View>()
-
-    data class PlacedBtn(
-        val def: BtnDef,
-        var x: Float,
-        var y: Float,
-        var w: Int = 70,
-        var h: Int = 120
-    )
+    private val placedViews = mutableMapOf<String, FrameLayout>()
     private val placedButtons = mutableListOf<PlacedBtn>()
+    private var editMode = false
 
-    val allButtons = listOf(
-        BtnDef("gas",         "GAS",        "⚡", 0xFF00C853.toInt()),
-        BtnDef("brake",       "BRAKE",      "🛑", 0xFFD50000.toInt()),
-        BtnDef("gear_up",     "GEAR+",      "⬆", 0xFF76FF03.toInt()),
-        BtnDef("gear_down",   "GEAR-",      "⬇", 0xFFFF6D00.toInt()),
-        BtnDef("btn_a",       "A",          "🅐", 0xFF3CFF6B.toInt()),
-        BtnDef("btn_b",       "B",          "🅑", 0xFFFF4B4B.toInt()),
-        BtnDef("btn_x",       "X",          "🅧", 0xFF3DB9FF.toInt()),
-        BtnDef("btn_y",       "Y",          "🅨", 0xFFFFD700.toInt()),
-        BtnDef("dpad_up",     "UP",         "△", 0xFFFFFFFF.toInt()),
-        BtnDef("dpad_down",   "DOWN",       "▽", 0xFFFFFFFF.toInt()),
-        BtnDef("dpad_left",   "LEFT",       "◁", 0xFFFFFFFF.toInt()),
-        BtnDef("dpad_right",  "RIGHT",      "▷", 0xFFFFFFFF.toInt()),
-        BtnDef("horn",        "HORN",       "📯", 0xFFFFEB3B.toInt()),
-        BtnDef("handbrake",   "H.BRAKE",   "🔒", 0xFFFF5722.toInt()),
-        BtnDef("camera",      "CAM",        "📷", 0xFF9C27B0.toInt()),
-        BtnDef("nitro",       "NITRO",      "💨", 0xFF00BCD4.toInt()),
-        BtnDef("lights",      "LIGHTS",     "💡", 0xFFFFC107.toInt()),
-        BtnDef("wipers",      "WIPERS",     "🌧", 0xFF607D8B.toInt()),
-        BtnDef("look_left",   "LOOK←",     "👁", 0xFF795548.toInt()),
-        BtnDef("look_right",  "LOOK→",     "👁", 0xFF8D6E63.toInt()),
-        BtnDef("reset",       "RESET",      "🔄", 0xFFF44336.toInt()),
-        BtnDef("pause",       "PAUSE",      "⏸", 0xFF9E9E9E.toInt()),
-        BtnDef("l1",          "L1",         "◀", 0xFF3F51B5.toInt()),
-        BtnDef("l2",          "L2",         "◀◀", 0xFF303F9F.toInt()),
-        BtnDef("r1",          "R1",         "▶", 0xFF3F51B5.toInt()),
-        BtnDef("r2",          "R2",         "▶▶", 0xFF303F9F.toInt()),
-        BtnDef("start",       "START",      "▶",  0xFF4CAF50.toInt()),
-        BtnDef("select",      "SELECT",     "☰",  0xFF388E3C.toInt()),
-        BtnDef("hazard",      "HAZARD",     "⚠", 0xFFFF9800.toInt()),
-        BtnDef("boost",       "BOOST",      "🚀", 0xFF00E5FF.toInt()),
-        BtnDef("map",         "MAP",        "🗺", 0xFF26C6DA.toInt()),
-        BtnDef("music",       "MUSIC",      "🎵", 0xFFEC407A.toInt()),
-        BtnDef("custom1",     "BTN 1",      "①",  0xFFE91E63.toInt()),
-        BtnDef("custom2",     "BTN 2",      "②",  0xFFAD1457.toInt()),
-        BtnDef("custom3",     "BTN 3",      "③",  0xFF880E4F.toInt()),
-        BtnDef("custom4",     "BTN 4",      "④",  0xFFE040FB.toInt()),
-        BtnDef("custom5",     "BTN 5",      "⑤",  0xFF7B1FA2.toInt()),
-        BtnDef("custom6",     "BTN 6",      "⑥",  0xFF4A148C.toInt()),
-        BtnDef("custom7",     "BTN 7",      "⑦",  0xFF6200EA.toInt()),
-        BtnDef("custom8",     "BTN 8",      "⑧",  0xFF311B92.toInt()),
-    )
+    // All 39 buttons with proper HID mapping
+    private val allButtons by lazy { listOf(
+        // Gas/Brake = axis
+        BtnDef("gas",         "GAS",       R.drawable.ic_btn_gas,        0xFF00C853.toInt(), isGas = true),
+        BtnDef("brake",       "BRAKE",     R.drawable.ic_btn_brake,      0xFFD50000.toInt(), isBrake = true),
+        // Gears = byte1 bit 6,7
+        BtnDef("gear_up",     "REVERSE",   R.drawable.expand_circle_up_24,   0xFFFF6D00.toInt(), byte1bit = 7),
+        BtnDef("gear_down",   "FRONT",     R.drawable.expand_circle_down_24, 0xFF00B4D8.toInt(), byte1bit = 6),
+        // ABXY
+        BtnDef("btn_a",       "A",         R.drawable.ic_btn_a,          0xFF3CFF6B.toInt(), byte1bit = 0),
+        BtnDef("btn_b",       "B",         R.drawable.ic_btn_b,          0xFFFF4B4B.toInt(), byte1bit = 1),
+        BtnDef("btn_x",       "X",         R.drawable.ic_btn_x,          0xFF3DB9FF.toInt(), byte2bit = 6),
+        BtnDef("btn_y",       "Y",         R.drawable.ic_btn_y,          0xFFFFD700.toInt(), byte1bit = 4),
+        // DPad
+        BtnDef("dpad_up",     "UP",        R.drawable.ic_arrow_up,       0xFFFFFFFF.toInt(), byte2bit = 2),
+        BtnDef("dpad_down",   "DOWN",      R.drawable.ic_arrow_down,     0xFFFFFFFF.toInt(), byte2bit = 3),
+        BtnDef("dpad_left",   "LEFT",      R.drawable.ic_arrow_left,     0xFFFFFFFF.toInt(), byte2bit = 6),
+        BtnDef("dpad_right",  "RIGHT",     R.drawable.ic_arrow_right,    0xFFFFFFFF.toInt(), byte2bit = 5),
+        // Extra buttons
+        BtnDef("horn",        "HORN",      R.drawable.ic_btn_horn,       0xFFFFEB3B.toInt(), byte1bit = 2),
+        BtnDef("handbrake",   "H.BRAKE",  R.drawable.ic_btn_handbrake,  0xFFFF5722.toInt(), byte1bit = 3),
+        BtnDef("camera",      "CAM",       R.drawable.ic_btn_camera,     0xFF9C27B0.toInt(), byte1bit = 5),
+        BtnDef("nitro",       "NITRO",     R.drawable.ic_btn_nitro,      0xFF00BCD4.toInt(), byte2bit = 0),
+        BtnDef("lights",      "LIGHTS",    R.drawable.ic_btn_lights,     0xFFFFC107.toInt(), byte2bit = 1),
+        BtnDef("look_left",   "LOOK←",    R.drawable.ic_btn_look_left,  0xFF795548.toInt(), byte2bit = 4),
+        BtnDef("look_right",  "LOOK→",    R.drawable.ic_btn_look_right, 0xFF8D6E63.toInt(), byte2bit = 7),
+        BtnDef("l1",          "L1",        R.drawable.ic_btn_l1,         0xFF3F51B5.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("r1",          "R1",        R.drawable.ic_btn_r1,         0xFF3F51B5.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("start",       "START",     R.drawable.ic_btn_start,      0xFF4CAF50.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("select",      "SELECT",    R.drawable.ic_btn_select,     0xFF388E3C.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("reset",       "RESET",     R.drawable.ic_btn_reset,      0xFFF44336.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("pause",       "PAUSE",     R.drawable.ic_btn_pause,      0xFF9E9E9E.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("hazard",      "HAZARD",    R.drawable.ic_btn_hazard,     0xFFFF9800.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("boost",       "BOOST",     R.drawable.ic_btn_boost,      0xFF00E5FF.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("wipers",      "WIPERS",    R.drawable.ic_btn_wipers,     0xFF607D8B.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("map",         "MAP",       R.drawable.ic_btn_map,        0xFF26C6DA.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("custom1",     "BTN 1",     R.drawable.ic_btn_custom,     0xFFE91E63.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("custom2",     "BTN 2",     R.drawable.ic_btn_custom,     0xFFAD1457.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("custom3",     "BTN 3",     R.drawable.ic_btn_custom,     0xFF880E4F.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("custom4",     "BTN 4",     R.drawable.ic_btn_custom,     0xFFE040FB.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("custom5",     "BTN 5",     R.drawable.ic_btn_custom,     0xFF7B1FA2.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("custom6",     "BTN 6",     R.drawable.ic_btn_custom,     0xFF4A148C.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("custom7",     "BTN 7",     R.drawable.ic_btn_custom,     0xFF6200EA.toInt(), byte1bit = -1, byte2bit = -1),
+        BtnDef("custom8",     "BTN 8",     R.drawable.ic_btn_custom,     0xFF311B92.toInt(), byte1bit = -1, byte2bit = -1),
+    )}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -94,71 +99,71 @@ class CustomLayoutActivity : AppCompatActivity() {
     }
 
     private fun buildUI() {
-        rootFrame = FrameLayout(this).apply {
+        val root = FrameLayout(this).apply {
             setBackgroundColor(Color.parseColor("#080808"))
         }
 
-        // Game area
         gameArea = FrameLayout(this).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT)
         }
 
-        // Steering wheel center
-        wheelImg = ImageView(this).apply {
+        // Steering wheel
+        val wheel = ImageView(this).apply {
             setImageResource(R.drawable.ic_steering_wheel)
-            layoutParams = FrameLayout.LayoutParams(280, 280).apply {
+            layoutParams = FrameLayout.LayoutParams(220, 220).apply {
                 gravity = Gravity.CENTER
             }
             scaleType = ImageView.ScaleType.FIT_CENTER
+            alpha = 0.3f
         }
-        gameArea.addView(wheelImg)
+        gameArea.addView(wheel)
 
         // Top bar
         val topBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setBackgroundColor(Color.parseColor("#111111"))
-            setPadding(12, 0, 12, 0)
+            setPadding(8, 0, 8, 0)
             layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, 52).apply {
+                FrameLayout.LayoutParams.MATCH_PARENT, 48).apply {
                 gravity = Gravity.TOP
             }
             gravity = Gravity.CENTER_VERTICAL
         }
 
-        val btnBack = buildBarBtn("← BACK", "#666666") { finish() }
+        val btnBack = barBtn("← BACK", "#888888") { finish() }
         val tvTitle = TextView(this).apply {
             text = "Layout Editor"
-            textSize = 13f
+            textSize = 12f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(0,
-                LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            layoutParams = LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
-        val btnEdit = buildBarBtn("✏ EDIT", "#FFD700") { toggleEditMode() }
-        val btnPlus = buildBarBtn("＋ ADD", "#00C853") { showButtonPicker() }
-        val btnSave = buildBarBtn("💾 SAVE", "#2196F3") { saveLayout(); finish() }
-        val btnReset = buildBarBtn("🗑 RESET", "#F44336") { resetLayout() }
+        val btnEditToggle = barBtn("✏ EDIT", "#FFD700") { toggleEdit() }
+        val btnAdd = barBtn("＋ ADD", "#00C853") { showPicker() }
+        val btnSave = barBtn("💾 SAVE", "#2196F3") { saveLayout(); finish() }
+        val btnReset = barBtn("🗑", "#F44336") { confirmReset() }
 
         topBar.addView(btnBack)
         topBar.addView(tvTitle)
-        topBar.addView(btnEdit)
-        topBar.addView(btnPlus)
+        topBar.addView(btnEditToggle)
+        topBar.addView(btnAdd)
         topBar.addView(btnSave)
         topBar.addView(btnReset)
 
-        rootFrame.addView(gameArea)
-        rootFrame.addView(topBar)
-        setContentView(rootFrame)
+        root.addView(gameArea)
+        root.addView(topBar)
+        setContentView(root)
     }
 
-    private fun buildBarBtn(text: String, color: String, onClick: () -> Unit): TextView {
-        return TextView(this).apply {
+    private fun barBtn(text: String, color: String, onClick: () -> Unit) =
+        TextView(this).apply {
             this.text = text
             textSize = 10f
             setTextColor(Color.parseColor(color))
-            setPadding(10, 6, 10, 6)
+            setPadding(8, 4, 8, 4)
             gravity = Gravity.CENTER
             setOnClickListener { onClick() }
             layoutParams = LinearLayout.LayoutParams(
@@ -167,41 +172,40 @@ class CustomLayoutActivity : AppCompatActivity() {
                 setMargins(2, 0, 2, 0)
             }
         }
-    }
 
-    private fun toggleEditMode() {
+    private fun toggleEdit() {
         editMode = !editMode
         Toast.makeText(this,
-            if (editMode) "Edit ON - Drag buttons" else "Edit OFF",
+            if (editMode) "Edit ON - Drag to move" else "Edit OFF",
             Toast.LENGTH_SHORT).show()
-        // Refresh all buttons
         placedButtons.forEach { pb ->
-            placedViews[pb.def.id]?.let { rebuildBtn(pb, it.parent as? FrameLayout) }
+            placedViews[pb.def.id]?.let { container ->
+                container.removeAllViews()
+                buildBtnView(pb, container)
+            }
         }
     }
 
-    private fun showButtonPicker() {
-        val dialog = android.app.AlertDialog.Builder(this)
+    private fun showPicker() {
         val scroll = ScrollView(this)
         val grid = GridLayout(this).apply {
-            columnCount = 4
+            columnCount = 5
             setPadding(8, 8, 8, 8)
         }
 
         allButtons.forEach { btn ->
-            val already = placedButtons.any { it.def.id == btn.id }
+            val placed = placedButtons.any { it.def.id == btn.id }
             val chip = FrameLayout(this).apply {
                 layoutParams = GridLayout.LayoutParams().apply {
-                    width = 160
-                    height = 80
+                    width = 130; height = 90
                     setMargins(4, 4, 4, 4)
                 }
-                setBackgroundColor(if (already)
-                    Color.argb(60, Color.red(btn.pressColor),
-                        Color.green(btn.pressColor), Color.blue(btn.pressColor))
-                else
-                    Color.argb(180, Color.red(btn.pressColor),
-                        Color.green(btn.pressColor), Color.blue(btn.pressColor)))
+                setBackgroundColor(
+                    if (placed) Color.parseColor("#1A1A1A")
+                    else Color.argb(160,
+                        Color.red(btn.pressColor),
+                        Color.green(btn.pressColor),
+                        Color.blue(btn.pressColor)))
                 outlineProvider = object : ViewOutlineProvider() {
                     override fun getOutline(view: View, outline: Outline) {
                         outline.setRoundRect(0, 0, view.width, view.height, 12f)
@@ -210,18 +214,20 @@ class CustomLayoutActivity : AppCompatActivity() {
                 clipToOutline = true
             }
 
-            val iconTv = TextView(this).apply {
-                text = btn.icon
-                textSize = 22f
-                gravity = Gravity.CENTER
-                layoutParams = FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT, 48)
+            val iconIv = ImageView(this).apply {
+                setImageResource(btn.iconRes)
+                setColorFilter(if (placed) Color.parseColor("#444444") else Color.WHITE)
+                layoutParams = FrameLayout.LayoutParams(40, 40).apply {
+                    gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
+                    topMargin = 8
+                }
+                scaleType = ImageView.ScaleType.FIT_CENTER
             }
 
             val labelTv = TextView(this).apply {
                 text = btn.label
                 textSize = 9f
-                setTextColor(Color.WHITE)
+                setTextColor(if (placed) Color.parseColor("#444444") else Color.WHITE)
                 gravity = Gravity.CENTER
                 layoutParams = FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
@@ -231,10 +237,10 @@ class CustomLayoutActivity : AppCompatActivity() {
                 }
             }
 
-            chip.addView(iconTv)
+            chip.addView(iconIv)
             chip.addView(labelTv)
 
-            if (!already) {
+            if (!placed) {
                 chip.setOnClickListener {
                     addButton(btn, 200f, 150f)
                 }
@@ -250,33 +256,25 @@ class CustomLayoutActivity : AppCompatActivity() {
             .show()
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     private fun addButton(def: BtnDef, x: Float, y: Float, w: Int = 70, h: Int = 120) {
         if (placedButtons.any { it.def.id == def.id }) return
-
         val pb = PlacedBtn(def, x, y, w, h)
         placedButtons.add(pb)
 
-        val container = FrameLayout(this)
+        val container = FrameLayout(this).apply {
+            this.x = x
+            this.y = y + 48f
+            layoutParams = FrameLayout.LayoutParams(w, h)
+        }
         buildBtnView(pb, container)
-        container.x = x
-        container.y = y + 52f // offset for topbar
-        container.layoutParams = FrameLayout.LayoutParams(w, h)
         gameArea.addView(container)
         placedViews[def.id] = container
-    }
-
-    private fun rebuildBtn(pb: PlacedBtn, container: FrameLayout?) {
-        container ?: return
-        container.removeAllViews()
-        buildBtnView(pb, container)
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun buildBtnView(pb: PlacedBtn, container: FrameLayout) {
         val def = pb.def
 
-        // Background
         container.setBackgroundColor(Color.parseColor("#111111"))
         container.outlineProvider = object : ViewOutlineProvider() {
             override fun getOutline(view: View, outline: Outline) {
@@ -285,25 +283,22 @@ class CustomLayoutActivity : AppCompatActivity() {
         }
         container.clipToOutline = true
 
-        // Icon
-        val iconTv = TextView(this).apply {
-            text = def.icon
-            textSize = 24f
-            gravity = Gravity.CENTER
-            setTextColor(Color.parseColor("#888888"))
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT)
+        val iconIv = ImageView(this).apply {
+            setImageResource(def.iconRes)
+            setColorFilter(Color.parseColor("#888888"))
+            layoutParams = FrameLayout.LayoutParams(48, 48).apply {
+                gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
+                topMargin = (pb.h * 0.2f).toInt()
+            }
+            scaleType = ImageView.ScaleType.FIT_CENTER
         }
 
-        // Label
         val labelTv = TextView(this).apply {
             text = def.label
             textSize = 9f
             setTextColor(Color.parseColor("#888888"))
             gravity = Gravity.CENTER
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
-            letterSpacing = 0.1f
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -312,19 +307,18 @@ class CustomLayoutActivity : AppCompatActivity() {
             }
         }
 
-        container.addView(iconTv)
+        container.addView(iconIv)
         container.addView(labelTv)
 
-        // Edit mode controls
         if (editMode) {
-            // Delete
+            // Delete btn
             val delBtn = TextView(this).apply {
                 text = "✕"
                 textSize = 9f
                 setTextColor(Color.WHITE)
                 gravity = Gravity.CENTER
-                setBackgroundColor(Color.argb(200, 200, 0, 0))
-                layoutParams = FrameLayout.LayoutParams(24, 24).apply {
+                setBackgroundColor(Color.argb(220, 200, 0, 0))
+                layoutParams = FrameLayout.LayoutParams(26, 26).apply {
                     gravity = Gravity.TOP or Gravity.END
                 }
                 setOnClickListener {
@@ -336,12 +330,12 @@ class CustomLayoutActivity : AppCompatActivity() {
 
             // Resize handle
             val resizeBtn = TextView(this).apply {
-                text = "↔"
-                textSize = 9f
+                text = "⤡"
+                textSize = 11f
                 setTextColor(Color.WHITE)
                 gravity = Gravity.CENTER
-                setBackgroundColor(Color.argb(200, 0, 100, 200))
-                layoutParams = FrameLayout.LayoutParams(24, 24).apply {
+                setBackgroundColor(Color.argb(220, 0, 100, 200))
+                layoutParams = FrameLayout.LayoutParams(26, 26).apply {
                     gravity = Gravity.BOTTOM or Gravity.END
                 }
             }
@@ -349,12 +343,10 @@ class CustomLayoutActivity : AppCompatActivity() {
             container.addView(delBtn)
             container.addView(resizeBtn)
 
-            // Drag
             var dX = 0f; var dY = 0f
             var resizing = false
             var resizeStartX = 0f
-            var resizeStartW = 0
-            var resizeStartH = 0
+            var resizeStartW = 0; var resizeStartH = 0
 
             resizeBtn.setOnTouchListener { _, e ->
                 when (e.action) {
@@ -367,10 +359,10 @@ class CustomLayoutActivity : AppCompatActivity() {
                     }
                     MotionEvent.ACTION_MOVE -> {
                         val diff = (e.rawX - resizeStartX).toInt()
-                        val newW = (resizeStartW + diff).coerceIn(60, 300)
-                        val newH = (resizeStartH + diff / 2).coerceIn(50, 250)
-                        container.layoutParams = FrameLayout.LayoutParams(newW, newH)
-                        pb.w = newW; pb.h = newH
+                        val nw = (resizeStartW + diff).coerceIn(60, 300)
+                        val nh = (resizeStartH + diff / 2).coerceIn(50, 250)
+                        container.layoutParams = FrameLayout.LayoutParams(nw, nh)
+                        pb.w = nw; pb.h = nh
                         true
                     }
                     MotionEvent.ACTION_UP -> { resizing = false; true }
@@ -388,10 +380,10 @@ class CustomLayoutActivity : AppCompatActivity() {
                     MotionEvent.ACTION_MOVE -> {
                         val nx = (e.rawX + dX).coerceIn(0f,
                             (gameArea.width - v.width).toFloat())
-                        val ny = (e.rawY + dY).coerceIn(52f,
+                        val ny = (e.rawY + dY).coerceIn(48f,
                             (gameArea.height - v.height).toFloat())
                         v.x = nx; v.y = ny
-                        pb.x = nx; pb.y = ny - 52f
+                        pb.x = nx; pb.y = ny - 48f
                         true
                     }
                     MotionEvent.ACTION_UP -> { v.elevation = 0f; true }
@@ -399,27 +391,29 @@ class CustomLayoutActivity : AppCompatActivity() {
                 }
             }
         } else {
-            // Play mode - press color change
-            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+            // Play mode
+            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             container.setOnTouchListener { _, e ->
                 when (e.action) {
                     MotionEvent.ACTION_DOWN -> {
-                        container.setBackgroundColor(
-                            Color.argb(60,
-                                Color.red(def.pressColor),
-                                Color.green(def.pressColor),
-                                Color.blue(def.pressColor)))
-                        iconTv.setTextColor(def.pressColor)
+                        container.setBackgroundColor(Color.argb(60,
+                            Color.red(def.pressColor),
+                            Color.green(def.pressColor),
+                            Color.blue(def.pressColor)))
+                        iconIv.setColorFilter(def.pressColor)
                         labelTv.setTextColor(def.pressColor)
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                            vibrator.vibrate(android.os.VibrationEffect.createOneShot(
-                                30, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                            vibrator.vibrate(VibrationEffect.createOneShot(
+                                30, VibrationEffect.DEFAULT_AMPLITUDE))
+                        // Send HID
+                        sendBtnReport(def, true)
                         true
                     }
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                         container.setBackgroundColor(Color.parseColor("#111111"))
-                        iconTv.setTextColor(Color.parseColor("#888888"))
+                        iconIv.setColorFilter(Color.parseColor("#888888"))
                         labelTv.setTextColor(Color.parseColor("#888888"))
+                        sendBtnReport(def, false)
                         true
                     }
                     else -> false
@@ -428,32 +422,50 @@ class CustomLayoutActivity : AppCompatActivity() {
         }
     }
 
+    @android.annotation.SuppressLint("MissingPermission")
+    private fun sendBtnReport(def: BtnDef, pressed: Boolean) {
+        val device = HidService.connectedDevice ?: return
+        val hid = HidService.hidDevice ?: return
+
+        // Get current state from MainActivity via HidService
+        // Build report based on button def
+        var b1 = 0; var b2 = 0
+        val gas = if (def.isGas && pressed) 0xFF.toByte() else 0x00.toByte()
+        val brake = if (def.isBrake && pressed) 0xFF.toByte() else 0x00.toByte()
+
+        if (pressed) {
+            if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
+            if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
+        }
+
+        hid.sendReport(device, 1,
+            byteArrayOf(b1.toByte(), b2.toByte(), 0x00, 0x00, gas, brake))
+    }
+
     private fun saveLayout() {
         val arr = JSONArray()
         placedButtons.forEach { pb ->
-            val obj = JSONObject().apply {
+            arr.put(JSONObject().apply {
                 put("id", pb.def.id)
                 put("x", pb.x)
                 put("y", pb.y)
                 put("w", pb.w)
                 put("h", pb.h)
-            }
-            arr.put(obj)
+            })
         }
         getSharedPreferences("mrb_layout", Context.MODE_PRIVATE)
             .edit().putString("custom_layout", arr.toString()).apply()
-        Toast.makeText(this, "✅ Layout Saved!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "✅ Saved!", Toast.LENGTH_SHORT).show()
     }
 
     private fun loadLayout() {
-        val prefs = getSharedPreferences("mrb_layout", Context.MODE_PRIVATE)
-        val json = prefs.getString("custom_layout", null) ?: return
+        val json = getSharedPreferences("mrb_layout", Context.MODE_PRIVATE)
+            .getString("custom_layout", null) ?: return
         try {
             val arr = JSONArray(json)
             for (i in 0 until arr.length()) {
                 val obj = arr.getJSONObject(i)
-                val id = obj.getString("id")
-                val def = allButtons.find { it.id == id } ?: continue
+                val def = allButtons.find { it.id == obj.getString("id") } ?: continue
                 addButton(def,
                     obj.getDouble("x").toFloat(),
                     obj.getDouble("y").toFloat(),
@@ -463,7 +475,7 @@ class CustomLayoutActivity : AppCompatActivity() {
         } catch (_: Exception) {}
     }
 
-    private fun resetLayout() {
+    private fun confirmReset() {
         android.app.AlertDialog.Builder(this)
             .setTitle("Reset Layout?")
             .setMessage("All buttons will be removed")
