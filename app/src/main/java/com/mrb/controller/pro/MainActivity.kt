@@ -166,6 +166,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             override fun run() {
                 if (step >= totalSteps) {
                     wheelView.rotation = 0f
+                    animPlaying = false
                     haptic(80)
                     return
                 }
@@ -243,7 +244,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (gearDown) btnByte1 = btnByte1 or (1 shl 6)
         if (gearUp)   btnByte1 = btnByte1 or (1 shl 7)
         if (btnY)     btnByte1 = btnByte1 or (1 shl 4)
-        if (btnX)     btnByte2 = btnByte2 or (1 shl 4)
+        if (btnX)     btnByte2 = btnByte2 or (1 shl 6)
         if (dpadUp)   btnByte2 = btnByte2 or (1 shl 2)
         if (dpadDown) btnByte2 = btnByte2 or (1 shl 3)
         if (dpadLeft) btnByte2 = btnByte2 or (1 shl 6)
