@@ -133,11 +133,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun playConnectedAnim() {
         connectedAnimDone = true
         val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-
-        // 3s = 3000ms / 16ms per frame = ~187 steps
-        val phase1Steps = 187  // 0 to -100 in 3s
-        val phase2Steps = 187  // -100 to +100 in 3s
-        val phase3Steps = 94   // +100 to 0 in 1.5s
+        val totalSteps = 468  // ~7.5s total at 16ms
         var step = 0
 
         fun haptic(ms: Long) {
@@ -147,34 +143,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         val r = object : Runnable {
             override fun run() {
-                val total = phase1Steps + phase2Steps + phase3Steps
-                when {
-                    step < phase1Steps -> {
-                        // Smooth 0 to -100
-                        val p = step.toFloat() / phase1Steps
-                        val eased = if (p < 0.5f) 2f*p*p else 1f-2f*(1f-p)*(1f-p)
-                        wheelView.rotation = -(eased * 100f)
-                        if (step == 0) haptic(40)
-                    }
-                    step < phase1Steps + phase2Steps -> {
-                        // Smooth -100 to +100
-                        val p = (step - phase1Steps).toFloat() / phase2Steps
-                        val eased = if (p < 0.5f) 2f*p*p else 1f-2f*(1f-p)*(1f-p)
-                        wheelView.rotation = -100f + (eased * 200f)
-                        if (step == phase1Steps) haptic(40)
-                    }
-                    step < total -> {
-                        // Smooth +100 to 0
-                        val p = (step - phase1Steps - phase2Steps).toFloat() / phase3Steps
-                        val eased = 1f - (1f-p)*(1f-p)
-                        wheelView.rotation = 100f * (1f - eased)
-                    }
-                    else -> {
-                        wheelView.rotation = 0f
-                        haptic(80)
-                        return
-                    }
+                if (step >= totalSteps) {
+                    wheelView.rotation = 0f
+                    haptic(80)
+                    return
                 }
+                val t = step.toFloat() / totalSteps
+                // Smooth sin wave: 0 -> -100 -> +100 -> 0
+                val angle = -100f * sin(t * Math.PI.toFloat() * 2f)
+                wheelView.rotation = angle
+                if (step == 0) haptic(40)
+                if (step == totalSteps / 2) haptic(40)
                 step++
                 handler.postDelayed(this, 16)
             }
@@ -220,11 +199,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type != Sensor.TYPE_ACCELEROMETER) return
         filtX = alpha * event.values[1] + (1 - alpha) * filtX
-        tiltByte = (filtX / 10f * 127f).toInt().coerceIn(-127, 127).toByte()
+        tiltByte = (filtX * 12.7f).toInt().coerceIn(-127, 127).toByte()
         val now = System.currentTimeMillis()
         if (now - lastSend > 40) { sendReport(); lastSend = now }
         runOnUiThread {
-            wheelView.rotation = (filtX / 10f * 90f).coerceIn(-90f, 90f)
+            wheelView.rotation = (filtX * 9f).coerceIn(-180f, 180f)
             txtTilt.text = "%.1f°".format(filtX * 9f)
             tiltBar.progress = (100 + (filtX/10f*100).toInt()).coerceIn(0, 200)
         }
