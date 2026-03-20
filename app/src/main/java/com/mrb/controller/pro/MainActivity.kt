@@ -719,7 +719,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (dpadRight)b2 = b2 or (1 shl 5)
 
         // Custom buttons
-        customButtons.forEach { def ->
+        customButtons.forEach { def: CustomBtn ->
             if (customBtnStates[def.id] == true) {
                 if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
                 if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
