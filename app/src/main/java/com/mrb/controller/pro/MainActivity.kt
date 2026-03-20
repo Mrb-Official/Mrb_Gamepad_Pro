@@ -85,22 +85,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         CustomBtn("slowmo",     "SLOW MO",  R.drawable.ic_btn_pause,      0xFF00838F.toInt(), byte1bit = -1),
         CustomBtn("screenshot", "SHOT",     R.drawable.ic_btn_camera,     0xFF558B2F.toInt(), byte1bit = -1),
 
-    data class CustomBtn(
-        val id: String,
-        val label: String,
-        val iconRes: Int,
-        val pressColor: Int,
-        val byte1bit: Int = -1,
-        val byte2bit: Int = -1
-    )
-
-    data class PlacedCustomBtn(
-        val id: String,
-        var x: Float,
-        var y: Float,
-        var w: Int = 80,
-        var h: Int = 100
-    )
 
     private val placedCustomBtns = mutableListOf<PlacedCustomBtn>()
     private val placedCustomViews = mutableMapOf<String, FrameLayout>()
@@ -215,19 +199,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (editMode) {
             showEditBar()
             // Show drag handles on placed buttons
-            placedCustomBtns.forEach { pb ->
+            for (pb in placedCustomBtns) {
                 placedCustomViews[pb.id]?.let { v ->
                     v.removeAllViews()
-                    val def = customButtons.find { it.id == pb.id } ?: return@forEach
+                    val def = customButtons.find { btn -> btn.id == pb.id } ?: continue
                     buildCustomBtnView(def, pb, v, editMode = true)
                 }
             }
         } else {
             hideEditBar()
-            placedCustomBtns.forEach { pb ->
+            for (pb in placedCustomBtns) {
                 placedCustomViews[pb.id]?.let { v ->
                     v.removeAllViews()
-                    val def = customButtons.find { it.id == pb.id } ?: return@forEach
+                    val def = customButtons.find { btn -> btn.id == pb.id } ?: continue
                     buildCustomBtnView(def, pb, v, editMode = false)
                 }
             }
@@ -551,7 +535,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun saveCustomLayout() {
         val arr = JSONArray()
-        placedCustomBtns.forEach { pb ->
+        for (pb in placedCustomBtns) {
             arr.put(JSONObject().apply {
                 put("id", pb.id)
                 put("x", pb.x)
@@ -586,7 +570,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         android.app.AlertDialog.Builder(this)
             .setTitle("Remove all custom buttons?")
             .setPositiveButton("Remove") { _, _ ->
-                placedCustomBtns.forEach { pb ->
+                for (pb in placedCustomBtns) {
                     placedCustomViews[pb.id]?.let { overlayFrame.removeView(it) }
                 }
                 placedCustomBtns.clear()
