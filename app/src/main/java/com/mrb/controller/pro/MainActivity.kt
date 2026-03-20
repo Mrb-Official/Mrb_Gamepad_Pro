@@ -127,10 +127,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setupTouch(R.id.lay_gear_up, R.drawable.btn_gear_normal, R.drawable.btn_press_orange, R.id.ic_gear_up, 0xFFFF6D00.toInt()) { gearUp = it }
         setupTouch(R.id.lay_gear_down, R.drawable.btn_gear_normal, R.drawable.btn_press_blue, R.id.ic_gear_down, 0xFF00B4D8.toInt()) { gearDown = it }
         setupTouch(R.id.btn_a, R.drawable.btn_xbox_green, R.drawable.btn_xbox_green_press, null, 0) { btnA = it }
-        setupTouch(R.id.btn_dpad_up,    R.drawable.btn_normal_r12, R.drawable.btn_press_red,    null, 0) { dpadUp    = it }
-        setupTouch(R.id.btn_dpad_down,  R.drawable.btn_normal_r12, R.drawable.btn_press_red,    null, 0) { dpadDown  = it }
-        setupTouch(R.id.btn_dpad_left,  R.drawable.btn_normal_r12, R.drawable.btn_press_red,    null, 0) { dpadLeft  = it }
-        setupTouch(R.id.btn_dpad_right, R.drawable.btn_normal_r12, R.drawable.btn_press_red,    null, 0) { dpadRight = it }
+        setupTouch(R.id.btn_dpad_up,    R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadUp    = it }
+        setupTouch(R.id.btn_dpad_down,  R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadDown  = it }
+        setupTouch(R.id.btn_dpad_left,  R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadLeft  = it }
+        setupTouch(R.id.btn_dpad_right, R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadRight = it }
         setupTouch(R.id.btn_b, R.drawable.btn_xbox_red, R.drawable.btn_xbox_red_press, null, 0) { btnB = it }
         setupTouch(R.id.btn_x, R.drawable.btn_xbox_blue, R.drawable.btn_xbox_blue_press, null, 0) { btnX = it }
         setupTouch(R.id.btn_y, R.drawable.btn_xbox_yellow, R.drawable.btn_xbox_yellow_press, null, 0) { btnY = it }
