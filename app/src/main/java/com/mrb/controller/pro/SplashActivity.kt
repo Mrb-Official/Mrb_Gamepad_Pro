@@ -220,6 +220,17 @@ class SplashActivity : AppCompatActivity() {
         }
     }
 
+    override fun onRequestPermissionsResult(req: Int, perms: Array<String>, results: IntArray) {
+        super.onRequestPermissionsResult(req, perms, results)
+        if (req == 99) {
+            // Permission granted - start service
+            startForegroundService(Intent(this, HidService::class.java))
+            HidService.onConnected = { device ->
+                runOnUiThread { showConnectedAnim(device.name ?: "Device") }
+            }
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
