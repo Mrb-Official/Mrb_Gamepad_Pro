@@ -59,16 +59,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         CustomBtn("camera",     "CAM",      R.drawable.ic_btn_camera,     0xFF9C27B0.toInt(), byte1bit = 5),
         CustomBtn("nitro",      "NITRO",    R.drawable.ic_btn_nitro,      0xFF00BCD4.toInt(), byte2bit = 0),
         CustomBtn("lights",     "LIGHTS",   R.drawable.ic_btn_lights,     0xFFFFC107.toInt(), byte2bit = 1),
-        CustomBtn("look_left",  "LOOK←",   R.drawable.ic_btn_look_left,  0xFF795548.toInt(), byte2bit = 4),
-        CustomBtn("look_right", "LOOK→",   R.drawable.ic_btn_look_right, 0xFF8D6E63.toInt(), byte2bit = 7),
-        CustomBtn("l1",         "L1",       R.drawable.ic_btn_l1,         0xFF3F51B5.toInt(), byte2bit = 8),
-        CustomBtn("r1",         "R1",       R.drawable.ic_btn_r1,         0xFF5C6BC0.toInt(), byte2bit = 9),
-        CustomBtn("start",      "START",    R.drawable.ic_btn_start,      0xFF4CAF50.toInt(), byte2bit = 10),
-        CustomBtn("select",     "SELECT",   R.drawable.ic_btn_select,     0xFF388E3C.toInt(), byte2bit = 11),
-        CustomBtn("reset",      "RESET",    R.drawable.ic_btn_reset,      0xFFF44336.toInt(), byte2bit = 12),
-        CustomBtn("pause",      "PAUSE",    R.drawable.ic_btn_pause,      0xFF9E9E9E.toInt(), byte2bit = 13),
-        CustomBtn("hazard",     "HAZARD",   R.drawable.ic_btn_hazard,     0xFFFF9800.toInt(), byte2bit = 14),
-        CustomBtn("boost",      "BOOST",    R.drawable.ic_btn_boost,      0xFF00E5FF.toInt(), byte2bit = 15),
+        CustomBtn("look_left",  "LOOKu2190",   R.drawable.ic_btn_look_left,  0xFF795548.toInt(), byte2bit = 4),
+        CustomBtn("look_right", "LOOKu2192",   R.drawable.ic_btn_look_right, 0xFF8D6E63.toInt(), byte2bit = 7),
+        CustomBtn("l1",         "L1",       R.drawable.ic_btn_l1,         0xFF3F51B5.toInt(), byte2bit = 2),
+        CustomBtn("r1",         "R1",       R.drawable.ic_btn_r1,         0xFF5C6BC0.toInt(), byte2bit = 3),
+        CustomBtn("start",      "START",    R.drawable.ic_btn_start,      0xFF4CAF50.toInt(), byte2bit = 5),
+        CustomBtn("select",     "SELECT",   R.drawable.ic_btn_select,     0xFF388E3C.toInt(), byte2bit = 6),
+        CustomBtn("reset",      "RESET",    R.drawable.ic_btn_reset,      0xFFF44336.toInt(), byte1bit = -1),
+        CustomBtn("pause",      "PAUSE",    R.drawable.ic_btn_pause,      0xFF9E9E9E.toInt(), byte1bit = -1),
+        CustomBtn("hazard",     "HAZARD",   R.drawable.ic_btn_hazard,     0xFFFF9800.toInt(), byte1bit = -1),
+        CustomBtn("boost",      "BOOST",    R.drawable.ic_btn_boost,      0xFF00E5FF.toInt(), byte1bit = -1),
         CustomBtn("wipers",     "WIPERS",   R.drawable.ic_btn_wipers,     0xFF607D8B.toInt(), byte1bit = -1),
         CustomBtn("map",        "MAP",      R.drawable.ic_btn_map,        0xFF26C6DA.toInt(), byte1bit = -1),
         CustomBtn("custom1",    "BTN 1",    R.drawable.ic_btn_custom,     0xFFE91E63.toInt(), byte1bit = -1),
@@ -81,10 +81,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         CustomBtn("custom8",    "BTN 8",    R.drawable.ic_btn_custom,     0xFF311B92.toInt(), byte1bit = -1),
         CustomBtn("turbo",      "TURBO",    R.drawable.ic_btn_nitro,      0xFFFF6F00.toInt(), byte1bit = -1),
         CustomBtn("siren",      "SIREN",    R.drawable.ic_btn_horn,       0xFF1565C0.toInt(), byte1bit = -1),
-        CustomBtn("cinematic",  "CINEMATIC",R.drawable.ic_btn_camera,     0xFF6A1B9A.toInt(), byte1bit = -1),
+        CustomBtn("cinematic",  "CIN",      R.drawable.ic_btn_camera,     0xFF6A1B9A.toInt(), byte1bit = -1),
         CustomBtn("slowmo",     "SLOW MO",  R.drawable.ic_btn_pause,      0xFF00838F.toInt(), byte1bit = -1),
         CustomBtn("screenshot", "SHOT",     R.drawable.ic_btn_camera,     0xFF558B2F.toInt(), byte1bit = -1),
-    )
 
     data class CustomBtn(
         val id: String,
@@ -389,7 +388,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun buildCustomBtnView(def: CustomBtn, pb: PlacedCustomBtn,
         container: FrameLayout, editMode: Boolean) {
 
-        container.setBackgroundColor(Color.parseColor("#111111"))
+        container.background = android.graphics.drawable.GradientDrawable().apply {
+            setColor(Color.parseColor("#111111"))
+            setStroke(2, Color.parseColor("#444444"))
+            cornerRadius = 16f
+        }
         container.outlineProvider = object : ViewOutlineProvider() {
             override fun getOutline(view: View, outline: Outline) {
                 outline.setRoundRect(0, 0, view.width, view.height, 16f)
@@ -709,7 +712,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (gearDown) b1 = b1 or (1 shl 6)
         if (gearUp)   b1 = b1 or (1 shl 7)
         if (btnY)     b1 = b1 or (1 shl 4)
-        if (btnX)     b1 = b1 or (1 shl 4) // test
+        if (btnX)     b1 = b1 or (1 shl 6)
         if (dpadUp)   b2 = b2 or (1 shl 2)
         if (dpadDown) b2 = b2 or (1 shl 3)
         if (dpadLeft) b2 = b2 or (1 shl 6)
