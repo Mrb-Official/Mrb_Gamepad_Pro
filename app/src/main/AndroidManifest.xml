@@ -17,7 +17,6 @@
         android:label="MRB Gamepad Pro"
         android:theme="@style/AppTheme">
 
-        <!-- SPLASH = LAUNCHER -->
         <activity
             android:name=".SplashActivity"
             android:exported="true"
@@ -28,15 +27,15 @@
             </intent-filter>
         </activity>
 
-        <!-- MAIN CONTROLLER -->
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:screenOrientation="landscape"/>
 
-            <service
+        <service
             android:name=".HidService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice"/>
+
     </application>
 </manifest>
