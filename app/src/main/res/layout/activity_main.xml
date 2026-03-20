@@ -5,6 +5,20 @@
     android:background="#080808"
     android:keepScreenOn="true">
 
+    <!-- Edit Layout Button -->
+    <TextView
+        android:id="@+id/btn_edit_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="8dp"
+        android:text="⚙ EDIT LAYOUT"
+        android:textColor="#444444"
+        android:textSize="10sp"
+        android:padding="8dp"
+        android:background="@drawable/btn_normal_r12"/>
+
     <!-- D-PAD left top -->
     <RelativeLayout
         android:id="@+id/dpad_layout"

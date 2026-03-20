@@ -32,6 +32,11 @@
             android:exported="false"
             android:screenOrientation="landscape"/>
 
+        <activity
+            android:name=".CustomLayoutActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"/>
+
         <service
             android:name=".HidService"
             android:exported="false"

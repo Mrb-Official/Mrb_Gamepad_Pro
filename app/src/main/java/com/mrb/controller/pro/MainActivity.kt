@@ -108,6 +108,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setupTouch(R.id.btn_dpad_right, R.drawable.btn_normal_r12, R.drawable.btn_press_white,
             null, 0) { dpadRight = it }
 
+        findViewById<android.widget.TextView>(R.id.btn_edit_layout)?.setOnClickListener {
+            startActivity(Intent(this, CustomLayoutActivity::class.java))
+        }
+
         setupHid()
     }
 
