@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private val alpha     = 0.15f
     private var lastSend  = 0L
     private var connectedAnimDone = false
+    private var animPlaying = false
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -146,6 +147,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun playConnectedAnim() {
         connectedAnimDone = true
+        animPlaying = true
         val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         val totalSteps = 468
         var step = 0
@@ -217,8 +219,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val now = System.currentTimeMillis()
         if (now - lastSend > 40) { sendReport(); lastSend = now }
         runOnUiThread {
-            filtXUI = 0.08f * filtX + 0.92f * filtXUI
-            wheelView.rotation = (filtXUI * 9f).coerceIn(-180f, 180f)
+            if (!animPlaying) filtXUI = 0.08f * filtX + 0.92f * filtXUI
+            if (!animPlaying) wheelView.rotation = (filtXUI * 9f).coerceIn(-180f, 180f)
             txtTilt.text = "%.1f°".format(filtX * 9f)
             tiltBar.progress = (100 + (filtX/9.8f*100).toInt()).coerceIn(0, 200)
         }
@@ -237,7 +239,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (gearDown) btnByte1 = btnByte1 or (1 shl 6)
         if (gearUp)   btnByte1 = btnByte1 or (1 shl 7)
         if (btnY)     btnByte1 = btnByte1 or (1 shl 4)
-        if (btnX)     btnByte2 = btnByte2 or (1 shl 3)
+        if (btnX)     btnByte2 = btnByte2 or (1 shl 4)
         if (dpadUp)   btnByte2 = btnByte2 or (1 shl 2)
         if (dpadDown) btnByte2 = btnByte2 or (1 shl 3)
         if (dpadLeft) btnByte2 = btnByte2 or (1 shl 6)
