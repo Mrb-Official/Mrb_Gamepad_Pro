@@ -104,6 +104,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        window.decorView.windowInsetsController?.apply {
+            hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+            systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
         setContentView(R.layout.activity_main)
 
         txtStatus = findViewById(R.id.txt_status)
@@ -116,8 +120,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         setupTouch(R.id.lay_brake, R.drawable.btn_normal_r12, R.drawable.btn_press_red, R.id.ic_brake, 0xFFFF4B4B.toInt()) { brakeOn = it }
         setupTouch(R.id.lay_gas, R.drawable.btn_normal_r12, R.drawable.btn_press_green, R.id.ic_gas, 0xFF3CFF6B.toInt()) { gasOn = it }
-        setupTouch(R.id.lay_gear_up, R.drawable.btn_gear_normal, R.drawable.btn_press_orange, null, 0) { gearUp = it }
-        setupTouch(R.id.lay_gear_down, R.drawable.btn_gear_normal, R.drawable.btn_press_blue, null, 0) { gearDown = it }
+        setupTouch(R.id.lay_gear_up, R.drawable.btn_gear_normal, R.drawable.btn_press_orange, R.id.ic_gear_up, 0xFFFF6D00.toInt()) { gearUp = it }
+        setupTouch(R.id.lay_gear_down, R.drawable.btn_gear_normal, R.drawable.btn_press_blue, R.id.ic_gear_down, 0xFF00B4D8.toInt()) { gearDown = it }
         setupTouch(R.id.btn_a, R.drawable.btn_xbox_green, R.drawable.btn_xbox_green_press, null, 0) { btnA = it }
         setupTouch(R.id.btn_b, R.drawable.btn_xbox_red, R.drawable.btn_xbox_red_press, null, 0) { btnB = it }
         setupTouch(R.id.btn_x, R.drawable.btn_xbox_blue, R.drawable.btn_xbox_blue_press, null, 0) { btnX = it }
@@ -198,6 +202,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     override fun onAccuracyChanged(s: Sensor?, a: Int) {}
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            window.decorView.windowInsetsController?.apply {
+                hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        }
+    }
     override fun onResume() { super.onResume(); sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME) }
     override fun onPause() { super.onPause(); sensorManager.unregisterListener(this) }
     override fun onRequestPermissionsResult(req: Int, perms: Array<String>, results: IntArray) { super.onRequestPermissionsResult(req, perms, results); if (req == 99) setupHid() }
