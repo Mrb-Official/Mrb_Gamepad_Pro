@@ -2,7 +2,6 @@ package com.mrb.controller.pro
 
 import android.annotation.SuppressLint
 import android.bluetooth.*
-import android.companion.*
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.graphics.*
@@ -41,15 +40,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private val alpha    = 0.15f
     private var lastSend = 0L
 
-    )
-
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val perms = arrayOf(android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_SCAN, android.Manifest.permission.BLUETOOTH_ADVERTISE)
-            val missing = perms.filter { checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
+            val perms = arrayOf(
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_SCAN,
+                android.Manifest.permission.BLUETOOTH_ADVERTISE)
+            val missing = perms.filter {
+                checkSelfPermission(it) !=
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
             if (missing.isNotEmpty()) requestPermissions(missing.toTypedArray(), 99)
         }
 
@@ -59,6 +62,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
             systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
+
         setContentView(R.layout.activity_main)
 
         txtStatus = findViewById(R.id.txt_status)
@@ -66,38 +70,72 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         tiltBar   = findViewById(R.id.tilt_bar)
         wheelView = findViewById(R.id.lay_steering)
 
-        sensorManager    = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
         setupTouch(R.id.lay_brake, R.drawable.btn_normal_r12, R.drawable.btn_press_red, R.id.ic_brake, 0xFFFF4B4B.toInt()) { brakeOn = it }
         setupTouch(R.id.lay_gas, R.drawable.btn_normal_r12, R.drawable.btn_press_green, R.id.ic_gas, 0xFF3CFF6B.toInt()) { gasOn = it }
         setupTouch(R.id.lay_gear_up, R.drawable.btn_gear_normal, R.drawable.btn_press_orange, R.id.ic_gear_up, 0xFFFF6D00.toInt()) { gearUp = it }
         setupTouch(R.id.lay_gear_down, R.drawable.btn_gear_normal, R.drawable.btn_press_blue, R.id.ic_gear_down, 0xFF00B4D8.toInt()) { gearDown = it }
         setupTouch(R.id.btn_a, R.drawable.btn_xbox_green, R.drawable.btn_xbox_green_press, null, 0) { btnA = it }
-        setupTouch(R.id.btn_dpad_up,    R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadUp    = it }
-        setupTouch(R.id.btn_dpad_down,  R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadDown  = it }
-        setupTouch(R.id.btn_dpad_left,  R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadLeft  = it }
-        setupTouch(R.id.btn_dpad_right, R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadRight = it }
         setupTouch(R.id.btn_b, R.drawable.btn_xbox_red, R.drawable.btn_xbox_red_press, null, 0) { btnB = it }
         setupTouch(R.id.btn_x, R.drawable.btn_xbox_blue, R.drawable.btn_xbox_blue_press, null, 0) { btnX = it }
         setupTouch(R.id.btn_y, R.drawable.btn_xbox_yellow, R.drawable.btn_xbox_yellow_press, null, 0) { btnY = it }
+        setupTouch(R.id.btn_dpad_up, R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadUp = it }
+        setupTouch(R.id.btn_dpad_down, R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadDown = it }
+        setupTouch(R.id.btn_dpad_left, R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadLeft = it }
+        setupTouch(R.id.btn_dpad_right, R.drawable.btn_normal_r12, R.drawable.btn_press_white, null, 0) { dpadRight = it }
 
         setupHid()
     }
 
+    private fun setupHid() {
+        connectedDevice = HidService.connectedDevice
+
+        if (connectedDevice != null) {
+            txtStatus.text = "● ${connectedDevice?.name}"
+            txtStatus.setTextColor(Color.parseColor("#00FF88"))
+        } else {
+            txtStatus.text = "Waiting for device..."
+            txtStatus.setTextColor(Color.argb(100,255,255,255))
+        }
+
+        HidService.onDisconnected = {
+            runOnUiThread {
+                connectedDevice = null
+                txtStatus.text = "Disconnected"
+                txtStatus.setTextColor(Color.argb(100,255,255,255))
+            }
+        }
+
+        HidService.onConnected = { device ->
+            runOnUiThread {
+                connectedDevice = device
+                txtStatus.text = "● ${device.name}"
+                txtStatus.setTextColor(Color.parseColor("#00FF88"))
+            }
+        }
+    }
+
     @SuppressLint("ClickableViewAccessibility")
-    private fun setupTouch(id: Int, normalRes: Int, pressRes: Int, iconId: Int?, pressIconColor: Int, onPress: (Boolean) -> Unit) {
+    private fun setupTouch(
+        id: Int, normalRes: Int, pressRes: Int,
+        iconId: Int?, pressIconColor: Int,
+        onPress: (Boolean) -> Unit
+    ) {
         val view = findViewById<View>(id) ?: return
         val icon = iconId?.let { findViewById<ImageView>(it) }
-        val vibrator = getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
         view.setOnTouchListener { _, e ->
             when (e.action) {
                 MotionEvent.ACTION_DOWN -> {
                     onPress(true)
                     view.setBackgroundResource(pressRes)
                     if (pressIconColor != 0) icon?.setColorFilter(pressIconColor)
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                        vibrator.vibrate(android.os.VibrationEffect.createOneShot(30, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(VibrationEffect.createOneShot(30,
+                            VibrationEffect.DEFAULT_AMPLITUDE))
                     } else {
+                        @Suppress("DEPRECATION")
                         vibrator.vibrate(30)
                     }
                     true
@@ -111,43 +149,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 else -> false
             }
         }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun setupHid() {
-        // HidService se connected device lo
-        connectedDevice = HidService.connectedDevice
-        hidDevice = HidService.hidDevice
-
-        // Status update
-        if (connectedDevice != null) {
-            txtStatus.text = "● ${connectedDevice?.name}"
-            txtStatus.setTextColor(Color.parseColor("#00FF88"))
-        } else {
-            txtStatus.text = "Waiting for device..."
-            txtStatus.setTextColor(Color.argb(100,255,255,255))
-        }
-
-        // Listen for disconnect
-        HidService.onDisconnected = {
-            runOnUiThread {
-                connectedDevice = null
-                hidDevice = null
-                txtStatus.text = "Disconnected"
-                txtStatus.setTextColor(Color.argb(100,255,255,255))
-            }
-        }
-
-        // Listen for reconnect
-        HidService.onConnected = { device ->
-            runOnUiThread {
-                connectedDevice = device
-                hidDevice = HidService.hidDevice
-                txtStatus.text = "● ${device.name}"
-                txtStatus.setTextColor(Color.parseColor("#00FF88"))
-            }
-        }
-    }
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -170,54 +171,99 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         var btnByte1 = 0
         var btnByte2 = 0
-        if (btnA)     btnByte1 = btnByte1 or (1 shl 0) // Button 1
-        if (btnB)     btnByte1 = btnByte1 or (1 shl 1) // Button 2
-        
-        if (gearDown) btnByte1 = btnByte1 or (1 shl 6) // SWAPPED: Front ab 13 dega
-        if (gearUp)   btnByte1 = btnByte1 or (1 shl 7) // EXACT Button 7 (RT)
-        if (btnX)     btnByte1 = btnByte1 or (1 shl 2) // SWAPPED: X ab 4 dega
-        if (btnY)     btnByte1 = btnByte1 or (1 shl 4) // Button 5 (Y)
-        if (dpadUp)   btnByte2 = btnByte2 or (1 shl 2)  // Button 11
-        if (dpadDown) btnByte2 = btnByte2 or (1 shl 3)  // Button 12
-        if (dpadLeft) btnByte2 = btnByte2 or (1 shl 6)  // Button 15
-        if (dpadRight)btnByte2 = btnByte2 or (1 shl 7)  // Button 16
+
+        if (btnA)     btnByte1 = btnByte1 or (1 shl 0)
+        if (btnB)     btnByte1 = btnByte1 or (1 shl 1)
+        if (gearDown) btnByte1 = btnByte1 or (1 shl 6)
+        if (gearUp)   btnByte1 = btnByte1 or (1 shl 7)
+        if (btnX)     btnByte1 = btnByte1 or (1 shl 2)
+        if (btnY)     btnByte1 = btnByte1 or (1 shl 4)
+        if (dpadUp)   btnByte2 = btnByte2 or (1 shl 2)
+        if (dpadDown) btnByte2 = btnByte2 or (1 shl 3)
+        if (dpadLeft) btnByte2 = btnByte2 or (1 shl 6)
+        if (dpadRight)btnByte2 = btnByte2 or (1 shl 7)
 
         val gas   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
         val brake = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
-        
-        // Payload strictly sends Byte 1 then Byte 2
-        hid.sendReport(device, 1, byteArrayOf(btnByte1.toByte(), btnByte2.toByte(), tiltByte, 0x00, gas, brake))
+
+        hid.sendReport(device, 1,
+            byteArrayOf(btnByte1.toByte(), btnByte2.toByte(), tiltByte, 0x00, gas, brake))
     }
 
     override fun onAccuracyChanged(s: Sensor?, a: Int) {}
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            window.decorView.windowInsetsController?.apply {
-                hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-                systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            }
+
+    override fun onResume() {
+        super.onResume()
+        sensorManager.registerListener(this,
+            sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+            SensorManager.SENSOR_DELAY_GAME)
+        // Refresh connection
+        connectedDevice = HidService.connectedDevice
+        if (connectedDevice != null) {
+            txtStatus.text = "● ${connectedDevice?.name}"
+            txtStatus.setTextColor(Color.parseColor("#00FF88"))
         }
     }
-    override fun onResume() { super.onResume(); sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME) }
-    override fun onPause() { super.onPause(); sensorManager.unregisterListener(this) }
-    override fun onRequestPermissionsResult(req: Int, perms: Array<String>, results: IntArray) { super.onRequestPermissionsResult(req, perms, results); if (req == 99) setupHid() }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) window.decorView.windowInsetsController?.apply {
+            hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+            systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        req: Int, perms: Array<String>, results: IntArray) {
+        super.onRequestPermissionsResult(req, perms, results)
+    }
 }
 
-class WheelView(context: android.content.Context, attrs: android.util.AttributeSet? = null) : View(context, attrs) {
-    var angle: Float = 0f; set(v) { field = v; invalidate() }
-    private val pRing = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 12f }
-    private val pHub = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 7f }
-    private val pSpoke = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(160,255,255,255); style = Paint.Style.STROKE; strokeWidth = 9f; strokeCap = Paint.Cap.ROUND }
-    private val pDot = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL }
-    private val pArc = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(40,255,255,255); style = Paint.Style.STROKE; strokeWidth = 7f; strokeCap = Paint.Cap.ROUND }
+class WheelView(
+    context: android.content.Context,
+    attrs: android.util.AttributeSet? = null
+) : View(context, attrs) {
+
+    var angle: Float = 0f
+        set(v) { field = v; invalidate() }
+
+    private val pRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 12f }
+    private val pHub = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 7f }
+    private val pSpoke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.argb(160,255,255,255)
+        style = Paint.Style.STROKE; strokeWidth = 9f
+        strokeCap = Paint.Cap.ROUND }
+    private val pDot = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE; style = Paint.Style.FILL }
+    private val pArc = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.argb(40,255,255,255)
+        style = Paint.Style.STROKE; strokeWidth = 7f
+        strokeCap = Paint.Cap.ROUND }
+
     override fun onDraw(canvas: android.graphics.Canvas) {
-        val cx = width/2f; val cy = height/2f; val r  = minOf(width,height)/2f - 12f
+        val cx = width/2f; val cy = height/2f
+        val r  = minOf(width,height)/2f - 12f
         canvas.drawCircle(cx, cy, r, pRing)
         val arc = android.graphics.RectF(cx-r*0.6f, cy-r*0.6f, cx+r*0.6f, cy+r*0.6f)
         canvas.drawArc(arc, -90f, -angle, false, pArc)
-        canvas.save(); canvas.rotate(-angle, cx, cy); canvas.drawCircle(cx, cy, r*0.22f, pHub)
-        for (i in 0..2) { val a = Math.toRadians(i*120.0 - 90.0); canvas.drawLine(cx+(r*0.22f*cos(a)).toFloat(), cy+(r*0.22f*sin(a)).toFloat(), cx+(r*cos(a)).toFloat(), cy+(r*sin(a)).toFloat(), pSpoke) }
-        canvas.drawCircle(cx, cy-r+9f, 7f, pDot); canvas.drawCircle(cx, cy, 5f, pDot); canvas.restore()
+        canvas.save()
+        canvas.rotate(-angle, cx, cy)
+        canvas.drawCircle(cx, cy, r*0.22f, pHub)
+        for (i in 0..2) {
+            val a = Math.toRadians(i*120.0 - 90.0)
+            canvas.drawLine(
+                cx+(r*0.22f*cos(a)).toFloat(), cy+(r*0.22f*sin(a)).toFloat(),
+                cx+(r*cos(a)).toFloat(), cy+(r*sin(a)).toFloat(), pSpoke)
+        }
+        canvas.drawCircle(cx, cy-r+9f, 7f, pDot)
+        canvas.drawCircle(cx, cy, 5f, pDot)
+        canvas.restore()
     }
 }
