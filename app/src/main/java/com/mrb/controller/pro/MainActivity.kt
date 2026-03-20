@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     // Custom buttons definitions - 30 buttons
     private val customButtons = listOf(
         CustomBtn("horn",       "HORN",     R.drawable.ic_btn_horn,       0xFFFFEB3B.toInt(), byte1bit = 2),
-        CustomBtn("handbrake",  "H.BRAKE",  R.drawable.ic_btn_handbrake,  0xFFFF5722.toInt(), byte1bit = 3),
+        CustomBtn("handbrake",  "H.BRAKE",  R.drawable.ic_btn_handbrake,  0xFFFF5722.toInt(), byte1bit = 6),
         CustomBtn("camera",     "CAM",      R.drawable.ic_btn_camera,     0xFF9C27B0.toInt(), byte1bit = 5),
         CustomBtn("nitro",      "NITRO",    R.drawable.ic_btn_nitro,      0xFF00BCD4.toInt(), byte2bit = 0),
         CustomBtn("lights",     "LIGHTS",   R.drawable.ic_btn_lights,     0xFFFFC107.toInt(), byte2bit = 1),
@@ -693,7 +693,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (gearDown) b1 = b1 or (1 shl 6)
         if (gearUp)   b1 = b1 or (1 shl 7)
         if (btnY)     b1 = b1 or (1 shl 4)
-        if (btnX)     b1 = b1 or (1 shl 6)
+        if (btnX)     b1 = b1 or (1 shl 3)
         if (dpadUp)   b2 = b2 or (1 shl 2)
         if (dpadDown) b2 = b2 or (1 shl 3)
         if (dpadLeft) b2 = b2 or (1 shl 6)
