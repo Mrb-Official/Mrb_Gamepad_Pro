@@ -668,8 +668,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (event?.sensor?.type != Sensor.TYPE_ACCELEROMETER) return
         filtX = alpha * event.values[1] + (1 - alpha) * filtX
         val rawTilt = (filtX * 127f / 9.8f).toInt().coerceIn(-127, 127)
-        tiltByte = if (rawTilt in -1..1) (rawTilt * 10).coerceIn(-127, 127).toByte() else rawTilt.toByte()
-        val now = System.currentTimeMillis()
+        tiltByte = when {
+            rawTilt > 0 -> rawTilt.coerceAtLeast(10).toByte()
+            rawTilt < 0 -> rawTilt.coerceAtMost(-10).toByte()
+            else -> 0
+        }
         if (now - lastSend > 40) { sendReport(); lastSend = now }
         runOnUiThread {
             if (!animPlaying) {
