@@ -49,7 +49,7 @@ class SplashActivity : AppCompatActivity() {
         }
 
         // Init AdMob
-        MobileAds.initialize(this)
+        try { MobileAds.initialize(this) } catch (e: Exception) { e.printStackTrace() }
 
         buildUI()
         checkPremium()
