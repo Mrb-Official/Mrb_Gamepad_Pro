@@ -51,11 +51,28 @@ class SplashActivity : AppCompatActivity() {
         // Init AdMob
         try { MobileAds.initialize(this) } catch (e: Exception) { e.printStackTrace() }
 
-        buildUI()
-        checkPremium()
-        startForegroundService(Intent(this, HidService::class.java))
-
-        HidService.onConnected = { device ->
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val perms = arrayOf(
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_SCAN,
+                android.Manifest.permission.BLUETOOTH_ADVERTISE)
+            val missing = perms.filter {
+                checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
+            if (missing.isNotEmpty()) {
+                requestPermissions(missing.toTypedArray(), 99)
+            } else {
+                startForegroundService(Intent(this, HidService::class.java))
+                HidService.onConnected = { device ->
+                    runOnUiThread { showConnectedAnim(device.name ?: "Device") }
+                }
+            }
+        } else {
+            startForegroundService(Intent(this, HidService::class.java))
+            HidService.onConnected = { device ->
+                runOnUiThread { showConnectedAnim(device.name ?: "Device") }
+            }
+        }
             runOnUiThread { showConnectedAnim(device.name ?: "Device") }
         }
 
