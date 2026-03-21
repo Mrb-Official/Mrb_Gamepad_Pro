@@ -34,9 +34,7 @@ class SplashActivity : AppCompatActivity() {
         }
     }
 
-    // Test Ad Unit ID - replace with real one after publish
     private val AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917" // Test ID
-    // Real ID = "ca-app-pub-5087876801896320/3281731159"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,9 +46,12 @@ class SplashActivity : AppCompatActivity() {
             systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
-        // Init AdMob
         try { MobileAds.initialize(this) } catch (e: Exception) { e.printStackTrace() }
 
+        buildUI()
+        checkPremium()
+
+        // Permission check before starting service
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val perms = arrayOf(
                 android.Manifest.permission.BLUETOOTH_CONNECT,
@@ -62,26 +63,23 @@ class SplashActivity : AppCompatActivity() {
             if (missing.isNotEmpty()) {
                 requestPermissions(missing.toTypedArray(), 99)
             } else {
-                startForegroundService(Intent(this, HidService::class.java))
-                HidService.onConnected = { device ->
-                    runOnUiThread { showConnectedAnim(device.name ?: "Device") }
-                }
+                startService()
             }
         } else {
-            startForegroundService(Intent(this, HidService::class.java))
-            HidService.onConnected = { device ->
-                runOnUiThread { showConnectedAnim(device.name ?: "Device") }
-            }
-        }
-            runOnUiThread { showConnectedAnim(device.name ?: "Device") }
+            startService()
         }
 
         playSound("boot.mp3")
         startPulse()
         handler.post(dotRunnable)
-
-        // Load rewarded ad
         loadRewardedAd()
+    }
+
+    private fun startService() {
+        startForegroundService(Intent(this, HidService::class.java))
+        HidService.onConnected = { device ->
+            runOnUiThread { showConnectedAnim(device.name ?: "Device") }
+        }
     }
 
     private fun buildUI() {
@@ -139,7 +137,6 @@ class SplashActivity : AppCompatActivity() {
             }
         }
 
-        // Premium status
         tvPremiumStatus = TextView(this).apply {
             textSize = 11f
             gravity = android.view.Gravity.CENTER
@@ -150,7 +147,6 @@ class SplashActivity : AppCompatActivity() {
             }
         }
 
-        // Watch Ad button
         btnWatchAd = TextView(this).apply {
             text = "▶ Watch Ad = 1 Day Premium"
             textSize = 12f
@@ -192,7 +188,6 @@ class SplashActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("mrb_premium", Context.MODE_PRIVATE)
         val expiry = prefs.getLong("premium_expiry", 0L)
         val now = System.currentTimeMillis()
-
         if (expiry > now) {
             val hoursLeft = ((expiry - now) / 3600000).toInt()
             tvPremiumStatus.text = "⭐ Premium Active - ${hoursLeft}h remaining"
@@ -217,9 +212,7 @@ class SplashActivity : AppCompatActivity() {
                 }
                 override fun onAdFailedToLoad(error: LoadAdError) {
                     rewardedAd = null
-                    runOnUiThread {
-                        btnWatchAd.alpha = 0.5f
-                    }
+                    runOnUiThread { btnWatchAd.alpha = 0.5f }
                 }
             })
     }
@@ -230,22 +223,17 @@ class SplashActivity : AppCompatActivity() {
             loadRewardedAd()
             return
         }
-
         ad.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdDismissedFullScreenContent() {
                 rewardedAd = null
                 loadRewardedAd()
             }
         }
-
-        ad.show(this) { reward ->
-            // User earned reward = 1 day premium
-            grantPremium()
-        }
+        ad.show(this) { grantPremium() }
     }
 
     private fun grantPremium() {
-        val expiry = System.currentTimeMillis() + 86400000L // 24 hours
+        val expiry = System.currentTimeMillis() + 86400000L
         getSharedPreferences("mrb_premium", Context.MODE_PRIVATE)
             .edit().putLong("premium_expiry", expiry).apply()
         runOnUiThread {
@@ -304,10 +292,8 @@ class SplashActivity : AppCompatActivity() {
     private fun showConnectedAnim(deviceName: String) {
         handler.removeCallbacks(dotRunnable)
         mediaPlayer?.release()
-
         ivIcon.clearAnimation()
         ivIcon.setColorFilter(Color.parseColor("#00FF88"))
-
         ivIcon.animate()
             .scaleX(1.4f).scaleY(1.4f).setDuration(150)
             .withEndAction {
@@ -316,13 +302,10 @@ class SplashActivity : AppCompatActivity() {
                     .setInterpolator(OvershootInterpolator(2f))
                     .start()
             }.start()
-
         tvStatus.text = "Device Connected"
         tvStatus.setTextColor(Color.parseColor("#00FF88"))
         tvDots.text = ""
-
         playSound("connect.mp3")
-
         handler.postDelayed({
             startActivity(Intent(this, MainActivity::class.java))
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
@@ -330,14 +313,10 @@ class SplashActivity : AppCompatActivity() {
         }, 1800)
     }
 
-    override fun onRequestPermissionsResult(req: Int, perms: Array<String>, results: IntArray) {
+    override fun onRequestPermissionsResult(
+        req: Int, perms: Array<String>, results: IntArray) {
         super.onRequestPermissionsResult(req, perms, results)
-        if (req == 99) {
-            startForegroundService(Intent(this, HidService::class.java))
-            HidService.onConnected = { device ->
-                runOnUiThread { showConnectedAnim(device.name ?: "Device") }
-            }
-        }
+        if (req == 99) startService()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
