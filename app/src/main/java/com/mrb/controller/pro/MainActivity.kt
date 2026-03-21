@@ -672,7 +672,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             rawTilt > 0 -> rawTilt.coerceAtLeast(10).toByte()
             rawTilt < 0 -> rawTilt.coerceAtMost(-10).toByte()
             else -> 0
-        }
+        val now = System.currentTimeMillis()
+        if (now - lastSend > 40) { sendReport(); lastSend = now }
         if (now - lastSend > 40) { sendReport(); lastSend = now }
         runOnUiThread {
             if (!animPlaying) {
