@@ -11,6 +11,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
     <uses-feature android:name="android.software.companion_device_setup"/>
 
+    <meta-data
+        android:name="com.google.android.gms.ads.APPLICATION_ID"
+        android:value="ca-app-pub-5087876801896320~5141874630"/>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
