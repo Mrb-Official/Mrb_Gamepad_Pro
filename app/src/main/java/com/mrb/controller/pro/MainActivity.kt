@@ -671,16 +671,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         tiltByte = when {
             rawTilt > 0 -> rawTilt.coerceAtLeast(10).toByte()
             rawTilt < 0 -> rawTilt.coerceAtMost(-10).toByte()
-            else -> 0
+            else -> 0.toByte()
+        }
         val now = System.currentTimeMillis()
-        if (now - lastSend > 40) { sendReport(); lastSend = now }
         if (now - lastSend > 40) { sendReport(); lastSend = now }
         runOnUiThread {
             if (!animPlaying) {
                 filtXUI = 0.08f * filtX + 0.92f * filtXUI
                 wheelView.rotation = (filtXUI * 9f).coerceIn(-180f, 180f)
             }
-            txtTilt.text = "%.1f°".format(filtX * 9f)
+            txtTilt.text = "%.1fu00b0".format(filtX * 9f)
             tiltBar.progress = (100 + (filtX / 9.8f * 100).toInt()).coerceIn(0, 200)
         }
     }
