@@ -10,15 +10,20 @@ import android.view.*
 import android.view.animation.*
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.ads.*
+import com.google.android.gms.ads.rewarded.*
 
 class SplashActivity : AppCompatActivity() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var mediaPlayer: MediaPlayer? = null
+    private var rewardedAd: RewardedAd? = null
 
     private lateinit var ivIcon: ImageView
     private lateinit var tvStatus: TextView
     private lateinit var tvDots: TextView
+    private lateinit var btnWatchAd: TextView
+    private lateinit var tvPremiumStatus: TextView
 
     private var dotCount = 0
     private val dotRunnable = object : Runnable {
@@ -28,6 +33,10 @@ class SplashActivity : AppCompatActivity() {
             handler.postDelayed(this, 500)
         }
     }
+
+    // Test Ad Unit ID - replace with real one after publish
+    private val AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917" // Test ID
+    // Real ID = "ca-app-pub-5087876801896320/3281731159"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,36 +48,23 @@ class SplashActivity : AppCompatActivity() {
             systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
-        buildUI()
+        // Init AdMob
+        MobileAds.initialize(this)
 
-        // Runtime BT permissions
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val perms = arrayOf(
-                android.Manifest.permission.BLUETOOTH_CONNECT,
-                android.Manifest.permission.BLUETOOTH_SCAN,
-                android.Manifest.permission.BLUETOOTH_ADVERTISE)
-            val missing = perms.filter {
-                checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED
-            }
-            if (missing.isNotEmpty()) {
-                requestPermissions(missing.toTypedArray(), 99)
-                return
-            }
-        }
-        // Start HID Service
+        buildUI()
+        checkPremium()
         startForegroundService(Intent(this, HidService::class.java))
 
-        // Listen for connection
         HidService.onConnected = { device ->
             runOnUiThread { showConnectedAnim(device.name ?: "Device") }
         }
 
-        // Boot sound
         playSound("boot.mp3")
-
-        // Pulse + dots
         startPulse()
         handler.post(dotRunnable)
+
+        // Load rewarded ad
+        loadRewardedAd()
     }
 
     private fun buildUI() {
@@ -119,21 +115,128 @@ class SplashActivity : AppCompatActivity() {
             textSize = 12f
             setTextColor(Color.argb(120, 255, 255, 255))
             gravity = android.view.Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = 32
+            }
+        }
+
+        // Premium status
+        tvPremiumStatus = TextView(this).apply {
+            textSize = 11f
+            gravity = android.view.Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = 12
+            }
+        }
+
+        // Watch Ad button
+        btnWatchAd = TextView(this).apply {
+            text = "▶ Watch Ad = 1 Day Premium"
+            textSize = 12f
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.parseColor("#FF6D00"))
+            setPadding(32, 14, 32, 14)
+            gravity = android.view.Gravity.CENTER
+            outlineProvider = object : ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: Outline) {
+                    outline.setRoundRect(0, 0, view.width, view.height, 24f)
+                }
+            }
+            clipToOutline = true
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                gravity = android.view.Gravity.CENTER
+            }
+            setOnClickListener { showRewardedAd() }
         }
 
         center.addView(ivIcon)
         center.addView(tvStatus)
         center.addView(tvDots)
         center.addView(tvSub)
+        center.addView(tvPremiumStatus)
+        center.addView(btnWatchAd)
         root.addView(center)
         setContentView(root)
 
-        // Animate icon in
         ivIcon.animate()
             .alpha(1f).scaleX(1f).scaleY(1f)
             .setDuration(800)
             .setInterpolator(OvershootInterpolator())
             .start()
+    }
+
+    private fun checkPremium() {
+        val prefs = getSharedPreferences("mrb_premium", Context.MODE_PRIVATE)
+        val expiry = prefs.getLong("premium_expiry", 0L)
+        val now = System.currentTimeMillis()
+
+        if (expiry > now) {
+            val hoursLeft = ((expiry - now) / 3600000).toInt()
+            tvPremiumStatus.text = "⭐ Premium Active - ${hoursLeft}h remaining"
+            tvPremiumStatus.setTextColor(Color.parseColor("#FFD700"))
+            btnWatchAd.text = "▶ Watch Ad = Extend 1 Day"
+        } else {
+            tvPremiumStatus.text = "Watch ad to unlock Premium for 1 day"
+            tvPremiumStatus.setTextColor(Color.argb(150, 255, 255, 255))
+        }
+    }
+
+    private fun loadRewardedAd() {
+        val adRequest = AdRequest.Builder().build()
+        RewardedAd.load(this, AD_UNIT_ID, adRequest,
+            object : RewardedAdLoadCallback() {
+                override fun onAdLoaded(ad: RewardedAd) {
+                    rewardedAd = ad
+                    runOnUiThread {
+                        btnWatchAd.alpha = 1f
+                        btnWatchAd.isEnabled = true
+                    }
+                }
+                override fun onAdFailedToLoad(error: LoadAdError) {
+                    rewardedAd = null
+                    runOnUiThread {
+                        btnWatchAd.alpha = 0.5f
+                    }
+                }
+            })
+    }
+
+    private fun showRewardedAd() {
+        val ad = rewardedAd ?: run {
+            Toast.makeText(this, "Ad loading... try again", Toast.LENGTH_SHORT).show()
+            loadRewardedAd()
+            return
+        }
+
+        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+            override fun onAdDismissedFullScreenContent() {
+                rewardedAd = null
+                loadRewardedAd()
+            }
+        }
+
+        ad.show(this) { reward ->
+            // User earned reward = 1 day premium
+            grantPremium()
+        }
+    }
+
+    private fun grantPremium() {
+        val expiry = System.currentTimeMillis() + 86400000L // 24 hours
+        getSharedPreferences("mrb_premium", Context.MODE_PRIVATE)
+            .edit().putLong("premium_expiry", expiry).apply()
+        runOnUiThread {
+            tvPremiumStatus.text = "⭐ Premium Unlocked for 24 hours!"
+            tvPremiumStatus.setTextColor(Color.parseColor("#FFD700"))
+            btnWatchAd.text = "▶ Watch Ad = Extend 1 More Day"
+            Toast.makeText(this, "🎉 Premium Active for 24 hours!", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun startPulse() {
@@ -185,11 +288,9 @@ class SplashActivity : AppCompatActivity() {
         handler.removeCallbacks(dotRunnable)
         mediaPlayer?.release()
 
-        // Change icon
         ivIcon.clearAnimation()
         ivIcon.setColorFilter(Color.parseColor("#00FF88"))
 
-        // Bounce
         ivIcon.animate()
             .scaleX(1.4f).scaleY(1.4f).setDuration(150)
             .withEndAction {
@@ -212,22 +313,21 @@ class SplashActivity : AppCompatActivity() {
         }, 1800)
     }
 
+    override fun onRequestPermissionsResult(req: Int, perms: Array<String>, results: IntArray) {
+        super.onRequestPermissionsResult(req, perms, results)
+        if (req == 99) {
+            startForegroundService(Intent(this, HidService::class.java))
+            HidService.onConnected = { device ->
+                runOnUiThread { showConnectedAnim(device.name ?: "Device") }
+            }
+        }
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) window.decorView.windowInsetsController?.apply {
             hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
             systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
-    }
-
-    override fun onRequestPermissionsResult(req: Int, perms: Array<String>, results: IntArray) {
-        super.onRequestPermissionsResult(req, perms, results)
-        if (req == 99) {
-            // Permission granted - start service
-            startForegroundService(Intent(this, HidService::class.java))
-            HidService.onConnected = { device ->
-                runOnUiThread { showConnectedAnim(device.name ?: "Device") }
-            }
         }
     }
 
@@ -237,9 +337,4 @@ class SplashActivity : AppCompatActivity() {
         mediaPlayer?.release()
         HidService.onConnected = null
     }
-}
-
-// Extension to handle permission result
-fun SplashActivity.onPermsGranted() {
-    startForegroundService(Intent(this, HidService::class.java))
 }
