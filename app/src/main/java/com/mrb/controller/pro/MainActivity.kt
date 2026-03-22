@@ -8,6 +8,7 @@ import android.graphics.*
 import android.hardware.*
 import android.os.*
 import android.view.*
+import android.view.animation.DecelerateInterpolator
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.ads.*
@@ -50,7 +51,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var editMode = false
     private var rewardedAd: RewardedAd? = null
     private val AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
-
     private val handler = Handler(Looper.getMainLooper())
 
     private val customButtons = listOf(
@@ -182,7 +182,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setupHid()
     }
 
-    // ── Premium ──────────────────────────────────────────────────────────────
+    // ── Premium ───────────────────────────────────────────────────────────────
 
     private fun isPremium(): Boolean {
         val expiry = getSharedPreferences("mrb_premium", MODE_PRIVATE)
@@ -191,31 +191,34 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun updateCrownGlow(crown: ImageView) {
-        if (isPremium()) {
-            crown.setColorFilter(Color.parseColor("#FFD700"))
-        } else {
-            crown.setColorFilter(Color.parseColor("#2196F3"))
-        }
+        if (isPremium()) crown.setColorFilter(Color.parseColor("#FFD700"))
+        else crown.setColorFilter(Color.parseColor("#2196F3"))
     }
 
     private fun onCrownClick() {
         val existing = overlayFrame.findViewWithTag<View>("premium_popup")
         if (existing != null) {
-            overlayFrame.removeView(existing)
+            existing.animate().alpha(0f).translationY(80f).setDuration(250)
+                .withEndAction { overlayFrame.removeView(existing) }.start()
             return
         }
         if (isPremium()) toggleEditMode() else showPremiumPopup()
     }
 
+    private fun dismissPopup() {
+        val v = overlayFrame.findViewWithTag<View>("premium_popup") ?: return
+        v.animate().alpha(0f).translationY(80f).setDuration(250)
+            .withEndAction { overlayFrame.removeView(v) }.start()
+    }
+
     private fun showPremiumPopup() {
-        // Full screen overlay
         val overlay = FrameLayout(this).apply {
             tag = "premium_popup"
             setBackgroundColor(Color.argb(200, 0, 0, 0))
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT)
-            setOnClickListener { } // consume clicks
+            setOnClickListener { dismissPopup() }
         }
 
         val card = LinearLayout(this).apply {
@@ -236,15 +239,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
             alpha = 0f
             translationY = 100f
+            setOnClickListener { } // prevent dismiss on card click
         }
 
-        // Top row: crown + title + close
+        // Top row
         val topRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 16 }
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 20 }
         }
 
         val crownIv = ImageView(this).apply {
@@ -263,22 +267,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         val btnClose = TextView(this).apply {
-            text = "  X  "
-            textSize = 16f
+            text = "✕"
+            textSize = 18f
             setTextColor(Color.argb(180, 255, 255, 255))
-            setOnClickListener {
-                overlayFrame.findViewWithTag<View>("premium_popup")?.let { v ->
-                    v.animate().alpha(0f).translationY(80f).setDuration(250)
-                        .withEndAction { overlayFrame.removeView(v) }.start()
-                }
-            }
+            setPadding(12, 4, 12, 4)
+            setOnClickListener { dismissPopup() }
         }
 
         topRow.addView(crownIv)
         topRow.addView(tvTitle)
         topRow.addView(btnClose)
 
-        // Content row: left + right
+        // Content row
         val contentRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(
@@ -286,6 +286,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 24 }
         }
 
+        // Left col
         val leftCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(0,
@@ -295,7 +296,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         val tvSub = TextView(this).apply {
-            text = "Watch an ad to unlock\npremium features for 24 hours"
+            text = "Watch an ad to unlock premium features for 24 hours"
             textSize = 12f
             setTextColor(Color.argb(180, 255, 255, 255))
             layoutParams = LinearLayout.LayoutParams(
@@ -303,7 +304,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 20 }
         }
 
-        val btnAd = FrameLayout(this).apply {
+        val btnAdContainer = FrameLayout(this).apply {
             setBackgroundColor(Color.parseColor("#1565C0"))
             outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
@@ -312,17 +313,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
             clipToOutline = true
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 52).apply { bottomMargin = 10 }
+                LinearLayout.LayoutParams.MATCH_PARENT, 52).apply { bottomMargin = 12 }
             setOnClickListener {
-                overlayFrame.findViewWithTag<View>("premium_popup")?.let { v ->
-                    v.animate().alpha(0f).setDuration(200)
-                        .withEndAction { overlayFrame.removeView(v) }.start()
-                }
+                dismissPopup()
                 showAdFromMainActivity()
             }
         }
 
-        val btnAdInner = LinearLayout(this).apply {
+        val btnAdRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
             layoutParams = FrameLayout.LayoutParams(
@@ -332,7 +330,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val playIv = ImageView(this).apply {
             setImageResource(R.drawable.motion_play_24)
             setColorFilter(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(28, 28).apply { setMargins(0,0,8,0) }
+            layoutParams = LinearLayout.LayoutParams(28, 28).apply { setMargins(0,0,10,0) }
         }
         val btnAdTv = TextView(this).apply {
             text = "Be a Premium Member"
@@ -340,9 +338,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             setTextColor(Color.WHITE)
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
         }
-        btnAdInner.addView(playIv)
-        btnAdInner.addView(btnAdTv)
-        btnAd.addView(btnAdInner)
+        btnAdRow.addView(playIv)
+        btnAdRow.addView(btnAdTv)
+        btnAdContainer.addView(btnAdRow)
 
         val btnTry = TextView(this).apply {
             text = "Try without Premium"
@@ -352,19 +350,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT)
-            setOnClickListener {
-                overlayFrame.findViewWithTag<View>("premium_popup")?.let { v ->
-                    v.animate().alpha(0f).setDuration(200)
-                        .withEndAction { overlayFrame.removeView(v) }.start()
-                }
-                toggleEditMode()
-            }
+            setOnClickListener { dismissPopup(); toggleEditMode() }
         }
 
         leftCol.addView(tvSub)
-        leftCol.addView(btnAd)
+        leftCol.addView(btnAdContainer)
         leftCol.addView(btnTry)
 
+        // Right col - benefits
         val rightCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
@@ -381,6 +374,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 12 }
         }
+        rightCol.addView(tvBTitle)
 
         val benefits = listOf(
             Pair(R.drawable.ic_btn_custom, "Custom button layout"),
@@ -388,8 +382,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             Pair(R.drawable.save_24,       "Save your layout"),
             Pair(R.drawable.crown_24,      "Premium crown badge")
         )
-
-        rightCol.addView(tvBTitle)
         for ((icon, label) in benefits) {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -412,7 +404,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         contentRow.addView(leftCol)
         contentRow.addView(rightCol)
-
         card.addView(topRow)
         card.addView(contentRow)
         overlay.addView(card)
@@ -421,9 +412,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         // Animate in
         card.animate().alpha(1f).translationY(0f)
             .setDuration(300)
-            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .setInterpolator(DecelerateInterpolator())
             .start()
-    }
     }
 
     private fun loadRewardedAd() {
@@ -486,16 +476,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 gravity = Gravity.BOTTOM
             }
         }
-        val btnAdd  = iconBarBtn(R.drawable.add_circle_24, "ADD",   "#00C853") { showPicker() }
-        val space   = View(this).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) }
-        val tvHint  = TextView(this).apply {
+        val btnAdd   = iconBarBtn(R.drawable.add_circle_24, "ADD",   "#00C853") { showPicker() }
+        val space    = View(this).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) }
+        val tvHint   = TextView(this).apply {
             text = "Drag  •  Resize  •  Delete"
             textSize = 9f
             setTextColor(Color.argb(120, 255, 255, 255))
             gravity = Gravity.CENTER
         }
-        val space2  = View(this).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) }
-        val btnSave = iconBarBtn(R.drawable.save_24, "SAVE", "#2196F3") {
+        val space2   = View(this).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) }
+        val btnSave  = iconBarBtn(R.drawable.save_24, "SAVE", "#2196F3") {
             saveCustomLayout(); toggleEditMode()
         }
         val btnReset = iconBarBtn(R.drawable.auto_delete_24, "RESET", "#F44336") { confirmReset() }
@@ -703,8 +693,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                         dX = v.x - e.rawX; dY = v.y - e.rawY; v.elevation = 12f; true
                     }
                     MotionEvent.ACTION_MOVE -> {
-                        val nx = (e.rawX + dX).coerceIn(0f, (overlayFrame.width - v.width).toFloat())
-                        val ny = (e.rawY + dY).coerceIn(0f, (overlayFrame.height - v.height - 52f))
+                        val nx = (e.rawX + dX).coerceIn(0f,
+                            (overlayFrame.width - v.width).toFloat())
+                        val ny = (e.rawY + dY).coerceIn(0f,
+                            (overlayFrame.height - v.height - 52f))
                         v.x = nx; v.y = ny; pb.x = nx; pb.y = ny; true
                     }
                     MotionEvent.ACTION_UP -> { v.elevation = 0f; true }
@@ -845,7 +837,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val totalSteps = 468; var step = 0
         fun haptic(ms: Long) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                vibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
+                vibrator.vibrate(VibrationEffect.createOneShot(
+                    ms, VibrationEffect.DEFAULT_AMPLITUDE))
         }
         val r = object : Runnable {
             override fun run() {
