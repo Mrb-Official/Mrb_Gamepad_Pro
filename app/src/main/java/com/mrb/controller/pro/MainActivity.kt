@@ -347,10 +347,26 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             textSize = 10f
             setTextColor(Color.argb(130, 255, 255, 255))
             gravity = Gravity.CENTER
+        val btnTry = FrameLayout(this).apply {
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.TRANSPARENT)
+                setStroke(1, Color.argb(80, 255, 255, 255))
+                cornerRadius = 24f
+            }
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT)
+                LinearLayout.LayoutParams.MATCH_PARENT, 48)
             setOnClickListener { dismissPopup(); toggleEditMode() }
+        }
+        val btnTryTv = TextView(this).apply {
+            text = "Try without Premium"
+            textSize = 11f
+            setTextColor(Color.argb(180, 255, 255, 255))
+            gravity = Gravity.CENTER
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT)
+        }
+        btnTry.addView(btnTryTv)
         }
 
         leftCol.addView(tvSub)
