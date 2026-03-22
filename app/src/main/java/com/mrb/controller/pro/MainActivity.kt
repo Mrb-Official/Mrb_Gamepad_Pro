@@ -157,7 +157,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
         overlayFrame.addView(btnCrown)
         updateCrownGlow(btnCrown)
-        overlayFrame.addView(btnEdit)
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
