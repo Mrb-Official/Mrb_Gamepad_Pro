@@ -182,8 +182,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setupHid()
     }
 
-    // ── Premium ───────────────────────────────────────────────────────────────
-
     private fun isPremium(): Boolean {
         val expiry = getSharedPreferences("mrb_premium", MODE_PRIVATE)
             .getLong("premium_expiry", 0L)
@@ -239,7 +237,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
             alpha = 0f
             translationY = 100f
-            setOnClickListener { } // prevent dismiss on card click
+            setOnClickListener { }
         }
 
         // Top row
@@ -283,7 +281,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 24 }
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 8 }
         }
 
         // Left col
@@ -304,7 +302,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 20 }
         }
 
-        val btnAdContainer = FrameLayout(this).apply {
+        // Be a Premium Member button
+        val btnAd = FrameLayout(this).apply {
             setBackgroundColor(Color.parseColor("#1565C0"))
             outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
@@ -313,14 +312,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
             clipToOutline = true
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 52).apply { bottomMargin = 12 }
-            setOnClickListener {
-                dismissPopup()
-                showAdFromMainActivity()
-            }
+                LinearLayout.LayoutParams.MATCH_PARENT, 56).apply { bottomMargin = 12 }
+            setOnClickListener { dismissPopup(); showAdFromMainActivity() }
         }
 
-        val btnAdRow = LinearLayout(this).apply {
+        val btnAdInner = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
             layoutParams = FrameLayout.LayoutParams(
@@ -338,15 +334,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             setTextColor(Color.WHITE)
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
         }
-        btnAdRow.addView(playIv)
-        btnAdRow.addView(btnAdTv)
-        btnAdContainer.addView(btnAdRow)
+        btnAdInner.addView(playIv)
+        btnAdInner.addView(btnAdTv)
+        btnAd.addView(btnAdInner)
 
-        val btnTry = TextView(this).apply {
-            text = "Try without Premium"
-            textSize = 10f
-            setTextColor(Color.argb(130, 255, 255, 255))
-            gravity = Gravity.CENTER
+        // Try without Premium button
         val btnTry = FrameLayout(this).apply {
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(Color.TRANSPARENT)
@@ -367,10 +359,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 FrameLayout.LayoutParams.MATCH_PARENT)
         }
         btnTry.addView(btnTryTv)
-        }
 
         leftCol.addView(tvSub)
-        leftCol.addView(btnAdContainer)
+        leftCol.addView(btnAd)
         leftCol.addView(btnTry)
 
         // Right col - benefits
@@ -425,7 +416,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         overlay.addView(card)
         overlayFrame.addView(overlay)
 
-        // Animate in
         card.animate().alpha(1f).translationY(0f)
             .setDuration(300)
             .setInterpolator(DecelerateInterpolator())
@@ -457,8 +447,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             Toast.makeText(this, "Ad loading... try again", Toast.LENGTH_SHORT).show()
         }
     }
-
-    // ── Edit Mode ─────────────────────────────────────────────────────────────
 
     private fun toggleEditMode() {
         editMode = !editMode
