@@ -144,20 +144,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         (window.decorView as FrameLayout).addView(overlayFrame)
 
         // Edit button - top center
-        val btnEdit = TextView(this).apply {
-            text = "⚙"
-            textSize = 16f
-            setTextColor(Color.argb(80, 255, 255, 255))
-            setPadding(20, 10, 20, 10)
-            gravity = Gravity.CENTER
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+        // Crown button - top center
+        val btnCrown = ImageView(this).apply {
+            setImageResource(R.drawable.crown_24)
+            setColorFilter(Color.parseColor("#2196F3"))
+            setPadding(16, 8, 16, 8)
+            layoutParams = FrameLayout.LayoutParams(80, 80).apply {
                 gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                topMargin = 6
+                topMargin = 4
             }
-            setOnClickListener { toggleEditMode() }
+            setOnClickListener { onCrownClick() }
         }
+        overlayFrame.addView(btnCrown)
+        updateCrownGlow(btnCrown)
         overlayFrame.addView(btnEdit)
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -194,6 +193,163 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setupHid()
     }
 
+    private fun isPremium(): Boolean {
+        val expiry = getSharedPreferences("mrb_premium", MODE_PRIVATE)
+            .getLong("premium_expiry", 0L)
+        return expiry > System.currentTimeMillis()
+    }
+
+    private fun updateCrownGlow(crown: ImageView) {
+        if (isPremium()) {
+            crown.setColorFilter(Color.parseColor("#FFD700"))
+            // Yellow pulse animation
+            val anim = android.animation.ObjectAnimator.ofFloat(crown, "alpha", 1f, 0.4f, 1f).apply {
+                duration = 1500
+                repeatCount = android.animation.ValueAnimator.INFINITE
+            }
+            anim.start()
+        } else {
+            crown.setColorFilter(Color.parseColor("#2196F3"))
+            // Blue pulse animation
+            val anim = android.animation.ObjectAnimator.ofFloat(crown, "alpha", 1f, 0.3f, 1f).apply {
+                duration = 1500
+                repeatCount = android.animation.ValueAnimator.INFINITE
+            }
+            anim.start()
+        }
+    }
+
+    private fun onCrownClick() {
+        if (isPremium()) {
+            toggleEditMode()
+        } else {
+            showPremiumPopup()
+        }
+    }
+
+    private fun showPremiumPopup() {
+        val dialog = android.app.Dialog(this)
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.parseColor("#1E1E1E"))
+            setPadding(40, 40, 40, 40)
+            outlineProvider = object : ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: Outline) {
+                    outline.setRoundRect(0, 0, view.width, view.height, 32f)
+                }
+            }
+            clipToOutline = true
+        }
+
+        // Crown icon
+        val crownIv = ImageView(this).apply {
+            setImageResource(R.drawable.crown_24)
+            setColorFilter(Color.parseColor("#FFD700"))
+            layoutParams = LinearLayout.LayoutParams(80, 80).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+                bottomMargin = 16
+            }
+        }
+
+        // Title
+        val tvTitle = TextView(this).apply {
+            text = "MRB Premium"
+            textSize = 22f
+            setTextColor(Color.parseColor("#FFD700"))
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = 8
+            }
+        }
+
+        // Subtitle
+        val tvSub = TextView(this).apply {
+            text = "Unlock for 24 hours by watching an ad"
+            textSize = 13f
+            setTextColor(Color.argb(180, 255, 255, 255))
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = 24
+            }
+        }
+
+        // Benefits
+        val benefits = listOf(
+            "🎮 Custom button layout",
+            "➕ 30+ extra buttons",
+            "↔ Drag and resize buttons",
+            "💾 Save your layout",
+            "⭐ Premium badge"
+        )
+        val tvBenefits = TextView(this).apply {
+            text = benefits.joinToString("\n")
+            textSize = 13f
+            setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = 28
+            }
+        }
+
+        // Watch Ad button
+        val btnAd = TextView(this).apply {
+            text = "▶  Watch Ad = 1 Day Free"
+            textSize = 14f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            setBackgroundColor(Color.parseColor("#FF6D00"))
+            setPadding(24, 16, 24, 16)
+            outlineProvider = object : ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: Outline) {
+                    outline.setRoundRect(0, 0, view.width, view.height, 24f)
+                }
+            }
+            clipToOutline = true
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = 12
+            }
+            setOnClickListener {
+                dialog.dismiss()
+                // Go to SplashActivity for ad
+                startActivity(Intent(this@MainActivity, SplashActivity::class.java))
+            }
+        }
+
+        // Try anyway button
+        val btnTry = TextView(this).apply {
+            text = "Try Layout Editor"
+            textSize = 12f
+            setTextColor(Color.argb(150, 255, 255, 255))
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT)
+            setOnClickListener {
+                dialog.dismiss()
+                toggleEditMode()
+            }
+        }
+
+        root.addView(crownIv)
+        root.addView(tvTitle)
+        root.addView(tvSub)
+        root.addView(tvBenefits)
+        root.addView(btnAd)
+        root.addView(btnTry)
+        dialog.setContentView(root)
+        dialog.show()
+    }
     private fun toggleEditMode() {
         editMode = !editMode
         if (editMode) {
