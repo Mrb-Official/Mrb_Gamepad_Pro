@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var animPlaying = false
     private var editMode = false
     private var rewardedAd: RewardedAd? = null
-    private val AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
+    private val AD_UNIT_ID = "ca-app-pub-5087876801896320/3281731159"
     private val handler = Handler(Looper.getMainLooper())
 
     private val customButtons = listOf(
