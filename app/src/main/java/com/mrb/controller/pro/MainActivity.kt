@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var connectedDevice: BluetoothDevice? = null
     private lateinit var sensorManager: SensorManager
     private lateinit var txtStatus: TextView
-    private lateinit var txtTilt: TextView
+
     private lateinit var tiltBar: ProgressBar
     private lateinit var wheelView: ImageView
     private lateinit var overlayFrame: FrameLayout
@@ -121,7 +121,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setContentView(R.layout.activity_main)
 
         txtStatus = findViewById(R.id.txt_status)
-        txtTilt   = findViewById(R.id.txt_tilt)
+
         tiltBar   = findViewById(R.id.tilt_bar)
         wheelView = findViewById(R.id.lay_steering)
 
