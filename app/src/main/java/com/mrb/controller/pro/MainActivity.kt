@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var connectedDevice: BluetoothDevice? = null
     private lateinit var sensorManager: SensorManager
     private lateinit var txtStatus: TextView
-
+    private lateinit var txtTilt: TextView
     private lateinit var tiltBar: ProgressBar
     private lateinit var wheelView: ImageView
     private lateinit var overlayFrame: FrameLayout
@@ -56,8 +56,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         CustomBtn("camera",     "CAM",      R.drawable.ic_btn_camera,     0xFF9C27B0.toInt(), byte1bit = 5),
         CustomBtn("nitro",      "NITRO",    R.drawable.ic_btn_nitro,      0xFF00BCD4.toInt(), byte2bit = 0),
         CustomBtn("lights",     "LIGHTS",   R.drawable.ic_btn_lights,     0xFFFFC107.toInt(), byte2bit = 1),
-        CustomBtn("look_left",  "LOOK\u2190", R.drawable.ic_btn_look_left,  0xFF795548.toInt(), byte2bit = 4),
-        CustomBtn("look_right", "LOOK\u2192", R.drawable.ic_btn_look_right, 0xFF8D6E63.toInt(), byte2bit = 7),
+        CustomBtn("look_left",  "LOOK<",    R.drawable.ic_btn_look_left,  0xFF795548.toInt(), byte2bit = 4),
+        CustomBtn("look_right", "LOOK>",    R.drawable.ic_btn_look_right, 0xFF8D6E63.toInt(), byte2bit = 7),
         CustomBtn("l1",         "L1",       R.drawable.ic_btn_l1,         0xFF3F51B5.toInt(), byte2bit = 2),
         CustomBtn("r1",         "R1",       R.drawable.ic_btn_r1,         0xFF5C6BC0.toInt(), byte2bit = 3),
         CustomBtn("start",      "START",    R.drawable.ic_btn_start,      0xFF4CAF50.toInt(), byte2bit = 5),
@@ -80,7 +80,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         CustomBtn("siren",      "SIREN",    R.drawable.ic_btn_horn,       0xFF1565C0.toInt()),
         CustomBtn("cinematic",  "CIN",      R.drawable.ic_btn_camera,     0xFF6A1B9A.toInt()),
         CustomBtn("slowmo",     "SLOW MO",  R.drawable.ic_btn_pause,      0xFF00838F.toInt()),
-        CustomBtn("screenshot", "SHOT",     R.drawable.ic_btn_camera,     0xFF558B2F.toInt()),
+        CustomBtn("screenshot", "SHOT",     R.drawable.ic_btn_camera,     0xFF558B2F.toInt())
     )
 
     private val placedCustomBtns = mutableListOf<PlacedCustomBtn>()
@@ -121,9 +121,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setContentView(R.layout.activity_main)
 
         txtStatus = findViewById(R.id.txt_status)
-
+        txtTilt   = findViewById(R.id.txt_tilt)
         tiltBar   = findViewById(R.id.tilt_bar)
         wheelView = findViewById(R.id.lay_steering)
+        txtTilt.visibility = View.GONE
 
         overlayFrame = FrameLayout(this).apply {
             layoutParams = FrameLayout.LayoutParams(
@@ -132,7 +133,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
         (window.decorView as FrameLayout).addView(overlayFrame)
 
-        // Crown button
         val btnCrown = ImageView(this).apply {
             setImageResource(R.drawable.crown_24)
             setPadding(16, 8, 16, 8)
@@ -177,8 +177,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setupHid()
     }
 
-    // ── Premium ──────────────────────────────────────────────────────────────
-
     private fun isPremium(): Boolean {
         val expiry = getSharedPreferences("mrb_premium", MODE_PRIVATE)
             .getLong("premium_expiry", 0L)
@@ -191,7 +189,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         } else {
             crown.setColorFilter(Color.parseColor("#2196F3"))
         }
-        // No blink - solid color only
+    }
 
     private fun onCrownClick() {
         if (isPremium()) toggleEditMode() else showPremiumPopup()
@@ -312,10 +310,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         val tvBenefits = TextView(this).apply {
-            text = "uD83CuDFAE  Custom layout\nu2795  30+ buttons\nu2194  Drag u0026 resize\nuD83DuDCBE  Save layout\nu2B50  Crown badge"
+            text = "Custom layout\n30+ buttons\nDrag & resize\nSave layout\nCrown badge"
             textSize = 11f
             setTextColor(Color.WHITE)
-            lineSpacingMultiplier = 1.4f
         }
 
         rightCol.addView(tvBenefitsTitle)
@@ -325,11 +322,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         dialog.setContentView(root)
         dialog.show()
     }
+
     private fun showAdFromMainActivity() {
         Toast.makeText(this, "Ad loading... try again", Toast.LENGTH_SHORT).show()
     }
-
-    // ── Edit Mode ─────────────────────────────────────────────────────────────
 
     private fun toggleEditMode() {
         editMode = !editMode
@@ -363,28 +359,22 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 gravity = Gravity.BOTTOM
             }
         }
-
-        val btnAdd = iconBarBtn(R.drawable.add_circle_24, "ADD", "#00C853") { showPicker() }
-        val space = View(this).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) }
-        val tvHint = TextView(this).apply {
-            text = "Drag \u2022 \u2934 Resize \u2022 \u2715 Delete"
+        val btnAdd  = iconBarBtn(R.drawable.add_circle_24, "ADD",   "#00C853") { showPicker() }
+        val space   = View(this).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) }
+        val tvHint  = TextView(this).apply {
+            text = "Drag  •  Resize  •  Delete"
             textSize = 9f
             setTextColor(Color.argb(120, 255, 255, 255))
             gravity = Gravity.CENTER
         }
-        val space2 = View(this).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) }
+        val space2  = View(this).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) }
         val btnSave = iconBarBtn(R.drawable.save_24, "SAVE", "#2196F3") {
             saveCustomLayout(); toggleEditMode()
         }
         val btnReset = iconBarBtn(R.drawable.auto_delete_24, "RESET", "#F44336") { confirmReset() }
 
-        bar.addView(btnAdd)
-        bar.addView(space)
-        bar.addView(tvHint)
-        bar.addView(space2)
-        bar.addView(btnSave)
-        bar.addView(btnReset)
-
+        bar.addView(btnAdd); bar.addView(space); bar.addView(tvHint)
+        bar.addView(space2); bar.addView(btnSave); bar.addView(btnReset)
         overlayFrame.addView(bar)
         editBar = bar
     }
@@ -403,9 +393,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             setOnClickListener { onClick() }
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(4, 0, 4, 0)
-            }
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(4, 0, 4, 0) }
         }
         val iv = ImageView(this).apply {
             setImageResource(iconRes)
@@ -415,38 +403,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
         }
         val tv = TextView(this).apply {
-            this.text = text
-            textSize = 8f
-            setTextColor(Color.parseColor(color))
-            gravity = Gravity.CENTER
+            this.text = text; textSize = 8f
+            setTextColor(Color.parseColor(color)); gravity = Gravity.CENTER
         }
-        btn.addView(iv)
-        btn.addView(tv)
+        btn.addView(iv); btn.addView(tv)
         return btn
     }
-
-    private fun barBtn(text: String, color: String, onClick: () -> Unit) =
-        TextView(this).apply {
-            this.text = text
-            textSize = 10f
-            setTextColor(Color.parseColor(color))
-            setPadding(12, 6, 12, 6)
-            gravity = Gravity.CENTER
-            setOnClickListener { onClick() }
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(4, 0, 4, 0)
-            }
-        }
 
     private fun showPicker() {
         val scroll = ScrollView(this)
         val grid = android.widget.GridLayout(this).apply {
-            columnCount = 5
-            setPadding(8, 8, 8, 8)
+            columnCount = 5; setPadding(8, 8, 8, 8)
         }
-
         for (btn in customButtons) {
             val placed = placedCustomBtns.any { it.id == btn.id }
             val chip = FrameLayout(this).apply {
@@ -464,7 +432,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 }
                 clipToOutline = true
             }
-
             val iconIv = ImageView(this).apply {
                 setImageResource(btn.iconRes)
                 setColorFilter(if (placed) Color.parseColor("#333333") else Color.WHITE)
@@ -473,10 +440,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 }
                 scaleType = ImageView.ScaleType.FIT_CENTER
             }
-
             val labelTv = TextView(this).apply {
-                text = btn.label
-                textSize = 9f
+                text = btn.label; textSize = 9f
                 setTextColor(if (placed) Color.parseColor("#333333") else Color.WHITE)
                 gravity = Gravity.CENTER
                 typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
@@ -486,10 +451,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     gravity = Gravity.BOTTOM; bottomMargin = 6
                 }
             }
-
-            chip.addView(iconIv)
-            chip.addView(labelTv)
-
+            chip.addView(iconIv); chip.addView(labelTv)
             if (!placed) {
                 chip.setOnClickListener {
                     val cx = (overlayFrame.width / 2 - 40).toFloat()
@@ -499,13 +461,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
             grid.addView(chip)
         }
-
         scroll.addView(grid)
         android.app.AlertDialog.Builder(this)
-            .setTitle("Add Button")
-            .setView(scroll)
-            .setNegativeButton("Close", null)
-            .show()
+            .setTitle("Add Button").setView(scroll)
+            .setNegativeButton("Close", null).show()
     }
 
     private fun addCustomButton(def: CustomBtn, x: Float, y: Float,
@@ -542,8 +501,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             setImageResource(def.iconRes)
             setColorFilter(Color.parseColor("#888888"))
             layoutParams = FrameLayout.LayoutParams(
-                (pb.w * 0.45f).toInt(),
-                (pb.h * 0.38f).toInt()).apply {
+                (pb.w * 0.45f).toInt(), (pb.h * 0.38f).toInt()).apply {
                 gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
                 topMargin = (pb.h * 0.15f).toInt()
             }
@@ -551,8 +509,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         val labelTv = TextView(this).apply {
-            text = def.label
-            textSize = 8f
+            text = def.label; textSize = 8f
             setTextColor(Color.parseColor("#888888"))
             gravity = Gravity.CENTER
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
@@ -563,8 +520,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
         }
 
-        container.addView(iconIv)
-        container.addView(labelTv)
+        container.addView(iconIv); container.addView(labelTv)
 
         if (editMode) {
             container.background = android.graphics.drawable.GradientDrawable().apply {
@@ -572,12 +528,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 setStroke(2, Color.parseColor("#FFD700"))
                 cornerRadius = 16f
             }
-
             val delBtn = TextView(this).apply {
-                text = "\u2715"
-                textSize = 9f
-                setTextColor(Color.WHITE)
-                gravity = Gravity.CENTER
+                text = "X"; textSize = 9f; setTextColor(Color.WHITE); gravity = Gravity.CENTER
                 setBackgroundColor(Color.argb(230, 200, 0, 0))
                 layoutParams = FrameLayout.LayoutParams(26, 26).apply {
                     gravity = Gravity.TOP or Gravity.END
@@ -588,24 +540,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     placedCustomBtns.removeAll { it.id == def.id }
                 }
             }
-
             val resizeBtn = TextView(this).apply {
-                text = "\u2924"
-                textSize = 11f
-                setTextColor(Color.WHITE)
-                gravity = Gravity.CENTER
+                text = "<>"; textSize = 9f; setTextColor(Color.WHITE); gravity = Gravity.CENTER
                 setBackgroundColor(Color.argb(230, 0, 100, 200))
                 layoutParams = FrameLayout.LayoutParams(26, 26).apply {
                     gravity = Gravity.BOTTOM or Gravity.END
                 }
             }
-
-            container.addView(delBtn)
-            container.addView(resizeBtn)
+            container.addView(delBtn); container.addView(resizeBtn)
 
             var dX = 0f; var dY = 0f
-            var resizing = false
-            var rsX = 0f; var rsW = 0; var rsH = 0
+            var resizing = false; var rsX = 0f; var rsW = 0; var rsH = 0
 
             resizeBtn.setOnTouchListener { _, e ->
                 when (e.action) {
@@ -624,7 +569,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     else -> false
                 }
             }
-
             container.setOnTouchListener { v, e ->
                 if (resizing) return@setOnTouchListener false
                 when (e.action) {
@@ -649,8 +593,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                         container.background = android.graphics.drawable.GradientDrawable().apply {
                             setColor(Color.argb(60, Color.red(def.pressColor),
                                 Color.green(def.pressColor), Color.blue(def.pressColor)))
-                            setStroke(2, Color.parseColor("#444444"))
-                            cornerRadius = 16f
+                            setStroke(2, Color.parseColor("#444444")); cornerRadius = 16f
                         }
                         iconIv.setColorFilter(def.pressColor)
                         labelTv.setTextColor(def.pressColor)
@@ -663,8 +606,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                         customBtnStates[def.id] = false
                         container.background = android.graphics.drawable.GradientDrawable().apply {
                             setColor(Color.parseColor("#111111"))
-                            setStroke(2, Color.parseColor("#444444"))
-                            cornerRadius = 16f
+                            setStroke(2, Color.parseColor("#444444")); cornerRadius = 16f
                         }
                         iconIv.setColorFilter(Color.parseColor("#888888"))
                         labelTv.setTextColor(Color.parseColor("#888888"))
@@ -686,7 +628,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
         getSharedPreferences("mrb_custom", MODE_PRIVATE)
             .edit().putString("custom_v1", arr.toString()).apply()
-        Toast.makeText(this, "\u2705 Saved!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show()
     }
 
     private fun loadCustomLayout() {
@@ -710,15 +652,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 for (pb in placedCustomBtns) {
                     placedCustomViews[pb.id]?.let { overlayFrame.removeView(it) }
                 }
-                placedCustomBtns.clear()
-                placedCustomViews.clear()
+                placedCustomBtns.clear(); placedCustomViews.clear()
                 getSharedPreferences("mrb_custom", MODE_PRIVATE)
                     .edit().remove("custom_v1").apply()
             }
             .setNegativeButton("Cancel", null).show()
     }
-
-    // ── Default Buttons ───────────────────────────────────────────────────────
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setupTouch(id: Int, normalRes: Int, pressRes: Int,
@@ -729,8 +668,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         view.setOnTouchListener { _, e ->
             when (e.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    onPress(true)
-                    view.setBackgroundResource(pressRes)
+                    onPress(true); view.setBackgroundResource(pressRes)
                     if (pressIconColor != 0) icon?.setColorFilter(pressIconColor)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                         vibrator.vibrate(VibrationEffect.createOneShot(
@@ -739,22 +677,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    onPress(false)
-                    view.setBackgroundResource(normalRes)
-                    icon?.setColorFilter(Color.parseColor("#888888"))
-                    true
+                    onPress(false); view.setBackgroundResource(normalRes)
+                    icon?.setColorFilter(Color.parseColor("#888888")); true
                 }
                 else -> false
             }
         }
     }
 
-    // ── HID ──────────────────────────────────────────────────────────────────
-
     private fun setupHid() {
         connectedDevice = HidService.connectedDevice
         if (connectedDevice != null) {
-            txtStatus.text = "\u25cf ${connectedDevice?.name}"
+            txtStatus.text = "● ${connectedDevice?.name}"
             txtStatus.setTextColor(Color.parseColor("#00FF88"))
             if (!connectedAnimDone) playConnectedAnim()
         } else {
@@ -771,7 +705,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         HidService.onConnected = { device ->
             runOnUiThread {
                 connectedDevice = device
-                txtStatus.text = "\u25cf ${device.name}"
+                txtStatus.text = "● ${device.name}"
                 txtStatus.setTextColor(Color.parseColor("#00FF88"))
                 if (!connectedAnimDone) playConnectedAnim()
             }
@@ -801,8 +735,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         handler.post(r)
     }
 
-    // ── Sensor ────────────────────────────────────────────────────────────────
-
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type != Sensor.TYPE_ACCELEROMETER) return
         filtX = alpha * event.values[1] + (1 - alpha) * filtX
@@ -829,7 +761,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun sendReport() {
         val device = HidService.connectedDevice ?: return
         val hid    = HidService.hidDevice ?: return
-
         var b1 = 0; var b2 = 0
         if (btnA)     b1 = b1 or (1 shl 0)
         if (btnB)     b1 = b1 or (1 shl 1)
@@ -841,22 +772,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (dpadDown) b2 = b2 or (1 shl 3)
         if (dpadLeft) b2 = b2 or (1 shl 6)
         if (dpadRight)b2 = b2 or (1 shl 5)
-
         for (def in customButtons) {
             if (customBtnStates[def.id] == true) {
                 if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
                 if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
             }
         }
-
         val gas   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
         val brake = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
-
         hid.sendReport(device, 1,
             byteArrayOf(b1.toByte(), b2.toByte(), tiltByte, 0x00, gas, brake))
     }
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     override fun onResume() {
         super.onResume()
@@ -865,7 +791,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             SensorManager.SENSOR_DELAY_GAME)
         connectedDevice = HidService.connectedDevice
         if (connectedDevice != null) {
-            txtStatus.text = "\u25cf ${connectedDevice?.name}"
+            txtStatus.text = "● ${connectedDevice?.name}"
             txtStatus.setTextColor(Color.parseColor("#00FF88"))
         }
         crownView?.let { updateCrownGlow(it) }
