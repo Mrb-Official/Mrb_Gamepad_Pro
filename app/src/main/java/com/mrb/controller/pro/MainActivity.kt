@@ -292,8 +292,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         val btnAd = TextView(this).apply {
+            text = "  Be a Premium Member"
             setCompoundDrawablesWithIntrinsicBounds(R.drawable.motion_play_24, 0, 0, 0)
-            text = "  Watch Ad = 1 Day Free"
             textSize = 13f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
