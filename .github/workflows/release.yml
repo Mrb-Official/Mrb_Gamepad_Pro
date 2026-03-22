@@ -26,7 +26,7 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
-      - name: Sign Premium APK
+      - name: Mrb Gamepad Pro 
         uses: r0adkll/sign-android-release@v1
         id: sign_app
         with:
@@ -35,9 +35,11 @@ jobs:
           alias: ${{ secrets.KEY_ALIAS }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
+          buildToolsVersion: '34.0.0'
 
       - name: Upload Mrb Gamepad Pro APK
         uses: actions/upload-artifact@v4
         with:
-          name: Mrb_Gamepad_Pro_Premium
+          name: Mrb_Gamepad_Pro
           path: ${{steps.sign_app.outputs.signedReleaseFile}}
+          
