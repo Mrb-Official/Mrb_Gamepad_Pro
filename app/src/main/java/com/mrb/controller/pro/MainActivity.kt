@@ -444,7 +444,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val btnReset = iconBarBtn(R.drawable.auto_delete_24, "RESET", "#F44336") { confirmReset() }
             toggleEditMode()
         }
-        val btnReset = barBtn("RESET", "#F44336") { confirmReset() }
 
         bar.addView(btnAdd)
         bar.addView(space)
