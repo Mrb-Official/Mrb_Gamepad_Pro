@@ -199,6 +199,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val dialog = android.app.Dialog(this)
         dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
         dialog.window?.apply {
+        dialog.window?.attributes?.apply {
+            width = android.view.WindowManager.LayoutParams.MATCH_PARENT
+            height = android.view.WindowManager.LayoutParams.WRAP_CONTENT
+        }
             setBackgroundDrawableResource(android.R.color.transparent)
             setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,
                 android.view.WindowManager.LayoutParams.WRAP_CONTENT)
@@ -261,6 +265,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             gravity = Gravity.CENTER
             setCompoundDrawablesWithIntrinsicBounds(R.drawable.motion_play_24, 0, 0, 0)
             compoundDrawablePadding = 8
+            compoundDrawables[0]?.setTint(Color.WHITE)
             setBackgroundColor(Color.parseColor("#1565C0"))
             setPadding(16, 12, 16, 12)
             outlineProvider = object : ViewOutlineProvider() {
