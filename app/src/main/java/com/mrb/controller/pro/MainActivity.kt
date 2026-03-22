@@ -208,14 +208,23 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun showPremiumPopup() {
-        val root = LinearLayout(this).apply {
+        // Full screen overlay
+        val overlay = FrameLayout(this).apply {
             tag = "premium_popup"
-            orientation = LinearLayout.HORIZONTAL
-            setBackgroundColor(Color.parseColor("#EE1C1B1F"))
-            setPadding(24, 24, 24, 24)
+            setBackgroundColor(Color.argb(200, 0, 0, 0))
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT)
+            setOnClickListener { } // consume clicks
+        }
+
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.parseColor("#1C1B1F"))
+            setPadding(40, 32, 40, 32)
             outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
-                    outline.setRoundRect(0, 0, view.width, view.height, 28f)
+                    outline.setRoundRect(0, 0, view.width, view.height, 32f)
                 }
             }
             clipToOutline = true
@@ -223,74 +232,117 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT).apply {
                 gravity = Gravity.CENTER
-                setMargins(32, 0, 32, 0)
+                setMargins(60, 0, 60, 0)
             }
+            alpha = 0f
+            translationY = 100f
         }
 
-        val leftCol = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(0,
-                LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                setMargins(0, 0, 12, 0)
-            }
-        }
-
-        val crownIv = ImageView(this).apply {
-            setImageResource(R.drawable.crown_24)
-            setColorFilter(Color.parseColor("#FFD700"))
-            layoutParams = LinearLayout.LayoutParams(60, 60).apply {
-                gravity = Gravity.CENTER_HORIZONTAL; bottomMargin = 8
-            }
-        }
-
-        val tvTitle = TextView(this).apply {
-            text = "MRB Premium"
-            textSize = 16f
-            setTextColor(Color.parseColor("#FFD700"))
-            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 4 }
-        }
-
-        val tvSub = TextView(this).apply {
-            text = "Watch an ad for 24h premium"
-            textSize = 11f
-            setTextColor(Color.argb(180, 255, 255, 255))
-            gravity = Gravity.CENTER
+        // Top row: crown + title + close
+        val topRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 16 }
         }
 
-        val btnAd = TextView(this).apply {
-            text = "  Be a Premium Member"
+        val crownIv = ImageView(this).apply {
+            setImageResource(R.drawable.crown_24)
+            setColorFilter(Color.parseColor("#FFD700"))
+            layoutParams = LinearLayout.LayoutParams(48, 48).apply { setMargins(0,0,12,0) }
+        }
+
+        val tvTitle = TextView(this).apply {
+            text = "MRB Premium"
+            textSize = 20f
+            setTextColor(Color.parseColor("#FFD700"))
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+
+        val btnClose = TextView(this).apply {
+            text = "  X  "
+            textSize = 16f
+            setTextColor(Color.argb(180, 255, 255, 255))
+            setOnClickListener {
+                overlayFrame.findViewWithTag<View>("premium_popup")?.let { v ->
+                    v.animate().alpha(0f).translationY(80f).setDuration(250)
+                        .withEndAction { overlayFrame.removeView(v) }.start()
+                }
+            }
+        }
+
+        topRow.addView(crownIv)
+        topRow.addView(tvTitle)
+        topRow.addView(btnClose)
+
+        // Content row: left + right
+        val contentRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 24 }
+        }
+
+        val leftCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins(0, 0, 24, 0)
+            }
+        }
+
+        val tvSub = TextView(this).apply {
+            text = "Watch an ad to unlock\npremium features for 24 hours"
             textSize = 12f
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-            setCompoundDrawablesWithIntrinsicBounds(R.drawable.motion_play_24, 0, 0, 0)
-            compoundDrawablePadding = 8
-            compoundDrawables[0]?.setTint(Color.WHITE)
+            setTextColor(Color.argb(180, 255, 255, 255))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 20 }
+        }
+
+        val btnAd = FrameLayout(this).apply {
             setBackgroundColor(Color.parseColor("#1565C0"))
-            setPadding(16, 12, 16, 12)
             outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
-                    outline.setRoundRect(0, 0, view.width, view.height, 20f)
+                    outline.setRoundRect(0, 0, view.width, view.height, 24f)
                 }
             }
             clipToOutline = true
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 8 }
+                LinearLayout.LayoutParams.MATCH_PARENT, 52).apply { bottomMargin = 10 }
             setOnClickListener {
-                overlayFrame.findViewWithTag<View>("premium_popup")?.let {
-                    overlayFrame.removeView(it)
+                overlayFrame.findViewWithTag<View>("premium_popup")?.let { v ->
+                    v.animate().alpha(0f).setDuration(200)
+                        .withEndAction { overlayFrame.removeView(v) }.start()
                 }
                 showAdFromMainActivity()
             }
         }
+
+        val btnAdInner = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT)
+        }
+        val playIv = ImageView(this).apply {
+            setImageResource(R.drawable.motion_play_24)
+            setColorFilter(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(28, 28).apply { setMargins(0,0,8,0) }
+        }
+        val btnAdTv = TextView(this).apply {
+            text = "Be a Premium Member"
+            textSize = 13f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        }
+        btnAdInner.addView(playIv)
+        btnAdInner.addView(btnAdTv)
+        btnAd.addView(btnAdInner)
 
         val btnTry = TextView(this).apply {
             text = "Try without Premium"
@@ -301,15 +353,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT)
             setOnClickListener {
-                overlayFrame.findViewWithTag<View>("premium_popup")?.let {
-                    overlayFrame.removeView(it)
+                overlayFrame.findViewWithTag<View>("premium_popup")?.let { v ->
+                    v.animate().alpha(0f).setDuration(200)
+                        .withEndAction { overlayFrame.removeView(v) }.start()
                 }
                 toggleEditMode()
             }
         }
 
-        leftCol.addView(crownIv)
-        leftCol.addView(tvTitle)
         leftCol.addView(tvSub)
         leftCol.addView(btnAd)
         leftCol.addView(btnTry)
@@ -323,25 +374,56 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         val tvBTitle = TextView(this).apply {
             text = "Benefits"
-            textSize = 13f
+            textSize = 14f
             setTextColor(Color.parseColor("#FFD700"))
             typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 10 }
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 12 }
         }
 
-        val tvB = TextView(this).apply {
-            text = "Custom layout\n30+ buttons\nDrag and resize\nSave layout\nCrown badge"
-            textSize = 11f
-            setTextColor(Color.WHITE)
-        }
+        val benefits = listOf(
+            Pair(R.drawable.ic_btn_custom, "Custom button layout"),
+            Pair(R.drawable.add_circle_24, "30+ extra buttons"),
+            Pair(R.drawable.save_24,       "Save your layout"),
+            Pair(R.drawable.crown_24,      "Premium crown badge")
+        )
 
         rightCol.addView(tvBTitle)
-        rightCol.addView(tvB)
-        root.addView(leftCol)
-        root.addView(rightCol)
-        overlayFrame.addView(root)
+        for ((icon, label) in benefits) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 10 }
+            }
+            val iv = ImageView(this).apply {
+                setImageResource(icon)
+                setColorFilter(Color.parseColor("#FFD700"))
+                layoutParams = LinearLayout.LayoutParams(24, 24).apply { setMargins(0,0,8,0) }
+            }
+            val tv = TextView(this).apply {
+                text = label; textSize = 11f; setTextColor(Color.WHITE)
+            }
+            row.addView(iv); row.addView(tv)
+            rightCol.addView(row)
+        }
+
+        contentRow.addView(leftCol)
+        contentRow.addView(rightCol)
+
+        card.addView(topRow)
+        card.addView(contentRow)
+        overlay.addView(card)
+        overlayFrame.addView(overlay)
+
+        // Animate in
+        card.animate().alpha(1f).translationY(0f)
+            .setDuration(300)
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .start()
+    }
     }
 
     private fun loadRewardedAd() {
