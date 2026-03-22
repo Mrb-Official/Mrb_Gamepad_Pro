@@ -1,6 +1,4 @@
 package com.mrb.controller.pro
-import com.google.android.gms.ads.*
-import com.google.android.gms.ads.rewarded.*
 
 import android.annotation.SuppressLint
 import android.bluetooth.*
@@ -123,7 +121,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         setContentView(R.layout.activity_main)
-        try { com.google.android.gms.ads.MobileAds.initialize(this) } catch (e: Exception) {}
 
         txtStatus = findViewById(R.id.txt_status)
         txtTilt   = findViewById(R.id.txt_tilt)
@@ -179,6 +176,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             null, 0) { dpadRight = it }
 
         overlayFrame.post { loadCustomLayout() }
+        try { com.google.android.gms.ads.MobileAds.initialize(this) } catch (_: Exception) {}
         loadRewardedAd()
         setupHid()
     }
@@ -206,10 +204,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
         dialog.window?.apply {
             setBackgroundDrawableResource(android.R.color.transparent)
-            setLayout(
-                android.view.WindowManager.LayoutParams.MATCH_PARENT,
+            setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,
                 android.view.WindowManager.LayoutParams.WRAP_CONTENT)
-            decorView.setPadding(0, 0, 0, 0)
         }
 
         val root = LinearLayout(this).apply {
@@ -269,7 +265,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             gravity = Gravity.CENTER
             setCompoundDrawablesWithIntrinsicBounds(R.drawable.motion_play_24, 0, 0, 0)
             compoundDrawablePadding = 8
-            compoundDrawables[0]?.setTint(Color.WHITE)
             setBackgroundColor(Color.parseColor("#1565C0"))
             setPadding(16, 12, 16, 12)
             outlineProvider = object : ViewOutlineProvider() {
@@ -328,6 +323,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         rightCol.addView(tvBenefits)
         root.addView(leftCol)
         root.addView(rightCol)
+        dialog.setContentView(root)
+        dialog.show()
+    }
+
     private fun showAdFromMainActivity() {
         val ad = rewardedAd
         if (ad != null) {
@@ -345,16 +344,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun loadRewardedAd() {
-        val adRequest = AdRequest.Builder().build()
-        RewardedAd.load(this, AD_UNIT_ID, adRequest,
-            object : RewardedAdLoadCallback() {
-                override fun onAdLoaded(ad: RewardedAd) { rewardedAd = ad }
-                override fun onAdFailedToLoad(error: LoadAdError) { rewardedAd = null }
+        val adRequest = com.google.android.gms.ads.AdRequest.Builder().build()
+        com.google.android.gms.ads.rewarded.RewardedAd.load(this, AD_UNIT_ID, adRequest,
+            object : com.google.android.gms.ads.rewarded.RewardedAdLoadCallback() {
+                override fun onAdLoaded(ad: com.google.android.gms.ads.rewarded.RewardedAd) { rewardedAd = ad }
+                override fun onAdFailedToLoad(error: com.google.android.gms.ads.LoadAdError) { rewardedAd = null }
             })
-    }
-
-    private fun showAdFromMainActivity() {
-        Toast.makeText(this, "Ad loading... try again", Toast.LENGTH_SHORT).show()
     }
 
     private fun toggleEditMode() {
