@@ -200,17 +200,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun showPremiumPopup() {
-        val dialog = android.app.Dialog(this)
-        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
-        dialog.window?.apply {
-            setBackgroundDrawableResource(android.R.color.transparent)
-            setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,
-                android.view.WindowManager.LayoutParams.WRAP_CONTENT)
+        // Remove existing popup if any
+        overlayFrame.findViewWithTag<View>("premium_popup")?.let {
+            overlayFrame.removeView(it)
+            return
         }
 
         val root = LinearLayout(this).apply {
+            tag = "premium_popup"
             orientation = LinearLayout.HORIZONTAL
-            setBackgroundColor(Color.parseColor("#1C1B1F"))
+            setBackgroundColor(Color.parseColor("#EE1C1B1F"))
             setPadding(24, 24, 24, 24)
             outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
@@ -218,6 +217,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 }
             }
             clipToOutline = true
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+                gravity = Gravity.CENTER
+                setMargins(32, 0, 32, 0)
+            }
         }
 
         val leftCol = LinearLayout(this).apply {
@@ -265,6 +270,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             gravity = Gravity.CENTER
             setCompoundDrawablesWithIntrinsicBounds(R.drawable.motion_play_24, 0, 0, 0)
             compoundDrawablePadding = 8
+            compoundDrawables[0]?.setTint(Color.WHITE)
             setBackgroundColor(Color.parseColor("#1565C0"))
             setPadding(16, 12, 16, 12)
             outlineProvider = object : ViewOutlineProvider() {
@@ -276,7 +282,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 8 }
-            setOnClickListener { dialog.dismiss(); showAdFromMainActivity() }
+            setOnClickListener {
+                overlayFrame.findViewWithTag<View>("premium_popup")?.let { overlayFrame.removeView(it) }
+                showAdFromMainActivity()
+            }
         }
 
         val btnTry = TextView(this).apply {
@@ -287,7 +296,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT)
-            setOnClickListener { dialog.dismiss(); toggleEditMode() }
+            setOnClickListener {
+                overlayFrame.findViewWithTag<View>("premium_popup")?.let { overlayFrame.removeView(it) }
+                toggleEditMode()
+            }
         }
 
         leftCol.addView(crownIv)
@@ -303,7 +315,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
 
-        val tvBenefitsTitle = TextView(this).apply {
+        val tvBTitle = TextView(this).apply {
             text = "Benefits"
             textSize = 13f
             setTextColor(Color.parseColor("#FFD700"))
@@ -313,18 +325,22 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 10 }
         }
 
-        val tvBenefits = TextView(this).apply {
-            text = "Custom layout\n30+ buttons\nDrag & resize\nSave layout\nCrown badge"
+        val tvB = TextView(this).apply {
+            text = "Custom layout
+30+ buttons
+Drag and resize
+Save layout
+Crown badge"
             textSize = 11f
             setTextColor(Color.WHITE)
         }
 
-        rightCol.addView(tvBenefitsTitle)
-        rightCol.addView(tvBenefits)
+        rightCol.addView(tvBTitle)
+        rightCol.addView(tvB)
         root.addView(leftCol)
         root.addView(rightCol)
-        dialog.setContentView(root)
-        dialog.show()
+        overlayFrame.addView(root)
+    }
     }
 
     private fun showAdFromMainActivity() {
