@@ -442,8 +442,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
         val btnSave = iconBarBtn(R.drawable.save_24, "SAVE", "#2196F3") { saveCustomLayout(); toggleEditMode() }
         val btnReset = iconBarBtn(R.drawable.auto_delete_24, "RESET", "#F44336") { confirmReset() }
-            toggleEditMode()
-        }
 
         bar.addView(btnAdd)
         bar.addView(space)
