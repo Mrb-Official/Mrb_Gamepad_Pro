@@ -1,4 +1,6 @@
 package com.mrb.controller.pro
+import com.google.android.gms.ads.*
+import com.google.android.gms.ads.rewarded.*
 
 import android.annotation.SuppressLint
 import android.bluetooth.*
@@ -47,6 +49,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var connectedAnimDone = false
     private var animPlaying = false
     private var editMode = false
+    private var rewardedAd: com.google.android.gms.ads.rewarded.RewardedAd? = null
+    private val AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -119,6 +123,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         setContentView(R.layout.activity_main)
+        try { com.google.android.gms.ads.MobileAds.initialize(this) } catch (e: Exception) {}
 
         txtStatus = findViewById(R.id.txt_status)
         txtTilt   = findViewById(R.id.txt_tilt)
@@ -174,6 +179,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             null, 0) { dpadRight = it }
 
         overlayFrame.post { loadCustomLayout() }
+        loadRewardedAd()
         setupHid()
     }
 
@@ -199,13 +205,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val dialog = android.app.Dialog(this)
         dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
         dialog.window?.apply {
-        dialog.window?.attributes?.apply {
-            width = android.view.WindowManager.LayoutParams.MATCH_PARENT
-            height = android.view.WindowManager.LayoutParams.WRAP_CONTENT
-        }
             setBackgroundDrawableResource(android.R.color.transparent)
-            setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,
+            setLayout(
+                android.view.WindowManager.LayoutParams.MATCH_PARENT,
                 android.view.WindowManager.LayoutParams.WRAP_CONTENT)
+            decorView.setPadding(0, 0, 0, 0)
         }
 
         val root = LinearLayout(this).apply {
@@ -324,8 +328,29 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         rightCol.addView(tvBenefits)
         root.addView(leftCol)
         root.addView(rightCol)
-        dialog.setContentView(root)
-        dialog.show()
+    private fun showAdFromMainActivity() {
+        val ad = rewardedAd
+        if (ad != null) {
+            ad.show(this) {
+                val expiry = System.currentTimeMillis() + 86400000L
+                getSharedPreferences("mrb_premium", MODE_PRIVATE)
+                    .edit().putLong("premium_expiry", expiry).apply()
+                Toast.makeText(this, "Premium Active 24h!", Toast.LENGTH_LONG).show()
+                crownView?.let { updateCrownGlow(it) }
+            }
+        } else {
+            loadRewardedAd()
+            Toast.makeText(this, "Ad loading... try again", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun loadRewardedAd() {
+        val adRequest = AdRequest.Builder().build()
+        RewardedAd.load(this, AD_UNIT_ID, adRequest,
+            object : RewardedAdLoadCallback() {
+                override fun onAdLoaded(ad: RewardedAd) { rewardedAd = ad }
+                override fun onAdFailedToLoad(error: LoadAdError) { rewardedAd = null }
+            })
     }
 
     private fun showAdFromMainActivity() {
