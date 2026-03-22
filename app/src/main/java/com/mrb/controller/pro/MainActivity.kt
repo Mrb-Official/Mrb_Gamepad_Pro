@@ -229,12 +229,20 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun showPremiumPopup() {
         val dialog = android.app.Dialog(this)
         dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.window?.apply {
+            setBackgroundDrawableResource(android.R.color.transparent)
+            // Force landscape
+            setLayout(
+                android.view.WindowManager.LayoutParams.MATCH_PARENT,
+                android.view.WindowManager.LayoutParams.WRAP_CONTENT
+            )
+        }
 
+        val scroll = android.widget.ScrollView(this)
         val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.parseColor("#1E1E1E"))
-            setPadding(40, 40, 40, 40)
+            orientation = LinearLayout.HORIZONTAL
+            setBackgroundColor(Color.parseColor("#1C1B1F"))
+            setPadding(32, 32, 32, 32)
             outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
                     outline.setRoundRect(0, 0, view.width, view.height, 32f)
@@ -243,70 +251,54 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             clipToOutline = true
         }
 
-        // Crown icon
+        // Left side - crown + title + subtitle
+        val leftCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins(0, 0, 16, 0)
+            }
+        }
+
         val crownIv = ImageView(this).apply {
             setImageResource(R.drawable.crown_24)
             setColorFilter(Color.parseColor("#FFD700"))
             layoutParams = LinearLayout.LayoutParams(80, 80).apply {
                 gravity = Gravity.CENTER_HORIZONTAL
-                bottomMargin = 16
+                bottomMargin = 12
             }
         }
 
-        // Title
         val tvTitle = TextView(this).apply {
             text = "MRB Premium"
-            textSize = 22f
+            textSize = 20f
             setTextColor(Color.parseColor("#FFD700"))
             typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = 8
-            }
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 6 }
         }
 
-        // Subtitle
         val tvSub = TextView(this).apply {
-            text = "Unlock for 24 hours by watching an ad"
-            textSize = 13f
+            text = "Watch an ad to unlock\npremium for 24 hours"
+            textSize = 12f
             setTextColor(Color.argb(180, 255, 255, 255))
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = 24
-            }
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 20 }
         }
 
-        // Benefits
-        val benefits = listOf(
-            "🎮 Custom button layout",
-            "➕ 30+ extra buttons",
-            "↔ Drag and resize buttons",
-            "💾 Save your layout",
-            "⭐ Premium badge"
-        )
-        val tvBenefits = TextView(this).apply {
-            text = benefits.joinToString("\n")
-            textSize = 13f
-            setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = 28
-            }
-        }
-
-        // Watch Ad button
         val btnAd = TextView(this).apply {
-            text = "▶  Watch Ad = 1 Day Free"
-            textSize = 14f
+            setCompoundDrawablesWithIntrinsicBounds(R.drawable.motion_play_24, 0, 0, 0)
+            text = "  Watch Ad = 1 Day Free"
+            textSize = 13f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
             setBackgroundColor(Color.parseColor("#FF6D00"))
-            setPadding(24, 16, 24, 16)
+            setPadding(20, 14, 20, 14)
             outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
                     outline.setRoundRect(0, 0, view.width, view.height, 24f)
@@ -315,39 +307,89 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             clipToOutline = true
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = 12
-            }
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 10 }
             setOnClickListener {
                 dialog.dismiss()
-                // Go to SplashActivity for ad
-                startActivity(Intent(this@MainActivity, SplashActivity::class.java))
+                showAdFromMainActivity()
             }
         }
 
-        // Try anyway button
         val btnTry = TextView(this).apply {
-            text = "Try Layout Editor"
-            textSize = 12f
-            setTextColor(Color.argb(150, 255, 255, 255))
+            text = "Try without Premium"
+            textSize = 11f
+            setTextColor(Color.argb(130, 255, 255, 255))
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT)
-            setOnClickListener {
-                dialog.dismiss()
-                toggleEditMode()
-            }
+            setOnClickListener { dialog.dismiss(); toggleEditMode() }
         }
 
-        root.addView(crownIv)
-        root.addView(tvTitle)
-        root.addView(tvSub)
-        root.addView(tvBenefits)
-        root.addView(btnAd)
-        root.addView(btnTry)
-        dialog.setContentView(root)
+        leftCol.addView(crownIv)
+        leftCol.addView(tvTitle)
+        leftCol.addView(tvSub)
+        leftCol.addView(btnAd)
+        leftCol.addView(btnTry)
+
+        // Right side - benefits
+        val rightCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+
+        val tvBenefitsTitle = TextView(this).apply {
+            text = "Benefits"
+            textSize = 14f
+            setTextColor(Color.parseColor("#FFD700"))
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 12 }
+        }
+
+        val benefits = listOf(
+            "🎮  Custom button layout",
+            "➕  30+ extra buttons",
+            "↔  Drag and resize",
+            "💾  Save your layout",
+            "⭐  Premium crown badge"
+        )
+        val tvBenefits = TextView(this).apply {
+            text = benefits.joinToString("\n")
+            textSize = 12f
+            setTextColor(Color.WHITE)
+            lineHeight = (textSize * 2.2f).toInt()
+        }
+
+        rightCol.addView(tvBenefitsTitle)
+        rightCol.addView(tvBenefits)
+
+        root.addView(leftCol)
+        root.addView(rightCol)
+        scroll.addView(root)
+        dialog.setContentView(scroll)
         dialog.show()
+    }
+
+    private fun showAdFromMainActivity() {
+        // Use SplashActivity instance if available, else reload
+        val splash = application as? SplashActivity
+        val ad = splash?.rewardedAd
+        if (ad != null) {
+            ad.show(this) {
+                val expiry = System.currentTimeMillis() + 86400000L
+                getSharedPreferences("mrb_premium", MODE_PRIVATE)
+                    .edit().putLong("premium_expiry", expiry).apply()
+                Toast.makeText(this, "⭐ Premium Active for 24h!", Toast.LENGTH_LONG).show()
+                // Update crown
+                initUI()
+            }
+        } else {
+            Toast.makeText(this, "Ad loading... try again in a moment", Toast.LENGTH_SHORT).show()
+        }
+    }
     }
     private fun toggleEditMode() {
         editMode = !editMode
@@ -385,7 +427,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
         }
 
-        val btnAdd = barBtn("＋ ADD", "#00C853") { showPicker() }
+        val btnAdd = iconBarBtn(R.drawable.add_circle_24, "ADD", "#00C853") { showPicker() }
         val space = View(this).apply {
             layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
         }
@@ -398,8 +440,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val space2 = View(this).apply {
             layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
         }
-        val btnSave = barBtn("💾 SAVE", "#2196F3") {
-            saveCustomLayout()
+        val btnSave = iconBarBtn(R.drawable.save_24, "SAVE", "#2196F3") { saveCustomLayout(); toggleEditMode() }
+        val btnReset = iconBarBtn(R.drawable.auto_delete_24, "RESET", "#F44336") { confirmReset() }
             toggleEditMode()
         }
         val btnReset = barBtn("RESET", "#F44336") { confirmReset() }
@@ -421,6 +463,35 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun barBtn(text: String, color: String, onClick: () -> Unit) =
+    private fun iconBarBtn(iconRes: Int, text: String, color: String, onClick: () -> Unit): LinearLayout {
+        val btn = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(12, 4, 12, 4)
+            setOnClickListener { onClick() }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(4, 0, 4, 0)
+            }
+        }
+        val iv = ImageView(this).apply {
+            setImageResource(iconRes)
+            setColorFilter(Color.parseColor(color))
+            layoutParams = LinearLayout.LayoutParams(32, 32).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+            }
+        }
+        val tv = TextView(this).apply {
+            this.text = text
+            textSize = 8f
+            setTextColor(Color.parseColor(color))
+            gravity = Gravity.CENTER
+        }
+        btn.addView(iv)
+        btn.addView(tv)
+        return btn
+    }
         TextView(this).apply {
             this.text = text
             textSize = 10f

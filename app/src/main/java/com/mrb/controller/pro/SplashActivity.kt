@@ -17,13 +17,11 @@ class SplashActivity : AppCompatActivity() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var mediaPlayer: MediaPlayer? = null
-    private var rewardedAd: RewardedAd? = null
+    var rewardedAd: RewardedAd? = null
 
     private lateinit var ivIcon: ImageView
     private lateinit var tvStatus: TextView
     private lateinit var tvDots: TextView
-    private lateinit var btnWatchAd: TextView
-    private lateinit var tvPremiumStatus: TextView
 
     private var dotCount = 0
     private val dotRunnable = object : Runnable {
@@ -34,7 +32,7 @@ class SplashActivity : AppCompatActivity() {
         }
     }
 
-    private val AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917" // Test ID
+    val AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917" // Test ID
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,9 +47,7 @@ class SplashActivity : AppCompatActivity() {
         try { MobileAds.initialize(this) } catch (e: Exception) { e.printStackTrace() }
 
         buildUI()
-        checkPremium()
 
-        // Permission check before starting service
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val perms = arrayOf(
                 android.Manifest.permission.BLUETOOTH_CONNECT,
@@ -130,50 +126,12 @@ class SplashActivity : AppCompatActivity() {
             textSize = 12f
             setTextColor(Color.argb(120, 255, 255, 255))
             gravity = android.view.Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = 32
-            }
-        }
-
-        tvPremiumStatus = TextView(this).apply {
-            textSize = 11f
-            gravity = android.view.Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = 12
-            }
-        }
-
-        btnWatchAd = TextView(this).apply {
-            text = "▶ Watch Ad = 1 Day Premium"
-            textSize = 12f
-            setTextColor(Color.WHITE)
-            setBackgroundColor(Color.parseColor("#FF6D00"))
-            setPadding(32, 14, 32, 14)
-            gravity = android.view.Gravity.CENTER
-            outlineProvider = object : ViewOutlineProvider() {
-                override fun getOutline(view: View, outline: Outline) {
-                    outline.setRoundRect(0, 0, view.width, view.height, 24f)
-                }
-            }
-            clipToOutline = true
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                gravity = android.view.Gravity.CENTER
-            }
-            setOnClickListener { showRewardedAd() }
         }
 
         center.addView(ivIcon)
         center.addView(tvStatus)
         center.addView(tvDots)
         center.addView(tvSub)
-        center.addView(tvPremiumStatus)
-        center.addView(btnWatchAd)
         root.addView(center)
         setContentView(root)
 
@@ -184,64 +142,23 @@ class SplashActivity : AppCompatActivity() {
             .start()
     }
 
-    private fun checkPremium() {
-        val prefs = getSharedPreferences("mrb_premium", Context.MODE_PRIVATE)
-        val expiry = prefs.getLong("premium_expiry", 0L)
-        val now = System.currentTimeMillis()
-        if (expiry > now) {
-            val hoursLeft = ((expiry - now) / 3600000).toInt()
-            tvPremiumStatus.text = "⭐ Premium Active - ${hoursLeft}h remaining"
-            tvPremiumStatus.setTextColor(Color.parseColor("#FFD700"))
-            btnWatchAd.text = "▶ Watch Ad = Extend 1 Day"
-        } else {
-            tvPremiumStatus.text = "Watch ad to unlock Premium for 1 day"
-            tvPremiumStatus.setTextColor(Color.argb(150, 255, 255, 255))
-        }
-    }
-
-    private fun loadRewardedAd() {
+    fun loadRewardedAd() {
         val adRequest = AdRequest.Builder().build()
         RewardedAd.load(this, AD_UNIT_ID, adRequest,
             object : RewardedAdLoadCallback() {
                 override fun onAdLoaded(ad: RewardedAd) {
                     rewardedAd = ad
-                    runOnUiThread {
-                        btnWatchAd.alpha = 1f
-                        btnWatchAd.isEnabled = true
-                    }
                 }
                 override fun onAdFailedToLoad(error: LoadAdError) {
                     rewardedAd = null
-                    runOnUiThread { btnWatchAd.alpha = 0.5f }
                 }
             })
     }
 
-    private fun showRewardedAd() {
-        val ad = rewardedAd ?: run {
-            Toast.makeText(this, "Ad loading... try again", Toast.LENGTH_SHORT).show()
-            loadRewardedAd()
-            return
-        }
-        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdDismissedFullScreenContent() {
-                rewardedAd = null
-                loadRewardedAd()
-            }
-        }
-        ad.show(this) { grantPremium() }
-    }
-
-    private fun grantPremium() {
+    fun grantPremium() {
         val expiry = System.currentTimeMillis() + 86400000L
         getSharedPreferences("mrb_premium", Context.MODE_PRIVATE)
             .edit().putLong("premium_expiry", expiry).apply()
-        runOnUiThread {
-            tvPremiumStatus.text = "⭐ Premium Unlocked for 24 hours!"
-            tvPremiumStatus.setTextColor(Color.parseColor("#FFD700"))
-            btnWatchAd.text = "▶ Watch Ad = Extend 1 More Day"
-            Toast.makeText(this, "🎉 Premium Active for 24 hours!", Toast.LENGTH_LONG).show()
-        }
     }
 
     private fun startPulse() {
@@ -289,7 +206,7 @@ class SplashActivity : AppCompatActivity() {
         handler.post(r)
     }
 
-    private fun showConnectedAnim(deviceName: String) {
+    fun showConnectedAnim(deviceName: String) {
         handler.removeCallbacks(dotRunnable)
         mediaPlayer?.release()
         ivIcon.clearAnimation()
