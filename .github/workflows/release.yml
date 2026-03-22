@@ -1,4 +1,4 @@
-name: Build Mrb Gamepad Pro Premium
+name: Build Mrb Gamepad Pro
 
 on:
   push:
@@ -26,20 +26,29 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
-      - name: Mrb Gamepad Pro 
-        uses: r0adkll/sign-android-release@v1
-        id: sign_app
-        with:
-          releaseDirectory: app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.MRB_KEYSTORE }}
-          alias: ${{ secrets.KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-          buildToolsVersion: '34.0.0'
+      - name: Zipalign and Sign Premium APK (Manual Native Method)
+        env:
+          KEYSTORE_B64: ${{ secrets.MRB_KEYSTORE }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          # 1. Base64 text ko wapas chabi (.jks) mein convert karo
+          echo "$KEYSTORE_B64" | base64 --decode > mrb_release.jks
+          
+          # 2. Cloud server par sabse latest Android tools dhundo
+          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
+          ZIPALIGN="$BUILD_TOOLS_DIR/zipalign"
+          APKSIGNER="$BUILD_TOOLS_DIR/apksigner"
+          
+          # 3. APK ko optimize (zipalign) karo
+          $ZIPALIGN -v -p 4 app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release-aligned.apk
+          
+          # 4. Apne original keystore se app ko Sign karo
+          $APKSIGNER sign --ks mrb_release.jks --ks-key-alias "$KEY_ALIAS" --ks-pass pass:"$KEYSTORE_PASSWORD" --key-pass pass:"$KEY_PASSWORD" --out app/build/outputs/apk/release/Mrb_Gamepad_Pro_Premium.apk app/build/outputs/apk/release/app-release-aligned.apk
 
       - name: Upload Mrb Gamepad Pro APK
         uses: actions/upload-artifact@v4
         with:
-          name: Mrb_Gamepad_Pro
-          path: ${{steps.sign_app.outputs.signedReleaseFile}}
-          
+          name: Mrb_Gamepad_Pro_Premium
+          path: app/build/outputs/apk/release/Mrb_Gamepad_Pro_Premium.apk
