@@ -10,6 +10,8 @@ import android.os.*
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.ads.*
+import com.google.android.gms.ads.rewarded.*
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.*
@@ -38,7 +40,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var dpadRight = false
 
     private val customBtnStates = mutableMapOf<String, Boolean>()
-
     private var tiltByte: Byte = 0
     private var filtX     = 0f
     private var filtXUI   = 0f
@@ -47,7 +48,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var connectedAnimDone = false
     private var animPlaying = false
     private var editMode = false
-    private var rewardedAd: com.google.android.gms.ads.rewarded.RewardedAd? = null
+    private var rewardedAd: RewardedAd? = null
     private val AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
 
     private val handler = Handler(Looper.getMainLooper())
@@ -176,10 +177,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             null, 0) { dpadRight = it }
 
         overlayFrame.post { loadCustomLayout() }
-        try { com.google.android.gms.ads.MobileAds.initialize(this) } catch (_: Exception) {}
+        try { MobileAds.initialize(this) } catch (_: Exception) {}
         loadRewardedAd()
         setupHid()
     }
+
+    // ── Premium ──────────────────────────────────────────────────────────────
 
     private fun isPremium(): Boolean {
         val expiry = getSharedPreferences("mrb_premium", MODE_PRIVATE)
@@ -196,16 +199,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun onCrownClick() {
+        val existing = overlayFrame.findViewWithTag<View>("premium_popup")
+        if (existing != null) {
+            overlayFrame.removeView(existing)
+            return
+        }
         if (isPremium()) toggleEditMode() else showPremiumPopup()
     }
 
     private fun showPremiumPopup() {
-        // Remove existing popup if any
-        overlayFrame.findViewWithTag<View>("premium_popup")?.let {
-            overlayFrame.removeView(it)
-            return
-        }
-
         val root = LinearLayout(this).apply {
             tag = "premium_popup"
             orientation = LinearLayout.HORIZONTAL
@@ -283,7 +285,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 8 }
             setOnClickListener {
-                overlayFrame.findViewWithTag<View>("premium_popup")?.let { overlayFrame.removeView(it) }
+                overlayFrame.findViewWithTag<View>("premium_popup")?.let {
+                    overlayFrame.removeView(it)
+                }
                 showAdFromMainActivity()
             }
         }
@@ -297,7 +301,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT)
             setOnClickListener {
-                overlayFrame.findViewWithTag<View>("premium_popup")?.let { overlayFrame.removeView(it) }
+                overlayFrame.findViewWithTag<View>("premium_popup")?.let {
+                    overlayFrame.removeView(it)
+                }
                 toggleEditMode()
             }
         }
@@ -326,11 +332,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         val tvB = TextView(this).apply {
-            text = "Custom layout
-30+ buttons
-Drag and resize
-Save layout
-Crown badge"
+            text = "Custom layout\n30+ buttons\nDrag and resize\nSave layout\nCrown badge"
             textSize = 11f
             setTextColor(Color.WHITE)
         }
@@ -341,6 +343,14 @@ Crown badge"
         root.addView(rightCol)
         overlayFrame.addView(root)
     }
+
+    private fun loadRewardedAd() {
+        val adRequest = AdRequest.Builder().build()
+        RewardedAd.load(this, AD_UNIT_ID, adRequest,
+            object : RewardedAdLoadCallback() {
+                override fun onAdLoaded(ad: RewardedAd) { rewardedAd = ad }
+                override fun onAdFailedToLoad(error: LoadAdError) { rewardedAd = null }
+            })
     }
 
     private fun showAdFromMainActivity() {
@@ -352,6 +362,7 @@ Crown badge"
                     .edit().putLong("premium_expiry", expiry).apply()
                 Toast.makeText(this, "Premium Active 24h!", Toast.LENGTH_LONG).show()
                 crownView?.let { updateCrownGlow(it) }
+                loadRewardedAd()
             }
         } else {
             loadRewardedAd()
@@ -359,14 +370,7 @@ Crown badge"
         }
     }
 
-    private fun loadRewardedAd() {
-        val adRequest = com.google.android.gms.ads.AdRequest.Builder().build()
-        com.google.android.gms.ads.rewarded.RewardedAd.load(this, AD_UNIT_ID, adRequest,
-            object : com.google.android.gms.ads.rewarded.RewardedAdLoadCallback() {
-                override fun onAdLoaded(ad: com.google.android.gms.ads.rewarded.RewardedAd) { rewardedAd = ad }
-                override fun onAdFailedToLoad(error: com.google.android.gms.ads.LoadAdError) { rewardedAd = null }
-            })
-    }
+    // ── Edit Mode ─────────────────────────────────────────────────────────────
 
     private fun toggleEditMode() {
         editMode = !editMode
