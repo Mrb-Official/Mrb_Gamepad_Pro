@@ -40,12 +40,369 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var dpadLeft  = false
     private var dpadRight = false
 
+    // Joystick axes
+    private var leftJoyX  = 0f   // -127 to 127
+    private var leftJoyY  = 0f
+    private var rightJoyX = 0f
+    private var rightJoyY = 0f
+
+    // Tilt mode
+    private var tiltEnabled = true
+
     private val customBtnStates = mutableMapOf<String, Boolean>()
     private var tiltByte: Byte = 0
     private var filtX     = 0f
     private var filtXUI   = 0f
     private val alpha     = 0.15f
     private var lastSend  = 0L
+    private var connectedAnimDone = false
+    private var animPlaying = false
+    private var editMode = false
+    private var rewardedAd: RewardedAd? = null
+    private val AD_UNIT_ID = "ca-app-pub-5087876801896320/3281731159"
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val customButtons = listOf(
+        CustomBtn("horn",       "HORN",     R.drawable.ic_btn_horn,       0xFFFFEB3B.toInt(), byte1bit = 2),
+        CustomBtn("handbrake",  "H.BRAKE",  R.drawable.ic_btn_handbrake,  0xFFFF5722.toInt(), byte1bit = 3),
+        CustomBtn("camera",     "CAM",      R.drawable.ic_btn_camera,     0xFF9C27B0.toInt(), byte1bit = 5),
+        CustomBtn("nitro",      "NITRO",    R.drawable.ic_btn_nitro,      0xFF00BCD4.toInt(), byte2bit = 0),
+        CustomBtn("lights",     "LIGHTS",   R.drawable.ic_btn_lights,     0xFFFFC107.toInt(), byte2bit = 1),
+        CustomBtn("look_left",  "LOOK<",    R.drawable.ic_btn_look_left,  0xFF795548.toInt(), byte2bit = 4),
+        CustomBtn("look_right", "LOOK>",    R.drawable.ic_btn_look_right, 0xFF8D6E63.toInt(), byte2bit = 7),
+        CustomBtn("l1",         "L1",       R.drawable.ic_btn_l1,         0xFF3F51B5.toInt(), byte2bit = 2),
+        CustomBtn("r1",         "R1",       R.drawable.ic_btn_r1,         0xFF5C6BC0.toInt(), byte2bit = 3),
+        CustomBtn("start",      "START",    R.drawable.ic_btn_start,      0xFF4CAF50.toInt(), byte2bit = 5),
+        CustomBtn("select",     "SELECT",   R.drawable.ic_btn_select,     0xFF388E3C.toInt(), byte2bit = 6),
+        CustomBtn("reset",      "RESET",    R.drawable.ic_btn_reset,      0xFFF44336.toInt()),
+        CustomBtn("pause",      "PAUSE",    R.drawable.ic_btn_pause,      0xFF9E9E9E.toInt()),
+        CustomBtn("hazard",     "HAZARD",   R.drawable.ic_btn_hazard,     0xFFFF9800.toInt()),
+        CustomBtn("boost",      "BOOST",    R.drawable.ic_btn_boost,      0xFF00E5FF.toInt()),
+        CustomBtn("wipers",     "WIPERS",   R.drawable.ic_btn_wipers,     0xFF607D8B.toInt()),
+        CustomBtn("map",        "MAP",      R.drawable.ic_btn_map,        0xFF26C6DA.toInt()),
+        CustomBtn("custom1",    "BTN 1",    R.drawable.ic_btn_custom,     0xFFE91E63.toInt()),
+        CustomBtn("custom2",    "BTN 2",    R.drawable.ic_btn_custom,     0xFFAD1457.toInt()),
+        CustomBtn("custom3",    "BTN 3",    R.drawable.ic_btn_custom,     0xFF880E4F.toInt()),
+        CustomBtn("custom4",    "BTN 4",    R.drawable.ic_btn_custom,     0xFFE040FB.toInt()),
+        CustomBtn("custom5",    "BTN 5",    R.drawable.ic_btn_custom,     0xFF7B1FA2.toInt()),
+        CustomBtn("custom6",    "BTN 6",    R.drawable.ic_btn_custom,     0xFF4A148C.toInt()),
+        CustomBtn("custom7",    "BTN 7",    R.drawable.ic_btn_custom,     0xFF6200EA.toInt()),
+        CustomBtn("custom8",    "BTN 8",    R.drawable.ic_btn_custom,     0xFF311B92.toInt()),
+        CustomBtn("turbo",      "TURBO",    R.drawable.ic_btn_nitro,      0xFFFF6F00.toInt()),
+        CustomBtn("siren",      "SIREN",    R.drawable.ic_btn_horn,       0xFF1565C0.toInt()),
+        CustomBtn("cinematic",  "CIN",      R.drawable.ic_btn_camera,     0xFF6A1B9A.toInt()),
+        CustomBtn("slowmo",     "SLOW MO",  R.drawable.ic_btn_pause,      0xFF00838F.toInt()),
+        CustomBtn("screenshot", "SHOT",     R.drawable.ic_btn_camera,     0xFF558B2F.toInt()),
+        // Joystick + Keyboard special buttons (edit mode only)
+        CustomBtn("left_joy",   "L.STICK",  R.drawable.ic_btn_custom,     0xFF00BCD4.toInt()),
+        CustomBtn("right_joy",  "R.STICK",  R.drawable.ic_btn_custom,     0xFF4CAF50.toInt()),
+        CustomBtn("kb_wasd",    "WASD",     R.drawable.ic_btn_custom,     0xFF9E9E9E.toInt()),
+        CustomBtn("kb_arrows",  "ARROWS",   R.drawable.ic_btn_custom,     0xFF607D8B.toInt()),
+        CustomBtn("tilt_tog",   "TILT",     R.drawable.ic_btn_custom,     0xFFFFD700.toInt())
+    )
+
+    private val placedCustomBtns = mutableListOf<PlacedCustomBtn>()
+    private val placedCustomViews = mutableMapOf<String, FrameLayout>()
+    private val specialViews = mutableMapOf<String, View>() // joystick/keyboard special views
+    private var editBar: LinearLayout? = null
+    private var crownView: ImageView? = null
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val perms = arrayOf(
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+                android.Manifest.permission.BLUETOOTH_SCAN,
+                android.Manifest.permission.BLUETOOTH_ADVERTISE)
+            val missing = perms.filter {
+                checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
+            if (missing.isNotEmpty()) { requestPermissions(missing.toTypedArray(), 99); return }
+        }
+        initUI()
+    }
+
+    override fun onRequestPermissionsResult(req: Int, perms: Array<String>, results: IntArray) {
+        super.onRequestPermissionsResult(req, perms, results)
+        if (req == 99) initUI()
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun initUI() {
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        window.decorView.windowInsetsController?.apply {
+            hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+            systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+
+        setContentView(R.layout.activity_main)
+
+        txtStatus = findViewById(R.id.txt_status)
+        txtTilt   = findViewById(R.id.txt_tilt)
+        tiltBar   = findViewById(R.id.tilt_bar)
+        wheelView = findViewById(R.id.lay_steering)
+        txtTilt.visibility = View.GONE
+
+        overlayFrame = FrameLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT)
+        }
+        (window.decorView as FrameLayout).addView(overlayFrame)
+
+        val btnCrown = ImageView(this).apply {
+            setImageResource(R.drawable.crown_24)
+            setPadding(16, 8, 16, 8)
+            layoutParams = FrameLayout.LayoutParams(80, 80).apply {
+                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                topMargin = 4
+            }
+            setOnClickListener { onCrownClick() }
+        }
+        overlayFrame.addView(btnCrown)
+        crownView = btnCrown
+        updateCrownGlow(btnCrown)
+
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+
+        setupTouch(R.id.lay_brake, R.drawable.btn_normal_r12, R.drawable.btn_press_red,
+            R.id.ic_brake, 0xFFFF4B4B.toInt()) { brakeOn = it }
+        setupTouch(R.id.lay_gas, R.drawable.btn_normal_r12, R.drawable.btn_press_green,
+            R.id.ic_gas, 0xFF3CFF6B.toInt()) { gasOn = it }
+        setupTouch(R.id.lay_gear_up, R.drawable.btn_gear_normal, R.drawable.btn_press_orange,
+            R.id.ic_gear_up, 0xFFFF6D00.toInt()) { gearUp = it }
+        setupTouch(R.id.lay_gear_down, R.drawable.btn_gear_normal, R.drawable.btn_press_blue,
+            R.id.ic_gear_down, 0xFF00B4D8.toInt()) { gearDown = it }
+        setupTouch(R.id.btn_a, R.drawable.btn_xbox_green, R.drawable.btn_xbox_green_press,
+            null, 0) { btnA = it }
+        setupTouch(R.id.btn_b, R.drawable.btn_xbox_red, R.drawable.btn_xbox_red_press,
+            null, 0) { btnB = it }
+        setupTouch(R.id.btn_x, R.drawable.btn_xbox_blue, R.drawable.btn_xbox_blue_press,
+            null, 0) { btnX = it }
+        setupTouch(R.id.btn_y, R.drawable.btn_xbox_yellow, R.drawable.btn_xbox_yellow_press,
+            null, 0) { btnY = it }
+        setupTouch(R.id.btn_dpad_up, R.drawable.btn_normal_r12, R.drawable.btn_press_white,
+            null, 0) { dpadUp = it }
+        setupTouch(R.id.btn_dpad_down, R.drawable.btn_normal_r12, R.drawable.btn_press_white,
+            null, 0) { dpadDown = it }
+        setupTouch(R.id.btn_dpad_left, R.drawable.btn_normal_r12, R.drawable.btn_press_white,
+            null, 0) { dpadLeft = it }
+        setupTouch(R.id.btn_dpad_right, R.drawable.btn_normal_r12, R.drawable.btn_press_white,
+            null, 0) { dpadRight = it }
+
+        overlayFrame.post { loadCustomLayout() }
+        try { MobileAds.initialize(this) } catch (_: Exception) {}
+        loadRewardedAd()
+        setupHid()
+    }
+
+    // ── Premium ───────────────────────────────────────────────────────────────
+
+    private fun isPremium(): Boolean {
+        val expiry = getSharedPreferences("mrb_premium", MODE_PRIVATE)
+            .getLong("premium_expiry", 0L)
+        return expiry > System.currentTimeMillis()
+    }
+
+    private fun updateCrownGlow(crown: ImageView) {
+        if (isPremium()) crown.setColorFilter(Color.parseColor("#FFD700"))
+        else crown.setColorFilter(Color.parseColor("#2196F3"))
+    }
+
+    private fun onCrownClick() {
+        val existing = overlayFrame.findViewWithTag<View>("premium_popup")
+        if (existing != null) {
+            existing.animate().alpha(0f).translationY(80f).setDuration(250)
+                .withEndAction { overlayFrame.removeView(existing) }.start()
+            return
+        }
+        if (isPremium()) toggleEditMode() else showPremiumPopup()
+    }
+
+    private fun dismissPopup() {
+        val v = overlayFrame.findViewWithTag<View>("premium_popup") ?: return
+        v.animate().alpha(0f).translationY(80f).setDuration(250)
+            .withEndAction { overlayFrame.removeView(v) }.start()
+    }
+
+    private fun showPremiumPopup() {
+        val overlay = FrameLayout(this).apply {
+            tag = "premium_popup"
+            setBackgroundColor(Color.argb(200, 0, 0, 0))
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT)
+            setOnClickListener { dismissPopup() }
+        }
+
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.parseColor("#1C1B1F"))
+            setPadding(40, 32, 40, 32)
+            outlineProvider = object : ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: Outline) {
+                    outline.setRoundRect(0, 0, view.width, view.height, 32f)
+                }
+            }
+            clipToOutline = true
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+                gravity = Gravity.CENTER
+                setMargins(60, 0, 60, 0)
+            }
+            alpha = 0f; translationY = 100f
+            setOnClickListener { }
+        }
+
+        val topRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 20 }
+        }
+        val crownIv = ImageView(this).apply {
+            setImageResource(R.drawable.crown_24)
+            setColorFilter(Color.parseColor("#FFD700"))
+            layoutParams = LinearLayout.LayoutParams(48, 48).apply { setMargins(0,0,12,0) }
+        }
+        val tvTitle = TextView(this).apply {
+            text = "MRB Premium"; textSize = 20f
+            setTextColor(Color.parseColor("#FFD700"))
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        val btnClose = TextView(this).apply {
+            text = "✕"; textSize = 18f
+            setTextColor(Color.argb(180, 255, 255, 255))
+            setPadding(12, 4, 12, 4)
+            setOnClickListener { dismissPopup() }
+        }
+        topRow.addView(crownIv); topRow.addView(tvTitle); topRow.addView(btnClose)
+
+        val contentRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 8 }
+        }
+
+        val leftCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(0,0,24,0) }
+        }
+        val tvSub = TextView(this).apply {
+            text = "Watch an ad to unlock premium features for 24 hours"
+            textSize = 12f; setTextColor(Color.argb(180, 255, 255, 255))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 20 }
+        }
+        val btnAd = FrameLayout(this).apply {
+            setBackgroundColor(Color.parseColor("#1565C0"))
+            outlineProvider = object : ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: Outline) {
+                    outline.setRoundRect(0, 0, view.width, view.height, 24f)
+                }
+            }
+            clipToOutline = true
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 56).apply { bottomMargin = 12 }
+            setOnClickListener { dismissPopup(); showAdFromMainActivity() }
+        }
+        val btnAdInner = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        }
+        val playIv = ImageView(this).apply {
+            setImageResource(R.drawable.motion_play_24); setColorFilter(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(28, 28).apply { setMargins(0,0,10,0) }
+        }
+        val btnAdTv = TextView(this).apply {
+            text = "Be a Premium Member"; textSize = 13f; setTextColor(Color.WHITE)
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        }
+        btnAdInner.addView(playIv); btnAdInner.addView(btnAdTv); btnAd.addView(btnAdInner)
+
+        val btnTry = FrameLayout(this).apply {
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.TRANSPARENT)
+                setStroke(1, Color.argb(80, 255, 255, 255))
+                cornerRadius = 24f
+            }
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 48)
+            setOnClickListener { dismissPopup(); toggleEditMode() }
+        }
+        val btnTryTv = TextView(this).apply {
+            text = "Try without Premium"; textSize = 11f
+            setTextColor(Color.argb(180, 255, 255, 255)); gravity = Gravity.CENTER
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        }
+        btnTry.addView(btnTryTv)
+        leftCol.addView(tvSub); leftCol.addView(btnAd); leftCol.addView(btnTry)
+
+        val rightCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        val tvBTitle = TextView(this).apply {
+            text = "Benefits"; textSize = 14f
+            setTextColor(Color.parseColor("#FFD700"))
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 12 }
+        }
+        rightCol.addView(tvBTitle)
+        val benefits = listOf(
+            Pair(R.drawable.ic_btn_custom, "Custom button layout"),
+            Pair(R.drawable.add_circle_24, "30+ extra buttons"),
+            Pair(R.drawable.save_24,       "Save your layout"),
+            Pair(R.drawable.crown_24,      "Premium crown badge")
+        )
+        for ((icon, label) in benefits) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 10 }
+            }
+            val iv = ImageView(this).apply {
+                setImageResource(icon); setColorFilter(Color.parseColor("#FFD700"))
+                layoutParams = LinearLayout.LayoutParams(24, 24).apply { setMargins(0,0,8,0) }
+            }
+            val tv = TextView(this).apply { text = label; textSize = 11f; setTextColor(Color.WHITE) }
+            row.addView(iv); row.addView(tv); rightCol.addView(row)
+        }
+
+        contentRow.addView(leftCol); contentRow.addView(rightCol)
+        card.addView(topRow); card.addView(contentRow)
+        overlay.addView(card); overlayFrame.addView(overlay)
+        card.animate().alpha(1f).translationY(0f).setDuration(300)
+            .setInterpolator(DecelerateInterpolator()).start()
+    }
+
+    private fun loadRewardedAd() {
+        val adRequest = AdRequest.Builder().build()
+        RewardedAd.load(this, AD_UNIT_ID, adRequest,
+            object : RewardedAdLoadCallback() {
+                override fun onAdLoaded(ad: RewardedAd) { rewardedAd = ad }
+                override fun onAdFailedToLoad(error: LoadAdError) { rewardedAd = null }
+            })
+    }
+
+    private fun showAdFromMainActivity() {
+        val ad = rewardedAd
+        if (ad != null) {
+            ad.show(this) {
+                val expiry = System.currentTimeMillis() + 86400000L
+                getSharedPreferences    private var lastSend  = 0L
     private var connectedAnimDone = false
     private var animPlaying = false
     private var editMode = false
