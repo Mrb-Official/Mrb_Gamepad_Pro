@@ -1018,31 +1018,55 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onAccuracyChanged(s: Sensor?, a: Int) {}
 
+
+    
+ //gemini keyfix // 
     @SuppressLint("MissingPermission")
     private fun sendReport() {
         val device = HidService.connectedDevice ?: return
         val hid    = HidService.hidDevice       ?: return
-        var b1 = 0; var b2 = 0
+        
+        var b1 = 0
+        var b2 = 0
+        
+        // Right side buttons
         if (btnA)     b1 = b1 or (1 shl 0)
         if (btnB)     b1 = b1 or (1 shl 1)
+        if (btnX)     b1 = b1 or (1 shl 3)
+        if (btnY)     b1 = b1 or (1 shl 4)
         if (gearDown) b1 = b1 or (1 shl 6)
         if (gearUp)   b1 = b1 or (1 shl 7)
-        if (btnY)     b1 = b1 or (1 shl 4)
-        if (btnX)     b1 = b1 or (1 shl 3)
-        if (dpadUp)   b2 = b2 or (1 shl 2)
-        if (dpadDown) b2 = b2 or (1 shl 3)
-        if (dpadLeft) b2 = b2 or (1 shl 6)
-        if (dpadRight)b2 = b2 or (1 shl 5)
+        
+        // Custom Buttons (jo edit mode se add hote hain)
         for (def in customButtons) {
             if (customBtnStates[def.id] == true) {
                 if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
                 if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
             }
         }
-        val steer = if (leftJoyX.toInt() != 0) leftJoyX else tiltByte
+        
+        // 🛠️ FIX 1 & 3: W, A, S, D (D-pad) ko Left Joystick ke X aur Y se connect kar diya
+        // Ab W,A,S,D dabane par horn/map nahi khulega, character aage/peeche/left/right jayega
+        val finalLeftX = if (dpadLeft) (-127).toByte() else if (dpadRight) 127.toByte() else if (leftJoyX.toInt() != 0) leftJoyX else tiltByte
+        val finalLeftY = if (dpadUp) (-127).toByte() else if (dpadDown) 127.toByte() else leftJoyY
+        
+        // Triggers (Gas / Brake)
         val gas   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
         val brake = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
+        
+        // 🛠️ FIX 2: Sahi order set kar diya (8 Bytes bhej rahe hain)
+        // Ab PC confuse nahi hoga ki konsi axis kahan hai
         hid.sendReport(device, 1,
-            byteArrayOf(b1.toByte(), b2.toByte(), steer, rightJoyX, gas, brake))
+            byteArrayOf(
+                b1.toByte(), 
+                b2.toByte(), 
+                finalLeftX,  // Byte 3: Left Stick X (Steering / Left-Right)
+                finalLeftY,  // Byte 4: Left Stick Y (Aage-Peeche)
+                rightJoyX,   // Byte 5: Right Stick X (Camera Left-Right)
+                rightJoyY,   // Byte 6: Right Stick Y (Camera Up-Down)
+                gas,         // Byte 7: Gas (R2/RT)
+                brake        // Byte 8: Brake (L2/LT)
+            )
+        )
     }
 }
