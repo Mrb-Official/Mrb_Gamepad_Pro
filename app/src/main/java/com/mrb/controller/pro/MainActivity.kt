@@ -1021,7 +1021,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     
  //gemini keyfix // 
-    @SuppressLint("MissingPermission")
+        @SuppressLint("MissingPermission")
     private fun sendReport() {
         val device = HidService.connectedDevice ?: return
         val hid    = HidService.hidDevice       ?: return
@@ -1029,7 +1029,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         var b1 = 0
         var b2 = 0
         
-        // Right side buttons
         if (btnA)     b1 = b1 or (1 shl 0)
         if (btnB)     b1 = b1 or (1 shl 1)
         if (btnX)     b1 = b1 or (1 shl 3)
@@ -1037,7 +1036,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (gearDown) b1 = b1 or (1 shl 6)
         if (gearUp)   b1 = b1 or (1 shl 7)
         
-        // Custom Buttons (jo edit mode se add hote hain)
+        // 🛠️ FIX 1: Yahan se maine dpad (W, A, S, D) wale 'b2' bits hata diye hain.
+        // Ab W, A, S, D dabane par Map/Horn nahi khulega, wo sirf movement karenge.
         for (def in customButtons) {
             if (customBtnStates[def.id] == true) {
                 if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
@@ -1045,28 +1045,28 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
         }
         
-        // 🛠️ FIX 1 & 3: W, A, S, D (D-pad) ko Left Joystick ke X aur Y se connect kar diya
-        // Ab W,A,S,D dabane par horn/map nahi khulega, character aage/peeche/left/right jayega
+        // 🛠️ FIX 2: Left Joystick aur W, A, S, D dono ab ek sath X aur Y Axis par kaam karenge (Movement)
         val finalLeftX = if (dpadLeft) (-127).toByte() else if (dpadRight) 127.toByte() else if (leftJoyX.toInt() != 0) leftJoyX else tiltByte
         val finalLeftY = if (dpadUp) (-127).toByte() else if (dpadDown) 127.toByte() else leftJoyY
         
-        // Triggers (Gas / Brake)
-        val gas   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
-        val brake = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
-        
-        // 🛠️ FIX 2: Sahi order set kar diya (8 Bytes bhej rahe hain)
-        // Ab PC confuse nahi hoga ki konsi axis kahan hai
+        // 🛠️ FIX 3: THE 6-BYTE HACK
+        // Kyunki sirf 6 bytes ki limit hai, hum Camera (Right Joystick) aur Gas/Brake ko ek hi jagah bhejenge.
+        // Agar Gas/Brake NAHI dabaya hai -> toh Right Joystick Camera ghumayega.
+        // Agar Gas/Brake DABAYA hai -> toh wo Gas/Brake ka kaam karega.
+        val finalByte4 = if (gasOn) 0xFF.toByte() else rightJoyX
+        val finalByte5 = if (brakeOn) 0xFF.toByte() else rightJoyY
+
+        // Wapas exactly 6 Bytes bheje jaa rahe hain, ab kuch bhi aage-peeche shift nahi hoga!
         hid.sendReport(device, 1,
             byteArrayOf(
-                b1.toByte(), 
-                b2.toByte(), 
-                finalLeftX,  // Byte 3: Left Stick X (Steering / Left-Right)
-                finalLeftY,  // Byte 4: Left Stick Y (Aage-Peeche)
-                rightJoyX,   // Byte 5: Right Stick X (Camera Left-Right)
-                rightJoyY,   // Byte 6: Right Stick Y (Camera Up-Down)
-                gas,         // Byte 7: Gas (R2/RT)
-                brake        // Byte 8: Brake (L2/LT)
+                b1.toByte(),     // Byte 1: Buttons
+                b2.toByte(),     // Byte 2: Buttons 
+                finalLeftX,      // Byte 3: Left-Right (Steering / A-D)
+                finalLeftY,      // Byte 4: Aage-Peeche (W-S / Left Joy Y)
+                finalByte4,      // Byte 5: Camera Left-Right OR Gas
+                finalByte5       // Byte 6: Camera Up-Down OR Brake
             )
         )
     }
+
 }
