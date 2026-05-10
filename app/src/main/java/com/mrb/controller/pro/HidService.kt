@@ -68,16 +68,16 @@ class HidService : Service() {
             0x95.toByte(), 0x01,
             0x81.toByte(), 0x02,
 
-            // Rx axis (right joy X / touchpad X)
-            0x09, 0x33,
+            // z axis (right joy X / touchpad X)
+            0x09, 0x32,
             0x15, 0x81.toByte(),
             0x25, 0x7f,
             0x75, 0x08,
             0x95.toByte(), 0x01,
             0x81.toByte(), 0x02,
 
-            // Ry axis (right joy Y / touchpad Y)
-            0x09, 0x34,
+            // Rz axis (right joy Y / touchpad Y)
+            0x09, 0x35,
             0x15, 0x81.toByte(),
             0x25, 0x7f,
             0x75, 0x08,

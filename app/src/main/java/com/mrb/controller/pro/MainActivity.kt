@@ -23,28 +23,32 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
     private lateinit var txtStatus: TextView
     private lateinit var txtTilt: TextView
-    private lateinit var tiltBar: ProgressBar
-    private lateinit var wheelView: ImageView
-    private lateinit var overlayFrame: FrameLayout
+        private lateinit var tiltBar: ProgressBar
+        private lateinit var wheelView: ImageView
+        private lateinit var overlayFrame: FrameLayout
 
-    private var gasOn     = false
-    private var brakeOn   = false
-    private var gearUp    = false
-    private var gearDown  = false
-    private var btnA      = false
-    private var btnB      = false
-    private var btnX      = false
-    private var btnY      = false
-    private var dpadUp    = false
-    private var dpadDown  = false
-    private var dpadLeft  = false
-    private var dpadRight = false
+        private var gasOn     = false
+        private var brakeOn   = false
+        private var gearUp    = false
+        private var gearDown  = false
+        private var btnA      = false
+        private var btnB      = false
+        private var btnX      = false
+        private var btnY      = false
+        private var dpadUp    = false
+        private var dpadDown  = false
+        private var dpadLeft  = false
+        private var dpadRight = false
+        private var wasdUp    = false
+        private var wasdDown  = false
+        private var wasdLeft  = false
+        private var wasdRight = false
 
-    // Joystick / touchpad axes
-    private var leftJoyX:  Byte = 0
-    private var leftJoyY:  Byte = 0
-    private var rightJoyX: Byte = 0
-    private var rightJoyY: Byte = 0
+        // Joystick / touchpad axes
+        private var leftJoyX:  Byte = 0
+        private var leftJoyY:  Byte = 0
+        private var rightJoyX: Byte = 0
+        private var rightJoyY: Byte = 0
 
     private var tiltEnabled = true
     private var tiltByte: Byte = 0
@@ -131,7 +135,21 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         CustomBtn("kb_6",        "6",       R.drawable.ic_btn_custom,     0xFFF44336.toInt(), byte2bit = 0),
         CustomBtn("kb_7",        "7",       R.drawable.ic_btn_custom,     0xFFF44336.toInt(), byte2bit = 1),
         CustomBtn("kb_8",        "8",       R.drawable.ic_btn_custom,     0xFFF44336.toInt(), byte2bit = 4),
-        CustomBtn("kb_9",        "9",       R.drawable.ic_btn_custom,     0xFFF44336.toInt(), byte2bit = 7)
+        CustomBtn("kb_9",        "9",       R.drawable.ic_btn_custom,     0xFFF44336.toInt(), byte2bit = 7),
+        CustomBtn("btn_a",      "A",       R.drawable.btn_xbox_green,  0xFF4CAF50.toInt(), byte1bit = 0),
+        CustomBtn("btn_b",      "B",       R.drawable.btn_xbox_red,    0xFFF44336.toInt(), byte1bit = 1),
+        CustomBtn("btn_x",      "X",       R.drawable.btn_xbox_blue,   0xFF2196F3.toInt(), byte1bit = 2),
+        CustomBtn("btn_y",      "Y",       R.drawable.btn_xbox_yellow, 0xFFFFEB3B.toInt(), byte1bit = 3),
+        CustomBtn("gear_down",  "L1",      R.drawable.ic_btn_custom,   0xFF00B4D8.toInt(), byte1bit = 4),
+        CustomBtn("gear_up",    "R1",      R.drawable.ic_btn_custom,   0xFFFF6D00.toInt(), byte1bit = 5),
+        
+        CustomBtn("dpad_up",    "UP",      R.drawable.btn_normal_r12,  0xFFFFFFFF.toInt(), byte2bit = 0),
+        CustomBtn("dpad_down",  "DOWN",    R.drawable.btn_normal_r12,  0xFFFFFFFF.toInt(), byte2bit = 1),
+        CustomBtn("dpad_left",  "LEFT",    R.drawable.btn_normal_r12,  0xFFFFFFFF.toInt(), byte2bit = 2),
+        CustomBtn("dpad_right", "RIGHT",   R.drawable.btn_normal_r12,  0xFFFFFFFF.toInt(), byte2bit = 3),
+
+        CustomBtn("gas",        "GAS",     R.drawable.ic_btn_custom,   0xFF3CFF6B.toInt()),
+        CustomBtn("brake",      "BRAKE",   R.drawable.ic_btn_custom,   0xFFFF4B4B.toInt()),
     )
 
     private val placedCustomBtns  = mutableListOf<PlacedCustomBtn>()
@@ -812,10 +830,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 if (pressed || released) {
                     // Movement keys = update dpad flags
                     when (def.id) {
-                        "kb_w", "kb_up"    -> dpadUp    = pressed
-                        "kb_a", "kb_left"  -> dpadLeft  = pressed
-                        "kb_s", "kb_down"  -> dpadDown  = pressed
-                        "kb_d", "kb_right" -> dpadRight = pressed
+                        "kb_w", "kb_up"    -> wasdUp    = pressed
+                        "kb_a", "kb_left"  -> wasdLeft  = pressed
+                        "kb_s", "kb_down"  -> wasdDown  = pressed
+                        "kb_d", "kb_right" -> wasdRight = pressed
                     }
                     // All keys = update customBtnStates (for HID button bits)
                     customBtnStates[def.id] = pressed
