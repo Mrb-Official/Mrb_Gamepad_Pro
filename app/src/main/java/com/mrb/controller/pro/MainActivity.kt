@@ -17,22 +17,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.*
 
-data class CustomBtn(
-    val id: String,
-    val label: String,
-    val iconRes: Int,
-    val pressColor: Int,
-    val byte1bit: Int = -1,
-    val byte2bit: Int = -1
-)
 
-data class PlacedCustomBtn(
-    val id: String,
-    var x: Float,
-    var y: Float,
-    var w: Int,
-    var h: Int
-)
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
