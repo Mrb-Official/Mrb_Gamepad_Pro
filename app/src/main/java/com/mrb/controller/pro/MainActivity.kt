@@ -1085,7 +1085,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun confirmReset() {
-        AlertDialog.Builder(this)
+        android.app.AlertDialog.Builder(this)
             .setTitle("Reset Layout?")
             .setMessage("All custom buttons will be removed.")
             .setPositiveButton("Reset") { _, _ ->
