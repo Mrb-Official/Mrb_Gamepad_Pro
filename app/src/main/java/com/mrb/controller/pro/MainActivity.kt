@@ -192,11 +192,74 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         setupDefaultViews()
 
+        // 🔥 NAYA FIXED TOUCHPAD (Center Bottom) 🔥
+        val touchpadView = FrameLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(600, 350).apply {
+                gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
+                bottomMargin = 60
+            }
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.argb(80, 50, 50, 50))
+                setStroke(2, Color.argb(150, 200, 200, 200))
+                cornerRadius = 24f
+            }
+            val tv = TextView(context).apply {
+                text = "TOUCH AREA"
+                textSize = 12f
+                setTextColor(Color.argb(100, 255, 255, 255))
+                gravity = Gravity.CENTER
+                layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+            }
+            addView(tv)
+        }
+        overlayFrame.addView(touchpadView)
+
+        var startX = 0f
+        var startY = 0f
+        val maxDrag = 150f
+
+        touchpadView.setOnTouchListener { _, e ->
+            if (editMode) return@setOnTouchListener false
+            
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    startX = e.x
+                    startY = e.y
+                    touchpadView.background = android.graphics.drawable.GradientDrawable().apply {
+                        setColor(Color.argb(120, 100, 100, 100))
+                        setStroke(2, Color.parseColor("#00BCD4"))
+                        cornerRadius = 24f
+                    }
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = (e.x - startX).coerceIn(-maxDrag, maxDrag)
+                    val dy = (e.y - startY).coerceIn(-maxDrag, maxDrag)
+                    rightJoyX = ((dx / maxDrag) * 127).toInt().toByte()
+                    rightJoyY = ((dy / maxDrag) * 127).toInt().toByte()
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                    rightJoyX = 0
+                    rightJoyY = 0
+                    touchpadView.background = android.graphics.drawable.GradientDrawable().apply {
+                        setColor(Color.argb(80, 50, 50, 50))
+                        setStroke(2, Color.argb(150, 200, 200, 200))
+                        cornerRadius = 24f
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+        // 🔥 TOUCHPAD CODE KHATAM 🔥
+
         overlayFrame.post { loadCustomLayout() }
         try { MobileAds.initialize(this) } catch (_: Exception) {}
         loadRewardedAd()
         setupHid()
     }
+    
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setupDefaultViews() {
@@ -1118,6 +1181,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (btnY)     b1 = b1 or (1 shl 4)
         if (gearDown) b1 = b1 or (1 shl 6)
         if (gearUp)   b1 = b1 or (1 shl 7)
+                    // 🔥 Gas aur Brake ko normal Buttons (Button 15 aur 16) ki tarah bhejo
+        if (brakeOn || customBtnStates["brake"] == true) b2 = b2 or (1 shl 6)
+        if (gasOn   || customBtnStates["gas"] == true)   b2 = b2 or (1 shl 7)
 
         for (def in customButtons) {
             if (customBtnStates[def.id] == true) {
