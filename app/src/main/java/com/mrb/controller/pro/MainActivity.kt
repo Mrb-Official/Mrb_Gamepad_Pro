@@ -1169,65 +1169,43 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onAccuracyChanged(s: Sensor?, a: Int) {}
 
-    @SuppressLint("MissingPermission")
+        @SuppressLint("MissingPermission")
     private fun sendReport() {
-        val device = HidService.connectedDevice ?: return
-        val hid    = HidService.hidDevice       ?: return
+        try {
+            val device = HidService.connectedDevice ?: return
+            val hid    = HidService.hidDevice       ?: return
 
-        var b1 = 0; var b2 = 0
-        if (btnA)     b1 = b1 or (1 shl 0)
-        if (btnB)     b1 = b1 or (1 shl 1)
-        if (btnX)     b1 = b1 or (1 shl 3)
-        if (btnY)     b1 = b1 or (1 shl 4)
-        if (gearDown) b1 = b1 or (1 shl 6)
-        if (gearUp)   b1 = b1 or (1 shl 7)
-                    // 🔥 Gas aur Brake ko normal Buttons (Button 15 aur 16) ki tarah bhejo
-        if (brakeOn || customBtnStates["brake"] == true) b2 = b2 or (1 shl 6)
-        if (gasOn   || customBtnStates["gas"] == true)   b2 = b2 or (1 shl 7)
+            var b1 = 0; var b2 = 0
+            // Buttons logic (Purana wala hi rakho)
+            if (btnA) b1 = b1 or (1 shl 0)
+            if (btnB) b1 = b1 or (1 shl 1)
+            if (btnX) b1 = b1 or (1 shl 2)
+            if (btnY) b1 = b1 or (1 shl 3)
+            if (gearDown) b1 = b1 or (1 shl 4)
+            if (gearUp)   b1 = b1 or (1 shl 5)
 
-        for (def in customButtons) {
-            if (customBtnStates[def.id] == true) {
-                if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
-                if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
+            // Custom buttons bit mapping
+            for (def in customButtons) {
+                if (customBtnStates[def.id] == true) {
+                    if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
+                    if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
+                }
             }
-        }
 
-        // Left axis
-        val lx: Byte = when {
-            dpadLeft  -> (-127).toByte()
-            dpadRight -> 127.toByte()
-            leftJoyX.toInt() != 0 -> leftJoyX
-            else -> tiltByte
-        }
-        val ly: Byte = when {
-            dpadUp   -> (-127).toByte()
-            dpadDown -> 127.toByte()
-            else     -> leftJoyY
-        }
+            // 🔥 BEST LOGIC: 0 SE FULL GAS/BRAKE 🔥
+            // Brake (Byte 6) aur Gas (Byte 7)
+            val brakeVal = if (brakeOn || customBtnStates["brake"] == true) 0x7F.toByte() else 0x00.toByte()
+            val gasVal   = if (gasOn || customBtnStates["gas"] == true)   0x7F.toByte() else 0x00.toByte()
 
-        // Right axis (Rx/Ry)
-        val rx = rightJoyX
-        val ry = rightJoyY
+            // 8 Bytes Report: [b1, b2, LX, LY, TouchX, TouchY, Brake, Gas]
+            hid.sendReport(device, 1, byteArrayOf(
+                b1.toByte(), b2.toByte(),
+                leftJoyX,  leftJoyY,          // Byte 2, 3
+                rightJoyX, rightJoyY,         // Byte 4, 5 (Z, Rz - Touchpad)
+                brakeVal,  gasVal             // Byte 6, 7 (Rx, Ry - LT/RT)
+            ))
 
-        // Left trigger = Brake, Right trigger = Gas
-        val brake = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
-        val gas   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
-
-        // Hat switch for dpad
-        val hat: Byte = when {
-            dpadUp   && !dpadLeft && !dpadRight -> 0
-            dpadUp   && dpadRight               -> 1
-            dpadRight && !dpadUp  && !dpadDown  -> 2
-            dpadDown && dpadRight               -> 3
-            dpadDown && !dpadLeft && !dpadRight -> 4
-            dpadDown && dpadLeft                -> 5
-            dpadLeft && !dpadUp   && !dpadDown  -> 6
-            dpadUp   && dpadLeft                -> 7
-            else                                -> 8
-        }
-
-        // 9 bytes: b1, b2, LeftX, LeftY, RightX, RightY, Brake, Gas, Hat
-        hid.sendReport(device, 1,
-            byteArrayOf(b1.toByte(), b2.toByte(), lx, ly, rx, ry, brake, gas, hat))
+        } catch (e: Exception) { e.printStackTrace() }
     }
+    
 }
