@@ -1168,23 +1168,28 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     override fun onAccuracyChanged(s: Sensor?, a: Int) {}
-
-        @SuppressLint("MissingPermission")
+    @SuppressLint("MissingPermission")
     private fun sendReport() {
         try {
             val device = HidService.connectedDevice ?: return
             val hid    = HidService.hidDevice       ?: return
 
             var b1 = 0; var b2 = 0
-            // Buttons logic (Purana wala hi rakho)
-            if (btnA) b1 = b1 or (1 shl 0)
-            if (btnB) b1 = b1 or (1 shl 1)
-            if (btnX) b1 = b1 or (1 shl 2)
-            if (btnY) b1 = b1 or (1 shl 3)
+            
+            // 1. Fixed Buttons
+            if (btnA)     b1 = b1 or (1 shl 0)
+            if (btnB)     b1 = b1 or (1 shl 1)
+            if (btnX)     b1 = b1 or (1 shl 2)
+            if (btnY)     b1 = b1 or (1 shl 3)
             if (gearDown) b1 = b1 or (1 shl 4)
             if (gearUp)   b1 = b1 or (1 shl 5)
+            
+            if (dpadUp)    b2 = b2 or (1 shl 0)
+            if (dpadDown)  b2 = b2 or (1 shl 1)
+            if (dpadLeft)  b2 = b2 or (1 shl 2)
+            if (dpadRight) b2 = b2 or (1 shl 3)
 
-            // Custom buttons bit mapping
+            // 2. Custom Buttons Logic (Isse Nitro/Camera sab chalenge)
             for (def in customButtons) {
                 if (customBtnStates[def.id] == true) {
                     if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
@@ -1192,20 +1197,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 }
             }
 
-            // 🔥 BEST LOGIC: 0 SE FULL GAS/BRAKE 🔥
-            // Brake (Byte 6) aur Gas (Byte 7)
+            // 3. 🔥 TERA BEST LOGIC: Direct 0 se Full 🔥
             val brakeVal = if (brakeOn || customBtnStates["brake"] == true) 0x7F.toByte() else 0x00.toByte()
-            val gasVal   = if (gasOn || customBtnStates["gas"] == true)   0x7F.toByte() else 0x00.toByte()
+            val gasVal   = if (gasOn   || customBtnStates["gas"] == true)   0x7F.toByte() else 0x00.toByte()
 
-            // 8 Bytes Report: [b1, b2, LX, LY, TouchX, TouchY, Brake, Gas]
+            // 4. Alignment as per your Best Setup
+            // [b1, b2, LX, LY, RX, RY, Brake, Gas]
             hid.sendReport(device, 1, byteArrayOf(
-                b1.toByte(), b2.toByte(),
-                leftJoyX,  leftJoyY,          // Byte 2, 3
-                rightJoyX, rightJoyY,         // Byte 4, 5 (Z, Rz - Touchpad)
-                brakeVal,  gasVal             // Byte 6, 7 (Rx, Ry - LT/RT)
+                b1.toByte(), b2.toByte(), 
+                leftJoyX, leftJoyY,     // Left Stick (LX, LY)
+                rightJoyX, rightJoyY,   // Touchpad (Z, Rz) -> Tera Camera
+                brakeVal, gasVal        // LT/RT (Rx, Ry) -> Tera Gas/Brake
             ))
 
         } catch (e: Exception) { e.printStackTrace() }
     }
-    
 }
