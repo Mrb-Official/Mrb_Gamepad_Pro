@@ -27,102 +27,34 @@ class HidService : Service() {
         // [8] Hat      = D-Pad Hat Switch
 
         val HID_DESC = byteArrayOf(
+                val HID_DESC = byteArrayOf(
             0x05, 0x01,             // Usage Page (Generic Desktop)
             0x09, 0x05,             // Usage (Gamepad)
             0xa1.toByte(), 0x01,    // Collection (Application)
             0x85.toByte(), 0x01,    // Report ID (1)
 
-            // ── Buttons 1-8 ──
-            0x05, 0x09,
-            0x19, 0x01,
-            0x29, 0x08,
-            0x15, 0x00,
-            0x25, 0x01,
-            0x75, 0x01,
-            0x95.toByte(), 0x08,
-            0x81.toByte(), 0x02,
+            // ── 16 Buttons (2 Bytes) ──
+            0x05, 0x09, 0x19, 0x01, 0x29, 0x10, 0x15, 0x00, 0x25, 0x01, 0x75, 0x01, 0x95.toByte(), 0x10, 0x81.toByte(), 0x02,
 
-            // ── Buttons 9-16 ──
-            0x05, 0x09,
-            0x19, 0x09,
-            0x29, 0x10,
-            0x15, 0x00,
-            0x25, 0x01,
-            0x75, 0x01,
-            0x95.toByte(), 0x08,
-            0x81.toByte(), 0x02,
-
-            // ── Left Stick X ──
+            // ── Axes (6 Bytes) ──
             0x05, 0x01,
-            0x09, 0x30,
-            0x15, 0x81.toByte(),
-            0x25, 0x7f,
-            0x75, 0x08,
-            0x95.toByte(), 0x01,
+            0x09, 0x30,             // X (Left Stick X)
+            0x09, 0x31,             // Y (Left Stick Y)
+            0x09, 0x32,             // Z (Touchpad X)
+            0x09, 0x35,             // Rz (Touchpad Y)
+            0x09, 0x33,             // Rx (Brake - LT)
+            0x09, 0x34,             // Ry (Gas - RT)
+            
+            0x15, 0x81.toByte(),    // Min -127
+            0x25, 0x7f,             // Max 127
+            0x75, 0x08,             // 8 bits each
+            0x95.toByte(), 0x06,    // Total 6 axes
             0x81.toByte(), 0x02,
 
-            // ── Left Stick Y ──
-            0x09, 0x31,
-            0x15, 0x81.toByte(),
-            0x25, 0x7f,
-            0x75, 0x08,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x02,
-
-            // ── Right Stick X (Rx) ──
-            0x09, 0x33,
-            0x15, 0x81.toByte(),
-            0x25, 0x7f,
-            0x75, 0x08,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x02,
-
-            // ── Right Stick Y (Ry) ──
-            0x09, 0x34,
-            0x15, 0x81.toByte(),
-            0x25, 0x7f,
-            0x75, 0x08,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x02,
-
-            // ── Left Trigger (Brake) ──
-            0x05, 0x02,
-            0x09, 0xC5.toByte(),    // Brake
-            0x15, 0x00,
-            0x26, 0xff.toByte(), 0x00,
-            0x75, 0x08,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x02,
-
-            // ── Right Trigger (Gas/Accelerator) ──
-            0x09, 0xC4.toByte(),    // Accelerator
-            0x15, 0x00,
-            0x26, 0xff.toByte(), 0x00,
-            0x75, 0x08,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x02,
-
-            // ── Hat Switch (D-pad) ──
-            0x05, 0x01,
-            0x09, 0x39,
-            0x15, 0x00,
-            0x25, 0x07,
-            0x35, 0x00,
-            0x46, 0x3b.toByte(), 0x01,
-            0x65, 0x14,
-            0x75, 0x04,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x42,
-
-            // ── Padding 4 bits ──
-            0x75, 0x04,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x03,
-
-            0xc0.toByte()           // End Collection
+            0xc0.toByte()           // End
         )
-    }
-
+                )
+            }
     private val handler = Handler(Looper.getMainLooper())
 
     override fun onBind(intent: Intent?): IBinder? = null
