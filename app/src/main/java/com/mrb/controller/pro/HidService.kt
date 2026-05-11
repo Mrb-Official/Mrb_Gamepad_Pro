@@ -27,98 +27,50 @@ class HidService : Service() {
         // [8] Brake (0..255)
 
         val HID_DESC = byteArrayOf(
-            0x05, 0x01,
-            0x09, 0x05,
-            0xa1.toByte(), 0x01,
-            0x85.toByte(), 0x01,
+            0x05, 0x01,             // Usage Page (Generic Desktop)
+            0x09, 0x05,             // Usage (Gamepad)
+            0xa1.toByte(), 0x01,    // Collection (Application)
+            0x85.toByte(), 0x01,    // Report ID (1)
 
-            // Buttons 1-8
-            0x05, 0x09,
-            0x19, 0x01,
-            0x29, 0x08,
-            0x15, 0x00,
-            0x25, 0x01,
-            0x75, 0x01,
-            0x95.toByte(), 0x08,
-            0x81.toByte(), 0x02,
+            // ── Buttons 1-16 (2 Bytes) ──
+            0x05, 0x09,             // Usage Page (Button)
+            0x19, 0x01,             // Usage Minimum (1)
+            0x29, 0x10,             // Usage Maximum (16)
+            0x15, 0x00,             // Logical Minimum (0)
+            0x25, 0x01,             // Logical Maximum (1)
+            0x75, 0x01,             // Report Size (1 bit)
+            0x95.toByte(), 0x10,    // Report Count (16)
+            0x81.toByte(), 0x02,    // Input (Data, Var, Abs)
 
-            // Buttons 9-16
-            0x05, 0x09,
-            0x19, 0x09,
-            0x29, 0x10,
-            0x15, 0x00,
-            0x25, 0x01,
-            0x75, 0x01,
-            0x95.toByte(), 0x08,
-            0x81.toByte(), 0x02,
+            // ── Left Joystick X & Y (2 Bytes) ──
+            0x05, 0x01,             // Usage Page (Generic Desktop)
+            0x09, 0x30,             // Usage (X)
+            0x09, 0x31,             // Usage (Y)
+            0x15, 0x81.toByte(),    // Logical Minimum (-127)
+            0x25, 0x7f,             // Logical Maximum (127)
+            0x75, 0x08,             // Report Size (8 bits)
+            0x95.toByte(), 0x02,    // Report Count (2)
+            0x81.toByte(), 0x02,    // Input (Data, Var, Abs)
 
-            // X axis (left joy X / tilt / WASD LR)
-            0x05, 0x01,
-            0x09, 0x30,
-            0x15, 0x81.toByte(),
-            0x25, 0x7f,
-            0x75, 0x08,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x02,
+            // ── Right Joystick Z & Rz (2 Bytes) ──
+            0x09, 0x32,             // Usage (Z) -> Touchpad X
+            0x09, 0x35,             // Usage (Rz) -> Touchpad Y
+            0x15, 0x81.toByte(),    
+            0x25, 0x7f,             
+            0x75, 0x08,             
+            0x95.toByte(), 0x02,    
+            0x81.toByte(), 0x02,    
 
-            // Y axis (left joy Y / WASD UD)
-            0x09, 0x31,
-            0x15, 0x81.toByte(),
-            0x25, 0x7f,
-            0x75, 0x08,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x02,
+            // ── Gas and Brake Rx & Ry (2 Bytes) ──
+            0x09, 0x33,             // Usage (Rx) -> Brake 
+            0x09, 0x34,             // Usage (Ry) -> Gas
+            0x15, 0x00,             // Min 0
+            0x26, 0xff.toByte(), 0x00, // Max 255
+            0x75, 0x08,             // Size (8 bits)
+            0x95.toByte(), 0x02,    // Count (2)
+            0x81.toByte(), 0x02,    // Input
 
-            // Z axis (right joy X / touchpad X)
-            0x09, 0x32,
-            0x15, 0x81.toByte(),
-            0x25, 0x7f,
-            0x75, 0x08,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x02,
-
-            // Rz axis (right joy Y / touchpad Y)
-            0x09, 0x35,
-            0x15, 0x81.toByte(),
-            0x25, 0x7f,
-            0x75, 0x08,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x02,
-
-            // Hat Switch (D-pad) - 4 bits
-            0x09, 0x39,
-            0x15, 0x00,
-            0x25, 0x07,
-            0x35, 0x00,
-            0x46, 0x3b.toByte(), 0x01,
-            0x65, 0x14,
-            0x75, 0x04,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x42,
-
-            // Padding 4 bits
-            0x75, 0x04,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x03,
-
-            // Gas
-            0x05, 0x02,
-            0x09, 0xC4.toByte(),
-            0x15, 0x00,
-            0x26, 0xff.toByte(), 0x00,
-            0x75, 0x08,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x02,
-
-            // Brake
-            0x09, 0xC5.toByte(),
-            0x15, 0x00,
-            0x26, 0xff.toByte(), 0x00,
-            0x75, 0x08,
-            0x95.toByte(), 0x01,
-            0x81.toByte(), 0x02,
-
-            0xc0.toByte()
+            0xc0.toByte()           // End Collection
         )
     }
 

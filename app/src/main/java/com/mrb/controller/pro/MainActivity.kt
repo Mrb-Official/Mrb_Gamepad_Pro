@@ -1230,14 +1230,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val gas   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
         val brake = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
 
-        // 9 bytes: b1, b2, X, Y, Z(RightX), Rz(RightY), Hat, Gas, Brake
-        hid.sendReport(device, 1,
-            byteArrayOf(
-                b1.toByte(), b2.toByte(),
-                finalLeftX, finalLeftY,
-                finalRightX, finalRightY,
-                hatVal,
-                gas, brake
-            ))
+        // 🔥 THE 8-BYTE PERFECT PAYLOAD (Hat switch nikal diya hai) 🔥
+        hid.sendReport(device, 1, byteArrayOf(
+            b1.toByte(), b2.toByte(), 
+            finalLeftX, finalLeftY, 
+            finalRightX, finalRightY, 
+            brake, gas
+        ))
     }
 }
