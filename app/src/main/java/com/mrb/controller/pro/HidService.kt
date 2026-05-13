@@ -39,15 +39,15 @@ class HidService : Service() {
             0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
 
             // ── Bytes 4 aur 5: Touchpad / Right Stick (Rx, Ry) ──
-            // 🔥 Emulator/GTA 5 inko hi camera maanta hai, isse screen spinning band ho jayegi!
-            0x09, 0x33, 0x09, 0x34, 
+            // 🔥 GTA 5 / Winlator Camera (Spinning Fixed)
+            0x05, 0x01,             // Usage Page (Generic Desktop)
+            0x09, 0x33, 0x09, 0x34, // Rx, Ry axes
             0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
 
-            // ── Bytes 6 aur 7: Swapped Brake & Gas (Full Speed 0-255) ──
-            // 🔥 Simulation controls jisse game ko samajh aayega ki ye pedals hain
-            0x05, 0x02,             // Usage Page (Simulation Controls)
-            0x09, 0xC5.toByte(),    // Usage (Brake) -> Byte 6 me map hoga
-            0x09, 0xC4.toByte(),    // Usage (Accelerator) -> Byte 7 me map hoga
+            // ── Bytes 6 aur 7: Swapped Brake & Gas (Z, Rz) ──
+            // 🔥 L2 / R2 Triggers (0-255 Full Speed) - Tester me ab ye respond karenge!
+            0x05, 0x01,             // Usage Page (Generic Desktop)
+            0x09, 0x32, 0x09, 0x35, // Z, Rz axes
             0x15, 0x00, 0x26, 0xff.toByte(), 0x00, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
 
             0xc0.toByte()           // End Collection
