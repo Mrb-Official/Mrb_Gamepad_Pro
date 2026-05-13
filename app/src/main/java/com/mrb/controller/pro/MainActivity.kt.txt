@@ -1023,50 +1023,54 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
  //gemini keyfix // 
         @SuppressLint("MissingPermission")
     private fun sendReport() {
-        val device = HidService.connectedDevice ?: return
-        val hid    = HidService.hidDevice       ?: return
-        
-        var b1 = 0
-        var b2 = 0
-        
-        if (btnA)     b1 = b1 or (1 shl 0)
-        if (btnB)     b1 = b1 or (1 shl 1)
-        if (btnX)     b1 = b1 or (1 shl 3)
-        if (btnY)     b1 = b1 or (1 shl 4)
-        if (gearDown) b1 = b1 or (1 shl 6)
-        if (gearUp)   b1 = b1 or (1 shl 7)
-        
-        // 🛠️ FIX 1: Yahan se maine dpad (W, A, S, D) wale 'b2' bits hata diye hain.
-        // Ab W, A, S, D dabane par Map/Horn nahi khulega, wo sirf movement karenge.
-        for (def in customButtons) {
-            if (customBtnStates[def.id] == true) {
-                if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
-                if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
-            }
-        }
-        
-        // 🛠️ FIX 2: Left Joystick aur W, A, S, D dono ab ek sath X aur Y Axis par kaam karenge (Movement)
-        val finalLeftX = if (dpadLeft) (-127).toByte() else if (dpadRight) 127.toByte() else if (leftJoyX.toInt() != 0) leftJoyX else tiltByte
-        val finalLeftY = if (dpadUp) (-127).toByte() else if (dpadDown) 127.toByte() else leftJoyY
-        
-        // 🛠️ FIX 3: THE 6-BYTE HACK
-        // Kyunki sirf 6 bytes ki limit hai, hum Camera (Right Joystick) aur Gas/Brake ko ek hi jagah bhejenge.
-        // Agar Gas/Brake NAHI dabaya hai -> toh Right Joystick Camera ghumayega.
-        // Agar Gas/Brake DABAYA hai -> toh wo Gas/Brake ka kaam karega.
-        val finalByte4 = if (gasOn) 0xFF.toByte() else rightJoyX
-        val finalByte5 = if (brakeOn) 0xFF.toByte() else rightJoyY
+        try {
+            val device = HidService.connectedDevice ?: return
+            val hid    = HidService.hidDevice       ?: return
 
-        // Wapas exactly 6 Bytes bheje jaa rahe hain, ab kuch bhi aage-peeche shift nahi hoga!
-        hid.sendReport(device, 1,
-            byteArrayOf(
-                b1.toByte(),     // Byte 1: Buttons
-                b2.toByte(),     // Byte 2: Buttons 
-                finalLeftX,      // Byte 3: Left-Right (Steering / A-D)
-                finalLeftY,      // Byte 4: Aage-Peeche (W-S / Left Joy Y)
-                finalByte4,      // Byte 5: Camera Left-Right OR Gas
-                finalByte5       // Byte 6: Camera Up-Down OR Brake
-            )
-        )
+            var b1 = 0; var b2 = 0
+            
+            // 1. A, B, X, Y & Shoulder Buttons
+            if (btnA)     b1 = b1 or (1 shl 0)
+            if (btnB)     b1 = b1 or (1 shl 1)
+            if (btnX)     b1 = b1 or (1 shl 2)
+            if (btnY)     b1 = b1 or (1 shl 3)
+            if (gearDown) b1 = b1 or (1 shl 4)
+            if (gearUp)   b1 = b1 or (1 shl 5)
+
+            // 2. Custom Buttons Loop (Nitro, L1, Camera, etc.)
+            for (def in customButtons) {
+                if (customBtnStates[def.id] == true) {
+                    if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
+                    if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
+                }
+            }
+
+            // 3. D-Pad (Hat Switch Logic) - Ise wapas laana bohot zaroori tha
+            var hatVal = 8 // Default center
+            if (dpadUp && dpadRight) hatVal = 1
+            else if (dpadRight && dpadDown) hatVal = 3
+            else if (dpadDown && dpadLeft) hatVal = 5
+            else if (dpadLeft && dpadUp) hatVal = 7
+            else if (dpadUp) hatVal = 0
+            else if (dpadRight) hatVal = 2
+            else if (dpadDown) hatVal = 4
+            else if (dpadLeft) hatVal = 6
+
+            // 4. 🔥 TERA BEST LOGIC: Direct 0 se 127 (Full Response) 🔥
+            val brakeVal = if (brakeOn || customBtnStates["brake"] == true) 0x7F.toByte() else 0x00.toByte()
+            val gasVal   = if (gasOn   || customBtnStates["gas"] == true)   0x7F.toByte() else 0x00.toByte()
+
+            // 5. Perfect Alignment (9 Bytes ki Train)
+            hid.sendReport(device, 1, byteArrayOf(
+                b1.toByte(), b2.toByte(), 
+                leftJoyX, leftJoyY,     // Left Joystick
+                rightJoyX, rightJoyY,   // Touchpad (Tera Camera Z/Rz)
+                brakeVal, gasVal,       // Brake aur Gas (LT/RT)
+                hatVal.toByte()         // Hat Switch (D-Pad)
+            ))
+
+        } catch (e: Exception) { e.printStackTrace() }
     }
+
 
 }
