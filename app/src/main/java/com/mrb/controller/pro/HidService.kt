@@ -38,22 +38,16 @@ class HidService : Service() {
             0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 
             0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
 
-            // ── Bytes 4 aur 5: Touchpad / Right Stick (Rx, Ry) ──
-            // 🔥 GTA 5 / Winlator Camera (Spinning Fixed)
-            0x05, 0x01,             // Usage Page (Generic Desktop)
-            0x09, 0x33, 0x09, 0x34, // Rx, Ry axes
+                        // ── Bytes 4 aur 5: Right Stick (Ab ye perfectly Z aur Rz lega) ──
+            0x09, 0x32, 0x09, 0x35, 
             0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
 
-            // ── Bytes 6 aur 7: Swapped Brake & Gas (Z, Rz) ──
-            // 🔥 L2 / R2 Triggers (0-255 Full Speed) - Tester me ab ye respond karenge!
-            0x05, 0x01,             // Usage Page (Generic Desktop)
-            0x09, 0x32, 0x09, 0x35, // Z, Rz axes
+            // ── Bytes 6 aur 7: Swapped Brake & Gas (Ab ye Rx aur Ry lenge) ──
+            0x09, 0x33, 0x09, 0x34, 
             0x15, 0x00, 0x26, 0xff.toByte(), 0x00, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
 
             0xc0.toByte()           // End Collection
-        )
-                
-
+            )
     }
 
     private val handler = Handler(Looper.getMainLooper())
