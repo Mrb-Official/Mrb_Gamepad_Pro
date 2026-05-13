@@ -123,7 +123,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         CustomBtn("kb_6",       "6",       R.drawable.ic_btn_custom,     0xFFF44336.toInt()),
         CustomBtn("kb_7",       "7",       R.drawable.ic_btn_custom,     0xFFF44336.toInt()),
         CustomBtn("kb_8",       "8",       R.drawable.ic_btn_custom,     0xFFF44336.toInt()),
-        CustomBtn("kb_9",       "9",       R.drawable.ic_btn_custom,     0xFFF44336.toInt())
+        CustomBtn("kb_9",       "9",       R.drawable.ic_btn_custom,     0xFFF44336.toInt()),
+        CustomBtn("touchpad", "TOUCHPAD", R.drawable.ic_btn_custom, 0xFF00BCD4.toInt())
     )
 
     private val placedCustomBtns  = mutableListOf<PlacedCustomBtn>()
@@ -1036,8 +1037,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             if (btnX) b1 = b1 or (1 shl 3)
             
             // 🔥 Point 2 Fix: Gear Down aur btnY Swap ho gaye hain
-            if (btnY)     b1 = b1 or (1 shl 6) // Yaha pehle shl 4 tha
-            if (gearDown) b1 = b1 or (1 shl 4) // Yaha pehle shl 6 tha
+            if (btnY)     b1 = b1 or (1 shl 4) // Yaha pehle shl 4 tha
+            if (gearDown) b1 = b1 or (1 shl 6) // Yaha pehle shl 6 tha
             if (gearUp)   b1 = b1 or (1 shl 7)
 
             for (def in customButtons) {
