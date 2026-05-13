@@ -608,14 +608,70 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         container.x = pb.x; container.y = pb.y
 
         when {
-            def.id == "left_joy" || def.id == "right_joy" -> buildJoystick(def, pb, container, inEditMode)
+            // 🔥 Ye line nayi add hui hai
+            def.id == "touchpad"                           -> buildTouchpad(pb, container, inEditMode)
+            
+            def.id == "left_joy" || def.id == "right_joy"  -> buildJoystick(def, pb, container, inEditMode)
             def.id == "tilt_tog"                           -> buildTiltToggle(pb, container, inEditMode)
             def.id.startsWith("kb_")                       -> buildKbKey(def, pb, container, inEditMode)
             else                                           -> buildNormalBtn(def, pb, container, inEditMode)
         }
 
         if (inEditMode) attachEditOverlay(def, pb, container)
+        }
+
+    //to upad logic
+        @SuppressLint("ClickableViewAccessibility")
+    private fun buildTouchpad(pb: PlacedCustomBtn, container: FrameLayout, inEditMode: Boolean) {
+        // UI Design: Dark gray box with cyan border
+        container.background = android.graphics.drawable.GradientDrawable().apply {
+            setColor(Color.argb(80, 50, 50, 50)) 
+            setStroke(2, Color.argb(150, 200, 200, 200))
+            cornerRadius = 24f
+        }
+        
+        // Text inside the touchpad
+        container.addView(TextView(this).apply {
+            text = "TOUCH AREA"
+            textSize = 12f
+            setTextColor(Color.argb(100, 255, 255, 255))
+            gravity = Gravity.CENTER
+            layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        })
+
+        // Sliding Logic for Camera/Right Joystick
+        if (!inEditMode) {
+            var startX = 0f
+            var startY = 0f
+            val maxDrag = 150f // Camera sensitivity
+
+            container.setOnTouchListener { _, e ->
+                when (e.actionMasked) {
+                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                        startX = e.x
+                        startY = e.y
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val dx = (e.x - startX).coerceIn(-maxDrag, maxDrag)
+                        val dy = (e.y - startY).coerceIn(-maxDrag, maxDrag)
+                        
+                        rightJoyX = ((dx / maxDrag) * 127).toInt().toByte()
+                        rightJoyY = ((dy / maxDrag) * 127).toInt().toByte()
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                        rightJoyX = 0
+                        rightJoyY = 0
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }
     }
+    
+        
 
     // ── Joystick ──────────────────────────────────────────────────────────────
 
