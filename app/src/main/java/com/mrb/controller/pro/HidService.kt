@@ -31,24 +31,26 @@ class HidService : Service() {
             0xa1.toByte(), 0x01,    // Collection (Application)
             0x85.toByte(), 0x01,    // Report ID (1)
 
-            // ── Dabbe 0 aur 1: 16 Buttons ──
+            // ── Bytes 0 aur 1: 16 Buttons ──
             0x05, 0x09, 0x19, 0x01, 0x29, 0x10, 0x15, 0x00, 0x25, 0x01, 0x75, 0x01, 0x95.toByte(), 0x10, 0x81.toByte(), 0x02,
 
-            // ── Dabbe 2 aur 3: Left Stick (Movement) ──
+            // ── Bytes 2 aur 3: Left Stick (Movement X, Y) ──
             0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 
             0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
 
-            // ── Dabbe 4 aur 5: Right Stick (Touchpad/Camera) ──
-            // Ye Z aur Rz axis hain. Ye Right Joystick ka lochha permanently solve kar denge.
-            0x09, 0x32, 0x09, 0x35, 
+            // ── Bytes 4 aur 5: Touchpad / Right Stick (Rx, Ry) ──
+            // 🔥 Emulator/GTA 5 inko hi camera maanta hai, isse screen spinning band ho jayegi!
+            0x09, 0x33, 0x09, 0x34, 
             0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
 
-            // ── Dabbe 6 aur 7: Gas aur Brake ──
-            // Inki limit 0 se 255 hai (Taaki aadhi value na jaye, full 100% jaye)
-            0x09, 0x33, 0x09, 0x34, 
+            // ── Bytes 6 aur 7: Swapped Brake & Gas (Full Speed 0-255) ──
+            // 🔥 Simulation controls jisse game ko samajh aayega ki ye pedals hain
+            0x05, 0x02,             // Usage Page (Simulation Controls)
+            0x09, 0xC5.toByte(),    // Usage (Brake) -> Byte 6 me map hoga
+            0x09, 0xC4.toByte(),    // Usage (Accelerator) -> Byte 7 me map hoga
             0x15, 0x00, 0x26, 0xff.toByte(), 0x00, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
 
-            0xc0.toByte()           // End
+            0xc0.toByte()           // End Collection
         )
                 
 
