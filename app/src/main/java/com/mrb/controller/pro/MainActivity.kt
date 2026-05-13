@@ -1026,18 +1026,20 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         try {
             val device = HidService.connectedDevice ?: return
             val hid    = HidService.hidDevice       ?: return
-
-            var b1 = 0; var b2 = 0
             
-            // 1. A, B, X, Y & Shoulder Buttons
-            if (btnA)     b1 = b1 or (1 shl 0)
-            if (btnB)     b1 = b1 or (1 shl 1)
-            if (btnX)     b1 = b1 or (1 shl 2)
-            if (btnY)     b1 = b1 or (1 shl 3)
-            if (gearDown) b1 = b1 or (1 shl 4)
-            if (gearUp)   b1 = b1 or (1 shl 5)
+            var b1 = 0
+            var b2 = 0
+            
+            // Buttons 
+            if (btnA) b1 = b1 or (1 shl 0)
+            if (btnB) b1 = b1 or (1 shl 1)
+            if (btnX) b1 = b1 or (1 shl 3)
+            
+            // 🔥 Point 2 Fix: Gear Down aur btnY Swap ho gaye hain
+            if (btnY)     b1 = b1 or (1 shl 6) // Yaha pehle shl 4 tha
+            if (gearDown) b1 = b1 or (1 shl 4) // Yaha pehle shl 6 tha
+            if (gearUp)   b1 = b1 or (1 shl 7)
 
-            // 2. Custom Buttons Loop (Nitro, L1, Camera, etc.)
             for (def in customButtons) {
                 if (customBtnStates[def.id] == true) {
                     if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
@@ -1045,32 +1047,28 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 }
             }
 
-            // 3. D-Pad (Hat Switch Logic) - Ise wapas laana bohot zaroori tha
-            var hatVal = 8 // Default center
-            if (dpadUp && dpadRight) hatVal = 1
-            else if (dpadRight && dpadDown) hatVal = 3
-            else if (dpadDown && dpadLeft) hatVal = 5
-            else if (dpadLeft && dpadUp) hatVal = 7
-            else if (dpadUp) hatVal = 0
-            else if (dpadRight) hatVal = 2
-            else if (dpadDown) hatVal = 4
-            else if (dpadLeft) hatVal = 6
+            // Movement (Left Stick)
+            val finalLeftX = if (dpadLeft) (-127).toByte() else if (dpadRight) 127.toByte() else if (leftJoyX.toInt() != 0) leftJoyX else tiltByte
+            val finalLeftY = if (dpadUp) (-127).toByte() else if (dpadDown) 127.toByte() else leftJoyY
 
-            // 4. 🔥 TERA BEST LOGIC: Direct 0 se 127 (Full Response) 🔥
-            val brakeVal = if (brakeOn || customBtnStates["brake"] == true) 0x7F.toByte() else 0x00.toByte()
-            val gasVal   = if (gasOn   || customBtnStates["gas"] == true)   0x7F.toByte() else 0x00.toByte()
+            // 🔥 Point 4 Fix: Right Joystick Workable
+            // Ab ye apna data Byte 4 aur 5 me bhejega bina null hue.
+            val finalRightX = rightJoyX
+            val finalRightY = rightJoyY
 
-            // 5. Perfect Alignment (9 Bytes ki Train)
+            // 🔥 Point 3 Fix: Gas/Brake Full 255 (0xFF)
+            val gasVal   = if (gasOn   || customBtnStates["gas"] == true)   0xFF.toByte() else 0x00.toByte()
+            val brakeVal = if (brakeOn || customBtnStates["brake"] == true) 0xFF.toByte() else 0x00.toByte()
+
+            // 🔥 Point 1 Fix: Brake aur Gas apni position me Swap kar diye (Pehle brake, fir gas)
             hid.sendReport(device, 1, byteArrayOf(
-                b1.toByte(), b2.toByte(), 
-                leftJoyX, leftJoyY,     // Left Joystick
-                rightJoyX, rightJoyY,   // Touchpad (Tera Camera Z/Rz)
-                brakeVal, gasVal,       // Brake aur Gas (LT/RT)
-                hatVal.toByte()         // Hat Switch (D-Pad)
+                b1.toByte(), b2.toByte(),   // Bytes 0, 1
+                finalLeftX, finalLeftY,     // Bytes 2, 3
+                finalRightX, finalRightY,   // Bytes 4, 5 (Touchpad Camera Z/Rz)
+                brakeVal, gasVal            // Bytes 6, 7 (Swapped, 0 se Full)
             ))
 
         } catch (e: Exception) { e.printStackTrace() }
     }
-
 
 }
