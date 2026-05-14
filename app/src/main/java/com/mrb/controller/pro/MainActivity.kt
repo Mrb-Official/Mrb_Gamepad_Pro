@@ -1087,16 +1087,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             var b1 = 0
             var b2 = 0
             
-            // 🔥 BUTTONS MAPPING (Based on your Screenshot)
-            if (btnA)      b1 = b1 or (1 shl 0) // Button 1
-            if (btnB)      b1 = b1 or (1 shl 1) // Button 2
-            if (btnX)      b1 = b1 or (1 shl 2) // Button 3
-            if (btnY)      b1 = b1 or (1 shl 3) // Button 4
-            if (gearDown)  b1 = b1 or (1 shl 4) // Button 5 (L1)
-            if (gearUp)    b1 = b1 or (1 shl 5) // Button 6 (R1)
-            if (brakeOn)   b1 = b1 or (1 shl 6) // Button 7 (L2/LT)
-            if (gasOn)     b1 = b1 or (1 shl 7) // Button 8 (R2/RT)
-
+                        // 🔥 STANDARDIZED BUTTON MAPPING
+            if (btnA)      b1 = b1 or (1 shl 0) // A
+            if (btnB)      b1 = b1 or (1 shl 1) // B
+            if (btnX)      b1 = b1 or (1 shl 2) // X
+            if (btnY)      b1 = b1 or (1 shl 3) // Y (Swap theek ho gaya)
+            if (gearDown)  b1 = b1 or (1 shl 4) // L1 (LB) ban gaya
+            if (gearUp)    b1 = b1 or (1 shl 5) // R1 (RB) ban gaya
+            if (brakeOn)   b1 = b1 or (1 shl 6) // L2 (LT) ban gaya (Brake)
+            if (gasOn)     b1 = b1 or (1 shl 7) // R2 (RT) ban gaya (Gas)
+            
             // D-Pad / Hat Switch Logic
             val hat: Byte = when {
                 dpadUp && !dpadLeft && !dpadRight -> 0
@@ -1117,24 +1117,21 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
 
             // --- AXES ASSIGNMENT (The Mixture) ---
-            val lx = if (leftJoyX.toInt() != 0) leftJoyX else tiltByte
-            val ly = leftJoyY
-            
-            // Right Stick (Z, Rz) -> Mobile/Android Tester ke liye
+                       // Asli Right Stick (Z, Rz)
             val rx = rightJoyX
             val ry = rightJoyY
             
-            // Triggers (Rx, Ry) -> PC/GTA 5 ke liye
-            val gasVal   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
-            val brakeVal = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
+            // Asli Triggers (Rx, Ry) 0 se 255
+            val brakeVal = if (brakeOn) 0xFF.toByte() else 0x00.toByte() 
+            val gasVal   = if (gasOn)   0xFF.toByte() else 0x00.toByte() 
 
-            // Payload: [Buttons1, Buttons2, LX, LY, RX, RY, Brake_Axis, Gas_Axis, Hat]
+            // Final Payload
             hid.sendReport(device, 1, byteArrayOf(
                 b1.toByte(), b2.toByte(), 
-                lx, ly,             // Left Stick
-                rx, ry,             // Right Stick (Z, Rz)
-                brakeVal, gasVal,   // Triggers (Rx, Ry)
-                hat                 // D-Pad
+                lx, ly,             // Left Stick (Bytes 2, 3)
+                rx, ry,             // Right Stick (Bytes 4, 5)
+                brakeVal, gasVal,   // Triggers (Bytes 6, 7)
+                hat                 // D-Pad (Byte 8)
             ))
 
         } catch (e: Exception) { e.printStackTrace() }
