@@ -1079,7 +1079,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     
  //gemini keyfix // 
 @SuppressLint("MissingPermission")
-    @android.annotation.SuppressLint("MissingPermission")
     private fun sendReport() {
         val device = HidService.connectedDevice ?: return
         val hid    = HidService.hidDevice       ?: return
