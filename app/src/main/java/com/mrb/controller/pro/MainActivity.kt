@@ -1078,7 +1078,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     
  //gemini keyfix // 
-    @SuppressLint("MissingPermission") // 🔥 Error fixed: Sirf ek baar lagaya hai
+    @SuppressLint("MissingPermission")
     private fun sendReport() {
         try {
             val device = HidService.connectedDevice ?: return
@@ -1087,15 +1087,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             var b1 = 0
             var b2 = 0
             
-                        // 🔥 STANDARDIZED BUTTON MAPPING
-            if (btnA)      b1 = b1 or (1 shl 0) // A
-            if (btnB)      b1 = b1 or (1 shl 1) // B
-            if (btnX)      b1 = b1 or (1 shl 4) // X
-            if (btnY)      b1 = b1 or (1 shl 2) // Y (Swap theek ho gaya)
-            if (gearDown)  b1 = b1 or (1 shl 3) // L1 (LB) ban gaya
-            if (gearUp)    b1 = b1 or (1 shl 5) // R1 (RB) ban gaya
-            
-            // D-Pad / Hat Switch Logic
+            // 🔥 STANDARD BUTTONS
+            if (btnA)      b1 = b1 or (1 shl 0)
+            if (btnB)      b1 = b1 or (1 shl 1)
+            if (btnX)      b1 = b1 or (1 shl 2)
+            if (btnY)      b1 = b1 or (1 shl 3) // Swap fix
+            if (gearDown)  b1 = b1 or (1 shl 4) // L1 (LB)
+            if (gearUp)    b1 = b1 or (1 shl 5) // R1 (RB)
+            // Note: Gas aur Brake ab buttons nahi hain, wo pure analog Triggers ban gaye hain.
+
+            // 🔥 D-PAD LOGIC
             val hat: Byte = when {
                 dpadUp && !dpadLeft && !dpadRight -> 0
                 dpadUp && dpadRight -> 1
@@ -1110,19 +1111,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
             for (def in customButtons) {
                 if (customBtnStates[def.id] == true) {
+                    if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
                     if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
                 }
             }
 
-            // --- AXES ASSIGNMENT (The Mixture) ---
-                    // --- AXES ASSIGNMENT ---
-            // Left Stick
-                        // --- AXES ASSIGNMENT ---
-            // 🔥 WASD ko Left Joystick me daala
+            // 🔥 WASD linked to Left Stick
             var tempLx = leftJoyX.toInt()
             var tempLy = leftJoyY.toInt()
 
-            // Agar custom WASD (kb_w, kb_a, kb_s, kb_d) dabenge toh joystick hilegi
             if (customBtnStates["kb_a"] == true) tempLx = -127
             if (customBtnStates["kb_d"] == true) tempLx = 127
             if (customBtnStates["kb_w"] == true) tempLy = -127
@@ -1131,22 +1128,21 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             val lx = if (tempLx != 0) tempLx.toByte() else tiltByte
             val ly = tempLy.toByte()
             
-            
-            // Right Stick
+            // Right Stick (Camera) -> Android Z/Rz
             val rx = rightJoyX
             val ry = rightJoyY
             
-            // Triggers (0xFF means full speed 255)
-            val gasVal   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
-            val brakeVal = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
+            // 🔥 Triggers (L2/R2) -> Android Rx/Ry
+            val brakeVal = if (brakeOn) 0xFF.toByte() else 0x00.toByte() // L2
+            val gasVal   = if (gasOn)   0xFF.toByte() else 0x00.toByte() // R2
 
-            // Naya Payload: Ab sab match ho jayega
+            // Final Payload (Strict Order Maintained)
             hid.sendReport(device, 1, byteArrayOf(
                 b1.toByte(), b2.toByte(), 
                 lx, ly,             // Left Stick (X, Y)
-                rx, ry,             // Right Stick (Rx, Ry)
-                brakeVal, gasVal,   // Triggers LT/RT (Z, Rz)
-                hat                 // Asli D-Pad (Hat Switch)
+                rx, ry,             // Right Stick (Z, Rz)
+                brakeVal, gasVal,   // Triggers (Rx, Ry)
+                hat                 // D-Pad
             ))
 
         } catch (e: Exception) { e.printStackTrace() }
