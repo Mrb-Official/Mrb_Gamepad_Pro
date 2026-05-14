@@ -1117,21 +1117,26 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
 
             // --- AXES ASSIGNMENT (The Mixture) ---
-                       // Asli Right Stick (Z, Rz)
+                    // --- AXES ASSIGNMENT ---
+            // Left Stick
+            val lx = if (leftJoyX.toInt() != 0) leftJoyX else tiltByte
+            val ly = leftJoyY
+            
+            // Right Stick
             val rx = rightJoyX
             val ry = rightJoyY
             
-            // Asli Triggers (Rx, Ry) 0 se 255
-            val brakeVal = if (brakeOn) 0xFF.toByte() else 0x00.toByte() 
-            val gasVal   = if (gasOn)   0xFF.toByte() else 0x00.toByte() 
+            // Triggers (0xFF means full speed 255)
+            val gasVal   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
+            val brakeVal = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
 
-            // Final Payload
+            // Naya Payload: Ab sab match ho jayega
             hid.sendReport(device, 1, byteArrayOf(
                 b1.toByte(), b2.toByte(), 
-                lx, ly,             // Left Stick (Bytes 2, 3)
-                rx, ry,             // Right Stick (Bytes 4, 5)
-                brakeVal, gasVal,   // Triggers (Bytes 6, 7)
-                hat                 // D-Pad (Byte 8)
+                lx, ly,             // Left Stick (X, Y)
+                rx, ry,             // Right Stick (Rx, Ry)
+                brakeVal, gasVal,   // Triggers LT/RT (Z, Rz)
+                hat                 // Asli D-Pad (Hat Switch)
             ))
 
         } catch (e: Exception) { e.printStackTrace() }
