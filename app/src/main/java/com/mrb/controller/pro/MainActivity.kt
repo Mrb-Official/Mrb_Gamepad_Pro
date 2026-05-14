@@ -1078,65 +1078,66 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     
  //gemini keyfix // 
-@SuppressLint("MissingPermission")
+    @SuppressLint("MissingPermission") // 🔥 Error fixed: Sirf ek baar lagaya hai
     private fun sendReport() {
-        val device = HidService.connectedDevice ?: return
-        val hid    = HidService.hidDevice       ?: return
+        try {
+            val device = HidService.connectedDevice ?: return
+            val hid    = HidService.hidDevice       ?: return
+            
+            var b1 = 0
+            var b2 = 0
+            
+            // 🔥 BUTTONS MAPPING (Based on your Screenshot)
+            if (btnA)      b1 = b1 or (1 shl 0) // Button 1
+            if (btnB)      b1 = b1 or (1 shl 1) // Button 2
+            if (btnX)      b1 = b1 or (1 shl 2) // Button 3
+            if (btnY)      b1 = b1 or (1 shl 3) // Button 4
+            if (gearDown)  b1 = b1 or (1 shl 4) // Button 5 (L1)
+            if (gearUp)    b1 = b1 or (1 shl 5) // Button 6 (R1)
+            if (brakeOn)   b1 = b1 or (1 shl 6) // Button 7 (L2/LT)
+            if (gasOn)     b1 = b1 or (1 shl 7) // Button 8 (R2/RT)
 
-        var b1 = 0
-        var b2 = 0
-
-        // Standard button mapping
-        if (btnA)     b1 = b1 or (1 shl 0)  // Button 1 = A
-        if (btnB)     b1 = b1 or (1 shl 1)  // Button 2 = B
-        if (btnX)     b1 = b1 or (1 shl 2)  // Button 3 = X
-        if (btnY)     b1 = b1 or (1 shl 3)  // Button 4 = Y
-        if (gearUp)   b1 = b1 or (1 shl 4)  // Button 5 = RB / GearUp
-        if (gearDown) b1 = b1 or (1 shl 5)  // Button 6 = LB / GearDown
-        if (gasOn)    b1 = b1 or (1 shl 6)  // Button 7 = Gas / RT
-        if (brakeOn)  b1 = b1 or (1 shl 7)  // Button 8 = Brake / LT
-
-        // Custom buttons in b2
-        for (def in customButtons) {
-            if (customBtnStates[def.id] == true) {
-                if (def.byte1bit >= 0) b2 = b2 or (1 shl def.byte1bit)
-                if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
+            // D-Pad / Hat Switch Logic
+            val hat: Byte = when {
+                dpadUp && !dpadLeft && !dpadRight -> 0
+                dpadUp && dpadRight -> 1
+                dpadRight && !dpadUp && !dpadDown -> 2
+                dpadDown && dpadRight -> 3
+                dpadDown && !dpadLeft && !dpadRight -> 4
+                dpadDown && dpadLeft -> 5
+                dpadLeft && !dpadUp && !dpadDown -> 6
+                dpadUp && dpadLeft -> 7
+                else -> 8
             }
-        }
 
-        // Left axis = Left Joy / WASD / Tilt
-        val lx: Byte = when {
-            dpadLeft  -> (-127).toByte()
-            dpadRight -> 127.toByte()
-            leftJoyX.toInt() != 0 -> leftJoyX
-            else -> tiltByte
-        }
-        val ly: Byte = when {
-            dpadUp   -> (-127).toByte()
-            dpadDown -> 127.toByte()
-            else     -> leftJoyY
-        }
+            for (def in customButtons) {
+                if (customBtnStates[def.id] == true) {
+                    if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
+                }
+            }
 
-        // Right axis = Right Joy / Touchpad (Z, Rz)
-        val rx = rightJoyX
-        val ry = rightJoyY
+            // --- AXES ASSIGNMENT (The Mixture) ---
+            val lx = if (leftJoyX.toInt() != 0) leftJoyX else tiltByte
+            val ly = leftJoyY
+            
+            // Right Stick (Z, Rz) -> Mobile/Android Tester ke liye
+            val rx = rightJoyX
+            val ry = rightJoyY
+            
+            // Triggers (Rx, Ry) -> PC/GTA 5 ke liye
+            val gasVal   = if (gasOn)   0xFF.toByte() else 0x00.toByte()
+            val brakeVal = if (brakeOn) 0xFF.toByte() else 0x00.toByte()
 
-        // Hat switch = D-pad cross
-        val hat: Byte = when {
-            dpadUp    && !dpadLeft && !dpadRight -> 0
-            dpadUp    && dpadRight               -> 1
-            dpadRight && !dpadUp   && !dpadDown  -> 2
-            dpadDown  && dpadRight               -> 3
-            dpadDown  && !dpadLeft && !dpadRight -> 4
-            dpadDown  && dpadLeft                -> 5
-            dpadLeft  && !dpadUp   && !dpadDown  -> 6
-            dpadUp    && dpadLeft                -> 7
-            else                                 -> 8  // center
-        }
+            // Payload: [Buttons1, Buttons2, LX, LY, RX, RY, Brake_Axis, Gas_Axis, Hat]
+            hid.sendReport(device, 1, byteArrayOf(
+                b1.toByte(), b2.toByte(), 
+                lx, ly,             // Left Stick
+                rx, ry,             // Right Stick (Z, Rz)
+                brakeVal, gasVal,   // Triggers (Rx, Ry)
+                hat                 // D-Pad
+            ))
 
-        // 7 bytes: b1, b2, X, Y, Z, Rz, Hat
-        hid.sendReport(device, 1,
-            byteArrayOf(b1.toByte(), b2.toByte(), lx, ly, rx, ry, hat))
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
 }
