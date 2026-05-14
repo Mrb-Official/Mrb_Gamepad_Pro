@@ -15,40 +15,25 @@ class HidService : Service() {
         var onConnected: ((BluetoothDevice) -> Unit)? = null
         var onDisconnected: (() -> Unit)? = null
 
-        // Report layout (8 bytes total):
-        // [0] Buttons 1-8   (byte1)
-        // [1] Buttons 9-16  (byte2)
-        // [2] X  axis       (left joystick / tilt steering) -127..127
-        // [3] Y  axis       (left joystick Y)               -127..127
-        // [4] Rx axis       (right joystick X)              -127..127
-        // [5] Ry axis       (right joystick Y)              -127..127
-        // [6] Gas  (throttle) 0..255
-        // [7] Brake          0..255
-
+        // 🔥 NAYA 9-BYTE HYBRID DESCRIPTOR (Mobile + PC/Xbox Dono ke liye) 🔥
         val HID_DESC = byteArrayOf(
-            0x05, 0x01,             // Usage Page (Generic Desktop)
-            0x09, 0x05,             // Usage (Gamepad)
-            0xa1.toByte(), 0x01,    // Collection (Application)
-            0x85.toByte(), 0x01,    // Report ID (1)
+            0x05, 0x01, 0x09, 0x05, 0xa1.toByte(), 0x01, 0x85.toByte(), 0x01,
 
-            // ── Bytes 0 aur 1: 16 Buttons ──
+            // Buttons (16 buttons)
             0x05, 0x09, 0x19, 0x01, 0x29, 0x10, 0x15, 0x00, 0x25, 0x01, 0x75, 0x01, 0x95.toByte(), 0x10, 0x81.toByte(), 0x02,
 
-            // ── Bytes 2 aur 3: Left Stick (Movement X, Y) ──
-            0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 
-            0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
+            // Axes: X, Y, Z, Rz, Rx, Ry (Total 6 axes)
+            0x05, 0x01, 
+            0x09, 0x30, 0x09, 0x31, // X, Y (Left Stick)
+            0x09, 0x32, 0x09, 0x35, // Z, Rz (Right Stick - Android Tester ke liye)
+            0x09, 0x33, 0x09, 0x34, // Rx, Ry (Triggers - PC/GTA 5 ke liye)
+            0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x06, 0x81.toByte(), 0x02,
 
-            // 🔥 MIXTURE PART 1: Camera Xbox 360 wala (Rx, Ry)
-            // Isse GTA 5 me camera perfect chalega, Tester bhale hi ise alag axis maane.
-            0x09, 0x33, 0x09, 0x34, 
-            0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
+            // D-Pad (Hat Switch)
+            0x09, 0x39, 0x15, 0x00, 0x25, 0x07, 0x35, 0x00, 0x46, 0x3b, 0x01, 0x75, 0x04, 0x95.toByte(), 0x01, 0x81.toByte(), 0x42,
+            0x75, 0x04, 0x95.toByte(), 0x01, 0x81.toByte(), 0x03, // Padding
 
-            // 🔥 MIXTURE PART 2: Gas/Brake Android wala (Z, Rz)
-            // Isse Triggers full speed lenge aur Tester me bhi respond karenge.
-            0x09, 0x32, 0x09, 0x35, 
-            0x15, 0x00, 0x26, 0xff.toByte(), 0x00, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
-
-            0xc0.toByte()           // End Collection
+            0xc0.toByte()
         )
     }
 
@@ -76,26 +61,7 @@ class HidService : Service() {
         startForeground(1, notif)
     }
 
-        val HID_DESC = byteArrayOf(
-            0x05, 0x01, 0x09, 0x05, 0xa1.toByte(), 0x01, 0x85.toByte(), 0x01,
-
-            // Buttons (16 buttons)
-            0x05, 0x09, 0x19, 0x01, 0x29, 0x10, 0x15, 0x00, 0x25, 0x01, 0x75, 0x01, 0x95.toByte(), 0x10, 0x81.toByte(), 0x02,
-
-            // Axes: X, Y, Z, Rz, Rx, Ry (Total 6 axes)
-            0x05, 0x01, 
-            0x09, 0x30, 0x09, 0x31, // X, Y (Left)
-            0x09, 0x32, 0x09, 0x35, // Z, Rz (Right Stick - Android Tester)
-            0x09, 0x33, 0x09, 0x34, // Rx, Ry (Triggers - PC/GTA 5)
-            0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x06, 0x81.toByte(), 0x02,
-
-            // D-Pad (Hat Switch)
-            0x09, 0x39, 0x15, 0x00, 0x25, 0x07, 0x35, 0x00, 0x46, 0x3b, 0x01, 0x75, 0x04, 0x95.toByte(), 0x01, 0x81.toByte(), 0x42,
-            0x75, 0x04, 0x95.toByte(), 0x01, 0x81.toByte(), 0x03, // Padding
-
-            0xc0.toByte()
-        )
-            @SuppressLint("MissingPermission")
+    @SuppressLint("MissingPermission")
     private fun initHid() {
         val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         btManager.adapter.getProfileProxy(this,
@@ -133,5 +99,4 @@ class HidService : Service() {
                 }
             }, BluetoothProfile.HID_DEVICE)
     }
-    
 }
