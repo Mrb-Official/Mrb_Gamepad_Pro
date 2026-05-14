@@ -1109,26 +1109,28 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 else -> 8
             }
 
+                        // 🔥 WASD aur Keyboard keys ko Button list se bahar nikal diya taaki D-Pad clash na ho
             for (def in customButtons) {
                 if (customBtnStates[def.id] == true) {
-                    
-                    // 🔥 Ye ek line WASD ko D-pad aur buttons se alag kar degi 🔥
-                    if (def.id == "kb_w" || def.id == "kb_a" || def.id == "kb_s" || def.id == "kb_d") continue 
-
-                    if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
-                    if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
+                    // WASD aur in special IDs ko button bit list mein kabhi mat bhejna
+                    val excludedIds = listOf("kb_w", "kb_a", "kb_s", "kb_d")
+                    if (def.id !in excludedIds) {
+                        if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
+                        if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
+                    }
                 }
-                        }
+            }
+            
                         
 
             // 🔥 WASD linked to Left Stick
             var tempLx = leftJoyX.toInt()
             var tempLy = leftJoyY.toInt()
 
-            if (customBtnStates["kb_a"] == true) tempLx = -125
-            if (customBtnStates["kb_d"] == true) tempLx = 125
-            if (customBtnStates["kb_w"] == true) tempLy = -125
-            if (customBtnStates["kb_s"] == true) tempLy = 125
+            if (customBtnStates["kb_a"] == true) tempLx = -127
+            if (customBtnStates["kb_d"] == true) tempLx = 127
+            if (customBtnStates["kb_w"] == true) tempLy = -127
+            if (customBtnStates["kb_s"] == true) tempLy = 127
 
             val lx = if (tempLx != 0) tempLx.toByte() else tiltByte
             val ly = tempLy.toByte()
