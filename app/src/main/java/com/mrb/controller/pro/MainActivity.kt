@@ -1097,17 +1097,25 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             // Note: Gas aur Brake ab buttons nahi hain, wo pure analog Triggers ban gaye hain.
 
             // 🔥 D-PAD LOGIC
-            val hat: Byte = when {
-                dpadUp && !dpadLeft && !dpadRight -> 0
-                dpadUp && dpadRight -> 1
-                dpadRight && !dpadUp && !dpadDown -> 2
-                dpadDown && dpadRight -> 3
-                dpadDown && !dpadLeft && !dpadRight -> 4
-                dpadDown && dpadLeft -> 5
-                dpadLeft && !dpadUp && !dpadDown -> 6
-                dpadUp && dpadLeft -> 7
-                else -> 8
+                        // 🔥 NEW KILL-SWITCH LOGIC: WASD dabte hi D-Pad block ho jayega
+            val isWasdActive = customBtnStates["kb_w"] == true || customBtnStates["kb_a"] == true || customBtnStates["kb_s"] == true || customBtnStates["kb_d"] == true
+
+            val hat: Byte = if (isWasdActive) {
+                8 // Agar WASD dab raha hai toh D-pad ko Neutral (8) kar do
+            } else {
+                when {
+                    dpadUp && !dpadLeft && !dpadRight -> 0
+                    dpadUp && dpadRight -> 1
+                    dpadRight && !dpadUp && !dpadDown -> 2
+                    dpadDown && dpadRight -> 3
+                    dpadDown && !dpadLeft && !dpadRight -> 4
+                    dpadDown && dpadLeft -> 5
+                    dpadLeft && !dpadUp && !dpadDown -> 6
+                    dpadUp && dpadLeft -> 7
+                    else -> 8
+                }
             }
+            
 
                         // 🔥 WASD aur Keyboard keys ko Button list se bahar nikal diya taaki D-Pad clash na ho
             for (def in customButtons) {
