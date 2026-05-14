@@ -96,10 +96,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         // Tilt toggle
         CustomBtn("tilt_tog",   "TILT",    R.drawable.ic_btn_custom,     0xFFFFD700.toInt()),
         // Keyboard keys - individual
-        CustomBtn("kb_w",       "W",       R.drawable.ic_btn_custom,     0xFF607D8B.toInt()),
-        CustomBtn("kb_a",       "A",       R.drawable.ic_btn_custom,     0xFF607D8B.toInt()),
-        CustomBtn("kb_s",       "S",       R.drawable.ic_btn_custom,     0xFF607D8B.toInt()),
-        CustomBtn("kb_d",       "D",       R.drawable.ic_btn_custom,     0xFF607D8B.toInt()),
+        CustomBtn("kb_w",       "W",       R.drawable.ic_btn_custom,     0xFF607D8B.toInt()), 
+        CustomBtn("kb_a",       "A",       R.drawable.ic_btn_custom,     0xFF607D8B.toInt()), 
+        CustomBtn("kb_s",       "S",       R.drawable.ic_btn_custom,     0xFF607D8B.toInt()), 
+        CustomBtn("kb_d",       "D",       R.drawable.ic_btn_custom,     0xFF607D8B.toInt()), 
         CustomBtn("kb_q",       "Q",       R.drawable.ic_btn_custom,     0xFF546E7A.toInt()),
         CustomBtn("kb_e",       "E",       R.drawable.ic_btn_custom,     0xFF546E7A.toInt()),
         CustomBtn("kb_r",       "R",       R.drawable.ic_btn_custom,     0xFF546E7A.toInt()),
