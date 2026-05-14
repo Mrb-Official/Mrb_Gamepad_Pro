@@ -1090,9 +1090,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             // 🔥 STANDARD BUTTONS
             if (btnA)      b1 = b1 or (1 shl 0)
             if (btnB)      b1 = b1 or (1 shl 1)
-            if (btnX)      b1 = b1 or (1 shl 2)
-            if (btnY)      b1 = b1 or (1 shl 3) // Swap fix
-            if (gearDown)  b1 = b1 or (1 shl 4) // L1 (LB)
+            if (btnX)      b1 = b1 or (1 shl 3)
+            if (btnY)      b1 = b1 or (1 shl 4) // Swap fix
+            if (gearDown)  b1 = b1 or (1 shl 2) // L1 (LB)
             if (gearUp)    b1 = b1 or (1 shl 5) // R1 (RB)
             // Note: Gas aur Brake ab buttons nahi hain, wo pure analog Triggers ban gaye hain.
 
