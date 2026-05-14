@@ -1090,12 +1090,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                         // 🔥 STANDARDIZED BUTTON MAPPING
             if (btnA)      b1 = b1 or (1 shl 0) // A
             if (btnB)      b1 = b1 or (1 shl 1) // B
-            if (btnX)      b1 = b1 or (1 shl 2) // X
-            if (btnY)      b1 = b1 or (1 shl 3) // Y (Swap theek ho gaya)
-            if (gearDown)  b1 = b1 or (1 shl 4) // L1 (LB) ban gaya
+            if (btnX)      b1 = b1 or (1 shl 4) // X
+            if (btnY)      b1 = b1 or (1 shl 2) // Y (Swap theek ho gaya)
+            if (gearDown)  b1 = b1 or (1 shl 3) // L1 (LB) ban gaya
             if (gearUp)    b1 = b1 or (1 shl 5) // R1 (RB) ban gaya
-            if (brakeOn)   b1 = b1 or (1 shl 6) // L2 (LT) ban gaya (Brake)
-            if (gasOn)     b1 = b1 or (1 shl 7) // R2 (RT) ban gaya (Gas)
             
             // D-Pad / Hat Switch Logic
             val hat: Byte = when {
@@ -1119,8 +1117,20 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             // --- AXES ASSIGNMENT (The Mixture) ---
                     // --- AXES ASSIGNMENT ---
             // Left Stick
-            val lx = if (leftJoyX.toInt() != 0) leftJoyX else tiltByte
-            val ly = leftJoyY
+                        // --- AXES ASSIGNMENT ---
+            // 🔥 WASD ko Left Joystick me daala
+            var tempLx = leftJoyX.toInt()
+            var tempLy = leftJoyY.toInt()
+
+            // Agar custom WASD (kb_w, kb_a, kb_s, kb_d) dabenge toh joystick hilegi
+            if (customBtnStates["kb_a"] == true) tempLx = -127
+            if (customBtnStates["kb_d"] == true) tempLx = 127
+            if (customBtnStates["kb_w"] == true) tempLy = -127
+            if (customBtnStates["kb_s"] == true) tempLy = 127
+
+            val lx = if (tempLx != 0) tempLx.toByte() else tiltByte
+            val ly = tempLy.toByte()
+            
             
             // Right Stick
             val rx = rightJoyX
