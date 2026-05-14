@@ -1111,10 +1111,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
             for (def in customButtons) {
                 if (customBtnStates[def.id] == true) {
+                    
+                    // 🔥 Ye ek line WASD ko D-pad aur buttons se alag kar degi 🔥
+                    if (def.id == "kb_w" || def.id == "kb_a" || def.id == "kb_s" || def.id == "kb_d") continue 
+
                     if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
                     if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
                 }
-            }
+                        }
+                        
 
             // 🔥 WASD linked to Left Stick
             var tempLx = leftJoyX.toInt()
