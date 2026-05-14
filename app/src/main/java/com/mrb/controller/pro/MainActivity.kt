@@ -1120,10 +1120,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             var tempLx = leftJoyX.toInt()
             var tempLy = leftJoyY.toInt()
 
-            if (customBtnStates["kb_a"] == true) tempLx = -127
-            if (customBtnStates["kb_d"] == true) tempLx = 127
-            if (customBtnStates["kb_w"] == true) tempLy = -127
-            if (customBtnStates["kb_s"] == true) tempLy = 127
+            if (customBtnStates["kb_a"] == true) tempLx = -125
+            if (customBtnStates["kb_d"] == true) tempLx = 125
+            if (customBtnStates["kb_w"] == true) tempLy = -125
+            if (customBtnStates["kb_s"] == true) tempLy = 125
 
             val lx = if (tempLx != 0) tempLx.toByte() else tiltByte
             val ly = tempLy.toByte()
