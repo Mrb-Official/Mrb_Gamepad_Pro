@@ -1078,54 +1078,66 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     
  //gemini keyfix // 
-        @SuppressLint("MissingPermission")
+@SuppressLint("MissingPermission")
+    @android.annotation.SuppressLint("MissingPermission")
     private fun sendReport() {
-        try {
-            val device = HidService.connectedDevice ?: return
-            val hid    = HidService.hidDevice       ?: return
-            
-            var b1 = 0
-            var b2 = 0
-            
-            // Buttons 
-            if (btnA) b1 = b1 or (1 shl 0)
-            if (btnB) b1 = b1 or (1 shl 1)
-            if (btnX) b1 = b1 or (1 shl 3)
-            
-            // 🔥 Point 2 Fix: Gear Down aur btnY Swap ho gaye hain
-            if (btnY)     b1 = b1 or (1 shl 4) // Yaha pehle shl 4 tha
-            if (gearDown) b1 = b1 or (1 shl 6) // Yaha pehle shl 6 tha
-            if (gearUp)   b1 = b1 or (1 shl 7)
+        val device = HidService.connectedDevice ?: return
+        val hid    = HidService.hidDevice       ?: return
 
-            for (def in customButtons) {
-                if (customBtnStates[def.id] == true) {
-                    if (def.byte1bit >= 0) b1 = b1 or (1 shl def.byte1bit)
-                    if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
-                }
+        var b1 = 0
+        var b2 = 0
+
+        // Standard button mapping
+        if (btnA)     b1 = b1 or (1 shl 0)  // Button 1 = A
+        if (btnB)     b1 = b1 or (1 shl 1)  // Button 2 = B
+        if (btnX)     b1 = b1 or (1 shl 2)  // Button 3 = X
+        if (btnY)     b1 = b1 or (1 shl 3)  // Button 4 = Y
+        if (gearUp)   b1 = b1 or (1 shl 4)  // Button 5 = RB / GearUp
+        if (gearDown) b1 = b1 or (1 shl 5)  // Button 6 = LB / GearDown
+        if (gasOn)    b1 = b1 or (1 shl 6)  // Button 7 = Gas / RT
+        if (brakeOn)  b1 = b1 or (1 shl 7)  // Button 8 = Brake / LT
+
+        // Custom buttons in b2
+        for (def in customButtons) {
+            if (customBtnStates[def.id] == true) {
+                if (def.byte1bit >= 0) b2 = b2 or (1 shl def.byte1bit)
+                if (def.byte2bit >= 0) b2 = b2 or (1 shl def.byte2bit)
             }
+        }
 
-            // Movement (Left Stick)
-            val finalLeftX = if (dpadLeft) (-127).toByte() else if (dpadRight) 127.toByte() else if (leftJoyX.toInt() != 0) leftJoyX else tiltByte
-            val finalLeftY = if (dpadUp) (-127).toByte() else if (dpadDown) 127.toByte() else leftJoyY
+        // Left axis = Left Joy / WASD / Tilt
+        val lx: Byte = when {
+            dpadLeft  -> (-127).toByte()
+            dpadRight -> 127.toByte()
+            leftJoyX.toInt() != 0 -> leftJoyX
+            else -> tiltByte
+        }
+        val ly: Byte = when {
+            dpadUp   -> (-127).toByte()
+            dpadDown -> 127.toByte()
+            else     -> leftJoyY
+        }
 
-            // 🔥 Point 4 Fix: Right Joystick Workable
-            // Ab ye apna data Byte 4 aur 5 me bhejega bina null hue.
-            val finalRightX = rightJoyX
-            val finalRightY = rightJoyY
+        // Right axis = Right Joy / Touchpad (Z, Rz)
+        val rx = rightJoyX
+        val ry = rightJoyY
 
-            // 🔥 Point 3 Fix: Gas/Brake Full 255 (0xFF)
-            val gasVal   = if (gasOn   || customBtnStates["gas"] == true)   0xFF.toByte() else 0x00.toByte()
-            val brakeVal = if (brakeOn || customBtnStates["brake"] == true) 0xFF.toByte() else 0x00.toByte()
+        // Hat switch = D-pad cross
+        val hat: Byte = when {
+            dpadUp    && !dpadLeft && !dpadRight -> 0
+            dpadUp    && dpadRight               -> 1
+            dpadRight && !dpadUp   && !dpadDown  -> 2
+            dpadDown  && dpadRight               -> 3
+            dpadDown  && !dpadLeft && !dpadRight -> 4
+            dpadDown  && dpadLeft                -> 5
+            dpadLeft  && !dpadUp   && !dpadDown  -> 6
+            dpadUp    && dpadLeft                -> 7
+            else                                 -> 8  // center
+        }
 
-            // 🔥 Point 1 Fix: Brake aur Gas apni position me Swap kar diye (Pehle brake, fir gas)
-            hid.sendReport(device, 1, byteArrayOf(
-                b1.toByte(), b2.toByte(),   // Bytes 0, 1
-                finalLeftX, finalLeftY,     // Bytes 2, 3
-                finalRightX, finalRightY,   // Bytes 4, 5 (Touchpad Camera Z/Rz)
-                brakeVal, gasVal            // Bytes 6, 7 (Swapped, 0 se Full)
-            ))
-
-        } catch (e: Exception) { e.printStackTrace() }
+        // 7 bytes: b1, b2, X, Y, Z, Rz, Hat
+        hid.sendReport(device, 1,
+            byteArrayOf(b1.toByte(), b2.toByte(), lx, ly, rx, ry, hat))
     }
 
 }
