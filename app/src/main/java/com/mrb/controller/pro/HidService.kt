@@ -95,4 +95,43 @@ class HidService : Service() {
 
             0xc0.toByte()
         )
+            @SuppressLint("MissingPermission")
+    private fun initHid() {
+        val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        btManager.adapter.getProfileProxy(this,
+            object : BluetoothProfile.ServiceListener {
+                override fun onServiceConnected(p: Int, proxy: BluetoothProfile?) {
+                    hidDevice = proxy as BluetoothHidDevice
+                    val sdp = BluetoothHidDeviceAppSdpSettings(
+                        "MRB Gamepad Pro", "Tilt Controller", "MeetDev",
+                        0x08.toByte(), HID_DESC)
+                    hidDevice?.registerApp(sdp, null, null,
+                        { it?.run() },
+                        object : BluetoothHidDevice.Callback() {
+                            override fun onConnectionStateChanged(
+                                device: BluetoothDevice?, state: Int) {
+                                when (state) {
+                                    BluetoothProfile.STATE_CONNECTED -> {
+                                        connectedDevice = device
+                                        handler.post { onConnected?.invoke(device!!) }
+                                    }
+                                    BluetoothProfile.STATE_DISCONNECTED -> {
+                                        connectedDevice = null
+                                        handler.post { onDisconnected?.invoke() }
+                                    }
+                                }
+                            }
+                            override fun onAppStatusChanged(
+                                d: BluetoothDevice?, registered: Boolean) {
+                                isRegistered = registered
+                            }
+                        })
+                }
+                override fun onServiceDisconnected(p: Int) {
+                    hidDevice = null
+                    isRegistered = false
+                }
+            }, BluetoothProfile.HID_DEVICE)
+    }
+    
 }
