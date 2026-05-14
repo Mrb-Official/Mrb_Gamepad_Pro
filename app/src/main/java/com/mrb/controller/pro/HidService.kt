@@ -38,16 +38,18 @@ class HidService : Service() {
             0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 
             0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
 
-                        // ── Bytes 4 aur 5: Right Stick (Ab ye perfectly Z aur Rz lega) ──
-            0x09, 0x32, 0x09, 0x35, 
+            // 🔥 MIXTURE PART 1: Camera Xbox 360 wala (Rx, Ry)
+            // Isse GTA 5 me camera perfect chalega, Tester bhale hi ise alag axis maane.
+            0x09, 0x33, 0x09, 0x34, 
             0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
 
-            // ── Bytes 6 aur 7: Swapped Brake & Gas (Ab ye Rx aur Ry lenge) ──
-            0x09, 0x33, 0x09, 0x34, 
+            // 🔥 MIXTURE PART 2: Gas/Brake Android wala (Z, Rz)
+            // Isse Triggers full speed lenge aur Tester me bhi respond karenge.
+            0x09, 0x32, 0x09, 0x35, 
             0x15, 0x00, 0x26, 0xff.toByte(), 0x00, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
 
             0xc0.toByte()           // End Collection
-            )
+        )
     }
 
     private val handler = Handler(Looper.getMainLooper())
