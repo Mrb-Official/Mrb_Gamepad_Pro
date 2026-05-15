@@ -176,6 +176,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT)
+                isMotionEventSplittingEnabled = true // 🔥 BAS YE EK LINE ADD KAR DE
         }
         (window.decorView as FrameLayout).addView(overlayFrame)
 
@@ -783,8 +784,28 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             container.setOnTouchListener { _, e ->
                 val act = e.actionMasked
-                val pressed  = act == MotionEvent.ACTION_DOWN || act == MotionEvent.ACTION_POINTER_DOWN
-                val released = act == MotionEvent.ACTION_UP || act == MotionEvent.ACTION_POINTER_UP || act == MotionEvent.ACTION_CANCEL
+                // 🔥 POINTER_DOWN / UP hata diye
+                val pressed  = act == MotionEvent.ACTION_DOWN
+                val released = act == MotionEvent.ACTION_UP || act == MotionEvent.ACTION_CANCEL
+                
+                if (pressed || released) {
+                    when (def.id) {
+                        "kb_w", "kb_up"    -> dpadUp    = pressed
+                        "kb_a", "kb_left"  -> dpadLeft  = pressed
+                        "kb_s", "kb_down"  -> dpadDown  = pressed
+                        "kb_d", "kb_right" -> dpadRight = pressed
+                    }
+                    customBtnStates[def.id] = pressed
+                    container.background = android.graphics.drawable.GradientDrawable().apply {
+                        setColor(if (pressed) Color.argb(160, 255, 255, 255) else Color.argb(60, 200, 200, 200))
+                        setStroke(1, Color.argb(120, 255, 255, 255)); cornerRadius = 10f
+                    }
+                    tv.setTextColor(if (pressed) Color.parseColor("#111111") else Color.WHITE)
+                    if (pressed && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                        vibrator.vibrate(VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE))
+                }
+                pressed || released
+            }
                 if (pressed || released) {
                     when (def.id) {
                         "kb_w", "kb_up"    -> dpadUp    = pressed
@@ -845,7 +866,33 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             container.setOnTouchListener { _, e ->
                 when (e.actionMasked) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    MotionEvent.ACTION_DOWN -> { // 🔥 POINTER_DOWN hata diya
+                        customBtnStates[def.id] = true
+                        container.background = android.graphics.drawable.GradientDrawable().apply {
+                            setColor(Color.argb(60, Color.red(def.pressColor),
+                                Color.green(def.pressColor), Color.blue(def.pressColor)))
+                            setStroke(2, Color.parseColor("#444444")); cornerRadius = 16f
+                        }
+                        iconIv.setColorFilter(def.pressColor)
+                        labelTv.setTextColor(def.pressColor)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            vibrator.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE))
+                        }
+                        true 
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { // 🔥 POINTER_UP hata diya
+                        customBtnStates[def.id] = false
+                        container.background = android.graphics.drawable.GradientDrawable().apply {
+                            setColor(Color.parseColor("#111111"))
+                            setStroke(2, Color.parseColor("#444444")); cornerRadius = 16f
+                        }
+                        iconIv.setColorFilter(Color.parseColor("#888888"))
+                        labelTv.setTextColor(Color.parseColor("#888888"))
+                        true 
+                    }
+                    else -> false
+                }
+            }
                         customBtnStates[def.id] = true
                         container.background = android.graphics.drawable.GradientDrawable().apply {
                             setColor(Color.argb(60, Color.red(def.pressColor),
@@ -986,10 +1033,22 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val icon = iconId?.let { findViewById<ImageView>(it) }
         val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         view.setOnTouchListener { _, e ->
-            // 🔥 'action' ki jagah 'actionMasked' use kiya multi-touch ke liye
             when (e.actionMasked) { 
-                // 🔥 POINTER_DOWN add kiya (doosri ungli ka touch pakadne ke liye)
-                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                MotionEvent.ACTION_DOWN -> { // 🔥 POINTER_DOWN hata diya
+                    onPress(true); view.setBackgroundResource(pressRes)
+                    if (pressIconColor != 0) icon?.setColorFilter(pressIconColor)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                        vibrator.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE))
+                    else { @Suppress("DEPRECATION") vibrator.vibrate(30) }
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { // 🔥 POINTER_UP hata diya
+                    onPress(false); view.setBackgroundResource(normalRes)
+                    icon?.setColorFilter(Color.parseColor("#888888")); true
+                }
+                else -> false
+            }
+        }
                     onPress(true); view.setBackgroundResource(pressRes)
                     if (pressIconColor != 0) icon?.setColorFilter(pressIconColor)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
