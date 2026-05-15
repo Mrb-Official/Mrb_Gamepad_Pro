@@ -653,8 +653,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                         true
                     }
                     MotionEvent.ACTION_MOVE -> {
-                        val dx = (e.x - startX).coerceIn(-maxDrag, maxDrag)
-                        val dy = (e.y - startY).coerceIn(-maxDrag, maxDrag)
+                        val sens = 2.5f // 🔥 SENSITIVITY YAHAN SE CONTROL HOGI (2.5f ko 3.0f ya 4.0f kar sakta hai aur tez karne ke liye)
+                        val dx = ((e.x - startX) * sens).coerceIn(-maxDrag, maxDrag)
+                        val dy = ((e.y - startY) * sens).coerceIn(-maxDrag, maxDrag)
                         
                         rightJoyX = ((dx / maxDrag) * 127).toInt().toByte()
                         rightJoyY = ((dy / maxDrag) * 127).toInt().toByte()
@@ -982,8 +983,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val icon = iconId?.let { findViewById<ImageView>(it) }
         val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         view.setOnTouchListener { _, e ->
-            when (e.action) {
-                MotionEvent.ACTION_DOWN -> {
+            // 🔥 'action' ki jagah 'actionMasked' use kiya multi-touch ke liye
+            when (e.actionMasked) { 
+                // 🔥 POINTER_DOWN add kiya (doosri ungli ka touch pakadne ke liye)
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                     onPress(true); view.setBackgroundResource(pressRes)
                     if (pressIconColor != 0) icon?.setColorFilter(pressIconColor)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
@@ -991,7 +994,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     else { @Suppress("DEPRECATION") vibrator.vibrate(30) }
                     true
                 }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                // 🔥 POINTER_UP add kiya (doosri ungli hatne par signal chhodne ke liye)
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
                     onPress(false); view.setBackgroundResource(normalRes)
                     icon?.setColorFilter(Color.parseColor("#888888")); true
                 }
