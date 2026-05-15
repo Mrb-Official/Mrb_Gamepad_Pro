@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#080808"
+    android:keepScreenOn="true">
+
+    <!-- CENTER wheel -->
+    <LinearLayout
+        android:id="@+id/center_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_centerHorizontal="true"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/txt_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Waiting for device..."
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:alpha="0.4"
+            android:paddingBottom="6dp"/>
+
+        <ImageView
+            android:id="@+id/lay_steering"
+            android:src="@drawable/ic_steering_wheel"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:clickable="true"
+            android:focusable="true"/>
+
+        <ProgressBar
+            android:id="@+id/tilt_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="190dp"
+            android:layout_height="4dp"
+            android:layout_marginTop="8dp"
+            android:max="200"
+            android:progress="100"/>
+
+        <TextView
+            android:id="@+id/txt_tilt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+
+</RelativeLayout>
