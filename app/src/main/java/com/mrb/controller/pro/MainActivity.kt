@@ -782,8 +782,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (!inEditMode) {
             val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             container.setOnTouchListener { _, e ->
-                val pressed  = e.action == MotionEvent.ACTION_DOWN
-                val released = e.action == MotionEvent.ACTION_UP || e.action == MotionEvent.ACTION_CANCEL
+                val act = e.actionMasked
+                val pressed  = act == MotionEvent.ACTION_DOWN || act == MotionEvent.ACTION_POINTER_DOWN
+                val released = act == MotionEvent.ACTION_UP || act == MotionEvent.ACTION_POINTER_UP || act == MotionEvent.ACTION_CANCEL
                 if (pressed || released) {
                     when (def.id) {
                         "kb_w", "kb_up"    -> dpadUp    = pressed
@@ -843,9 +844,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (!inEditMode) {
             val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             container.setOnTouchListener { _, e ->
-                when (e.action) {
-                    MotionEvent.ACTION_DOWN -> {
+                when (e.actionMasked) {
+                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                         customBtnStates[def.id] = true
+                        // ... tera color code waisa hi rehne de ...
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                        customBtnStates[def.id] = false
                         container.background = android.graphics.drawable.GradientDrawable().apply {
                             setColor(Color.argb(60, Color.red(def.pressColor),
                                 Color.green(def.pressColor), Color.blue(def.pressColor)))
