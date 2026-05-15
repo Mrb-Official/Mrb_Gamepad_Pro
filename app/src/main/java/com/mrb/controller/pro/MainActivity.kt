@@ -847,21 +847,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 when (e.actionMasked) {
                     MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                         customBtnStates[def.id] = true
-                        // ... tera color code waisa hi rehne de ...
-                    }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
-                        customBtnStates[def.id] = false
                         container.background = android.graphics.drawable.GradientDrawable().apply {
                             setColor(Color.argb(60, Color.red(def.pressColor),
                                 Color.green(def.pressColor), Color.blue(def.pressColor)))
                             setStroke(2, Color.parseColor("#444444")); cornerRadius = 16f
                         }
-                        iconIv.setColorFilter(def.pressColor); labelTv.setTextColor(def.pressColor)
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                        iconIv.setColorFilter(def.pressColor)
+                        labelTv.setTextColor(def.pressColor)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                             vibrator.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE))
-                        true
+                        }
+                        true 
                     }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
                         customBtnStates[def.id] = false
                         container.background = android.graphics.drawable.GradientDrawable().apply {
                             setColor(Color.parseColor("#111111"))
@@ -869,7 +867,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                         }
                         iconIv.setColorFilter(Color.parseColor("#888888"))
                         labelTv.setTextColor(Color.parseColor("#888888"))
-                        true
+                        true 
                     }
                     else -> false
                 }
