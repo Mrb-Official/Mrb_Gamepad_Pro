@@ -48,5 +48,23 @@
             android:visibility="gone"/>
 
     </LinearLayout>
+        <FrameLayout
+        android:id="@+id/btn_tilt_xml"
+        android:layout_width="130dp"
+        android:layout_height="50dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:clickable="true"
+        android:focusable="true">
+        <TextView
+            android:id="@+id/tv_tilt_xml"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textSize="11sp"
+            android:textStyle="bold"/>
+    </FrameLayout>
+    
 
 </RelativeLayout>
