@@ -2,6 +2,10 @@
 
 # 🎮 Mrb Gamepad Pro
 
+<div align="center">
+  <img src="logo.svg" alt="App Dashboard" width="100%" />
+</div>
+
 **Transform Your Android Device into a High-Performance Virtual Bluetooth Controller**
 
 [![Version](https://img.shields.io/badge/Version-v3.0-blue.svg?style=for-the-badge&logo=android)](#)
