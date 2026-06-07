@@ -27,9 +27,9 @@ Mrb Gamepad Pro leverages standard Bluetooth HID Profiles to turn your phone int
 ## 📸 Screenshots
 
 <div align="center">
-  <img src="[IMAGE_LINK_1]" alt="App Dashboard" width="30%" />
-  <img src="[IMAGE_LINK_2]" alt="Custom Button Editing" width="30%" />
-  <img src="[IMAGE_LINK_3]" alt="Gameplay Overlay" width="30%" />
+  <img src="first.png" alt="App Dashboard" width="30%" />
+  <img src="second.png" alt="Custom Button Editing" width="30%" />
+  <img src="third.png" alt="Gameplay Overlay" width="30%" />
 </div>
 
 > *Note: Replace `[IMAGE_LINK_X]` with your actual image URLs hosted on GitHub or Imgur.*
