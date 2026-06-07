@@ -24,19 +24,16 @@ Mrb Gamepad Pro leverages standard Bluetooth HID Profiles to turn your phone int
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 <div align="center">
-  <img src="first.png" alt="App Dashboard" width="30%" />
-  <img src="second.png" alt="Custom Button Editing" width="30%" />
-  <img src="third.png" alt="Gameplay Overlay" width="30%" />
+  <img src="first.png" alt="App Dashboard" width="100%" />
+  <img src="second.png" alt="Custom Button Editing" width="100%" />
+  <img src="third.png" alt="Gameplay Overlay" width="100%" />
 </div>
 
-> *Note: Replace `[IMAGE_LINK_X]` with your actual image URLs hosted on GitHub or Imgur.*
 
----
-
-## 🛠️ Architecture & Tech Stack
+##  Architecture & Tech Stack
 
 This project is built with performance and clean architecture in mind:
 
@@ -47,7 +44,7 @@ This project is built with performance and clean architecture in mind:
 
 ---
 
-## 🚀 How to Use
+## How to Use
 
 1. **Install:** Download the latest release from the [APKPure Store](#) or build the APK directly via Android Studio / Termux command line.
 2. **Pair Device:** Pair your Android device to your PC or target device via Bluetooth.
@@ -65,5 +62,5 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 This project is [MIT](https://opensource.org/licenses/MIT) licensed.
 
 <div align="center">
-  Developed with ❤️ by <b>Meet</b>
+  Developed with ❤️ by <b>Mrb</b>
 </div>
