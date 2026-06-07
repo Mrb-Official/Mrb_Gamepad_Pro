@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+
+<defs>
+<linearGradient id="pad" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#444"/>
+<stop offset="100%" stop-color="#111"/>
+</linearGradient>
+</defs>
+
+<!-- background -->
+<rect width="512" height="512" rx="90" fill="#000"/>
+
+<!-- wireless signal -->
+<path d="M180 110 Q256 60 332 110" stroke="#fff" stroke-width="14" fill="none" stroke-linecap="round"/>
+<path d="M210 145 Q256 110 302 145" stroke="#fff" stroke-width="14" fill="none" stroke-linecap="round"/>
+
+<!-- controller body -->
+<path d="M140 260 
+C140 210 180 190 220 205
+L292 205
+C332 190 372 210 372 260
+L372 310
+C372 350 340 360 305 330
+L207 330
+C172 360 140 350 140 310
+Z" fill="url(#pad)"/>
+
+<!-- LEFT + PAD -->
+<rect x="180" y="270" width="60" height="14" rx="3" fill="#777"/>
+<rect x="203" y="247" width="14" height="60" rx="3" fill="#777"/>
+
+<!-- ABXY buttons -->
+<circle cx="300" cy="245" r="12" fill="#ffd500"/>
+<circle cx="325" cy="270" r="12" fill="#ff4b4b"/>
+<circle cx="300" cy="295" r="12" fill="#3cff6b"/>
+<circle cx="275" cy="270" r="12" fill="#3db9ff"/>
+
+<!-- hands -->
+<path d="M110 345 Q160 280 205 330 L180 395 Q125 370 110 345" fill="#fff"/>
+<path d="M402 345 Q352 280 307 330 L332 395 Q387 370 402 345" fill="#fff"/>
+
+<!-- small PRO badge near controller -->
+<rect x="340" y="210" width="70" height="28" rx="14" fill="#ff3b3b"/>
+<text x="375" y="229" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff" font-family="Arial, sans-serif">
+PRO
+</text>
+
+</svg>
