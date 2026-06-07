@@ -46,7 +46,7 @@ This project is built with performance and clean architecture in mind:
 
 ## How to Use
 
-1. **Install:** Download the latest release from the [APKPure Store](#) or build the APK directly via Android Studio / Termux command line.
+1. **Install:** Download the latest release from the [APKPure Store](#) or [uptodown store](#)
 2. **Pair Device:** Pair your Android device to your PC or target device via Bluetooth.
 3. **Launch:** Open Mrb Gamepad Pro, allow Bluetooth permissions, and tap the status bar to initiate the HID connection.
 4. **Customize:** Tap the Crown icon to enter Edit Mode, arrange your UI, and toggle the Tilt sensor as needed.
