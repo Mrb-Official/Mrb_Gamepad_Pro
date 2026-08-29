@@ -1,0 +1,115 @@
+package com.mrb.controller.pro
+
+import android.annotation.SuppressLint
+import android.app.*
+import android.bluetooth.*
+import android.content.*
+import android.os.*
+
+class HidService : Service() {
+
+    companion object {
+        var hidDevice: BluetoothHidDevice? = null
+        var connectedDevice: BluetoothDevice? = null
+        var isRegistered = false
+        var onConnected: ((BluetoothDevice) -> Unit)? = null
+        var onDisconnected: (() -> Unit)? = null
+
+        // 🔥 NAYA 10-BYTE HYBRID DESCRIPTOR (Mobile + PC/Xbox Dono ke liye) 🔥
+        // Button field ab 16 se 24 (3 bytes) — pehle sirf 16 bits the jisse
+        // A/X/Horn/Handbrake/GearUp/Camera jaise buttons ek hi bit share kar
+        // rahe the (clash). Ab har button ka apna unique bit hai + L3/R3 ke
+        // liye extra room bhi.
+        val HID_DESC = byteArrayOf(
+            0x05, 0x01, 0x09, 0x05, 0xa1.toByte(), 0x01, 0x85.toByte(), 0x01,
+
+            // ── Buttons (24) ──
+            0x05, 0x09, 0x19, 0x01, 0x29, 0x18, 0x15, 0x00, 0x25, 0x01, 0x75, 0x01, 0x95.toByte(), 0x18, 0x81.toByte(), 0x02,
+
+            // ── Left Stick (X, Y) ──
+            0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 
+            0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
+
+            // ── Right Stick (Z, Rz) -> Ab ye safe hai! ──
+            0x09, 0x32, 0x09, 0x35, 
+            0x15, 0x81.toByte(), 0x25, 0x7f, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
+
+            // 🔥 NAYA JADOO: Gas aur Brake ko 'Simulation Controls' (Car Pedals) bana diya! 🔥
+            0x05, 0x02,             // Usage Page (Simulation Controls)
+            0x09, 0xC5.toByte(),    // Usage (Brake) -> Android isko L2 maanta hai
+            0x09, 0xC4.toByte(),    // Usage (Accelerator) -> Android isko R2 maanta hai
+            0x15, 0x00, 0x26, 0xff.toByte(), 0x00, 0x75, 0x08, 0x95.toByte(), 0x02, 0x81.toByte(), 0x02,
+
+            // ── D-Pad (Hat Switch) ──
+            0x05, 0x01,             // Wapas Generic Desktop page par aao
+            0x09, 0x39, 0x15, 0x00, 0x25, 0x07, 0x35, 0x00, 0x46, 0x3b, 0x01, 0x75, 0x04, 0x95.toByte(), 0x01, 0x81.toByte(), 0x42,
+            0x75, 0x04, 0x95.toByte(), 0x01, 0x81.toByte(), 0x03,
+
+            0xc0.toByte()
+        )
+        
+    }
+
+    private val handler = Handler(Looper.getMainLooper())
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        createNotification()
+        initHid()
+    }
+
+    private fun createNotification() {
+        val channel = NotificationChannel(
+            "mrb_hid", "MRB Gamepad",
+            NotificationManager.IMPORTANCE_LOW)
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(channel)
+        val notif = Notification.Builder(this, "mrb_hid")
+            .setContentTitle("MRB Gamepad Pro")
+            .setContentText("Waiting for connection...")
+            .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
+            .build()
+        startForeground(1, notif)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun initHid() {
+        val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        btManager.adapter.getProfileProxy(this,
+            object : BluetoothProfile.ServiceListener {
+                override fun onServiceConnected(p: Int, proxy: BluetoothProfile?) {
+                    hidDevice = proxy as BluetoothHidDevice
+                    val sdp = BluetoothHidDeviceAppSdpSettings(
+                        "MRB Gamepad Pro", "Tilt Controller", "MeetDev",
+                        0x08.toByte(), HID_DESC)
+                    hidDevice?.registerApp(sdp, null, null,
+                        { it?.run() },
+                        object : BluetoothHidDevice.Callback() {
+                            override fun onConnectionStateChanged(
+                                device: BluetoothDevice?, state: Int) {
+                                when (state) {
+                                    BluetoothProfile.STATE_CONNECTED -> {
+                                        connectedDevice = device
+                                        handler.post { onConnected?.invoke(device!!) }
+                                    }
+                                    BluetoothProfile.STATE_DISCONNECTED -> {
+                                        connectedDevice = null
+                                        handler.post { onDisconnected?.invoke() }
+                                    }
+                                }
+                            }
+                            override fun onAppStatusChanged(
+                                d: BluetoothDevice?, registered: Boolean) {
+                                isRegistered = registered
+                            }
+                        })
+                }
+                override fun onServiceDisconnected(p: Int) {
+                    hidDevice = null
+                    isRegistered = false
+                }
+            }, BluetoothProfile.HID_DEVICE)
+    }
+}
